@@ -1,0 +1,40 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('transactions', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('account_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
+            $table->foreignId('destination_account_id')->nullable()->constrained('accounts')->nullOnDelete();
+            $table->enum('type', ['income', 'expense', 'transfer']);
+            $table->decimal('amount', 15, 2);
+            $table->string('description')->nullable();
+            $table->timestamp('transaction_date');
+            $table->string('reference_number')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+
+            $table->index(['user_id', 'transaction_date']);
+            $table->index(['account_id', 'transaction_date']);
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('transactions');
+    }
+};

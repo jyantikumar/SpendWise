@@ -25,4 +25,7 @@ export default defineConfig({
             host: 'spendwise.test',
         },
     },
+    optimizeDeps: {
+        include: ['recharts'],
+    },
 });
