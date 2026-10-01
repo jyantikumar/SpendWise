@@ -87,39 +87,40 @@ export function AppSidebar({ user }) {
             </SidebarContent>
 
             {/* User Profile Footer */}
-            <SidebarFooter>
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <SidebarMenuButton
-                                    size="lg"
-                                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
-                                >
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted font-medium text-xs">
-                                        {user?.name?.substring(0, 2).toUpperCase()}
-                                    </div>
-                                    <div className="grid flex-1 text-left text-sm leading-tight">
-                                        <span className="truncate font-semibold">{user?.name}</span>
-                                        <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
-                                    </div>
-                                    <ChevronUp className="ml-auto" />
-                                </SidebarMenuButton>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent side="top" className="w-[--radix-popper-anchor-width]">
-                                <DropdownMenuItem asChild>
-                                    <Link href={route('profile.edit')} className="cursor-pointer">
-                                        <User className="mr-2 h-4 w-4" /> Profile
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
-                                    <LogOut className="mr-2 h-4 w-4" /> Log out
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarFooter>
+            {/* User Profile Footer in resources/js/components/app-sidebar.jsx */}
+<SidebarFooter>
+    <SidebarMenu>
+        <SidebarMenuItem>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <button 
+                        type="button" 
+                        className="flex w-full items-center gap-2 rounded-lg p-2 text-left text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground outline-none transition-colors"
+                    >
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted font-medium text-xs">
+                            {user?.name?.substring(0, 2).toUpperCase()}
+                        </div>
+                        <div className="grid flex-1 text-left text-sm leading-tight">
+                            <span className="truncate font-semibold">{user?.name}</span>
+                            <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
+                        </div>
+                        <ChevronUp className="ml-auto h-4 w-4 text-muted-foreground" />
+                    </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="top" className="w-[--radix-popper-anchor-width]">
+                    <DropdownMenuItem asChild>
+                        <Link href={route('profile.edit')} className="cursor-pointer">
+                            <User className="mr-2 h-4 w-4" /> Profile
+                        </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
+                        <LogOut className="mr-2 h-4 w-4" /> Log out
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+        </SidebarMenuItem>
+    </SidebarMenu>
+</SidebarFooter>
         </Sidebar>
     );
 }
