@@ -33,8 +33,8 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
 
     const formatCurrency = (val) => 
-        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val || 0);
-
+        new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
+    
     const handleFilterChange = (value) => {
         router.get(route('dashboard'), { range: value }, { preserveState: true });
     };

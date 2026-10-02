@@ -118,7 +118,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
     });
 
     const formatCurrency = (val) => 
-        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val || 0);
+        new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
 
     const openCreateModal = () => {
         clearErrors();
@@ -396,7 +396,11 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                                     </TableCell>
                                                     <TableCell>{tx.category?.name || '—'}</TableCell>
                                                     <TableCell className={`text-right font-semibold whitespace-nowrap ${
-                                                        tx.type === 'income' ? 'text-emerald-600' : tx.type === 'expense' ? 'text-rose-600' : 'text-slate-900'
+                                                        tx.type === 'income' 
+                                                            ? 'text-emerald-600' 
+                                                            : tx.type === 'expense' 
+                                                            ? 'text-rose-600' 
+                                                            : 'text-blue-600 dark:text-blue-400'
                                                     }`}>
                                                         {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
                                                         {formatCurrency(tx.amount)}
