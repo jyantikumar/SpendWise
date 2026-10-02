@@ -14,8 +14,36 @@ class TransactionController extends Controller
     {
         $user = $request->user();
 
+    $search    = $request->input('search');
+        $type      = $request->input('type');
+        $accountId = $request->input('account_id');
+        $startDate = $request->input('start_date');
+        $endDate   = $request->input('end_date');
+
         $transactions = Transaction::where('user_id', $user->id)
             ->with(['account', 'category'])
+            // Search filter (Description or Reference Number)
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('description', 'like', "%{$search}%")
+                      ->orWhere('reference_number', 'like', "%{$search}%");
+                });
+            })
+            // Transaction Type filter
+            ->when($type, function ($query, $type) {
+                $query->where('type', $type);
+            })
+            // Account filter
+            ->when($accountId, function ($query, $accountId) {
+                $query->where('account_id', $accountId);
+            })
+            // Date Range filter
+            ->when($startDate, function ($query, $startDate) {
+                $query->whereDate('transaction_date', '>=', $startDate);
+            })
+            ->when($endDate, function ($query, $endDate) {
+                $query->whereDate('transaction_date', '<=', $endDate);
+            })
             ->orderBy('transaction_date', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(10)
@@ -28,6 +56,13 @@ class TransactionController extends Controller
             'transactions' => $transactions,
             'accounts'     => $accounts,
             'categories'   => $categories,
+            'filters'      => [
+                'search'     => $search ?? '',
+                'type'       => $type ?? 'all',
+                'account_id' => $accountId ?? 'all',
+                'start_date' => $startDate ?? '',
+                'end_date'   => $endDate ?? '',
+            ],
         ]);
     }
 

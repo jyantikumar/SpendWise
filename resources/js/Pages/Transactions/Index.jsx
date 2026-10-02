@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import { 
     Plus, 
@@ -7,7 +7,10 @@ import {
     Trash2, 
     ArrowUpRight, 
     ArrowDownRight, 
-    ArrowLeftRight 
+    ArrowLeftRight,
+    Search,
+    X,
+    Filter
 } from 'lucide-react';
 
 import { AppSidebar } from '@/components/app-sidebar';
@@ -45,13 +48,64 @@ import {
     AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
 
-export default function TransactionIndex({ auth, transactions, accounts = [], categories = [] }) {
+export default function TransactionIndex({ auth, transactions, accounts = [], categories = [], filters = {} }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [deletingTransaction, setDeletingTransaction] = useState(null);
 
+    // Filter states initialized from server props
+    const [search, setSearch] = useState(filters.search || '');
+    const [selectedType, setSelectedType] = useState(filters.type || 'all');
+    const [selectedAccount, setSelectedAccount] = useState(filters.account_id || 'all');
+    const [startDate, setStartDate] = useState(filters.start_date || '');
+    const [endDate, setEndDate] = useState(filters.end_date || '');
+
     const transactionList = Array.isArray(transactions) ? transactions : (transactions?.data || []);
     const paginationLinks = transactions?.links || [];
+
+    const isFirstRender = useRef(true);
+
+    // Apply filters via Inertia router visit
+    const applyFilters = (overrides = {}) => {
+        const query = {
+            search: overrides.search !== undefined ? overrides.search : search,
+            type: (overrides.type !== undefined ? overrides.type : selectedType) === 'all' ? '' : (overrides.type ?? selectedType),
+            account_id: (overrides.account_id !== undefined ? overrides.account_id : selectedAccount) === 'all' ? '' : (overrides.account_id ?? selectedAccount),
+            start_date: overrides.start_date !== undefined ? overrides.start_date : startDate,
+            end_date: overrides.end_date !== undefined ? overrides.end_date : endDate,
+        };
+
+        router.get(route('transactions.index'), query, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+        });
+    };
+
+    // Debounced search handling
+    useEffect(() => {
+        if (isFirstRender.current) {
+            isFirstRender.current = false;
+            return;
+        }
+
+        const timer = setTimeout(() => {
+            applyFilters({ search });
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [search]);
+
+    const handleResetFilters = () => {
+        setSearch('');
+        setSelectedType('all');
+        setSelectedAccount('all');
+        setStartDate('');
+        setEndDate('');
+        router.get(route('transactions.index'), {}, { preserveState: true, replace: true });
+    };
+
+    const hasActiveFilters = search || selectedType !== 'all' || selectedAccount !== 'all' || startDate || endDate;
 
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         account_id: accounts[0]?.id ? String(accounts[0].id) : '',
@@ -187,6 +241,112 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                             </Button>
                         </div>
 
+                        {/* Filters Card */}
+<Card>
+    <CardHeader className="pb-3">
+        <CardTitle className="text-base font-medium flex items-center gap-2">
+            <Filter className="h-4 w-4 text-muted-foreground" /> Filter Transactions
+        </CardTitle>
+    </CardHeader>
+    <CardContent className="space-y-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+            {/* Search Input */}
+            <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                    placeholder="Search description..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-8 h-9 w-full"
+                />
+            </div>
+
+            {/* Type Filter */}
+            <div>
+                <Select 
+                    value={selectedType} 
+                    onValueChange={(val) => {
+                        setSelectedType(val);
+                        applyFilters({ type: val });
+                    }}
+                >
+                    <SelectTrigger className="h-9 w-full min-w-[140px]">
+                        <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="expense">Expense</SelectItem>
+                        <SelectItem value="income">Income</SelectItem>
+                        <SelectItem value="transfer">Transfer</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* Account Filter */}
+            <div>
+                <Select 
+                    value={selectedAccount} 
+                    onValueChange={(val) => {
+                        setSelectedAccount(val);
+                        applyFilters({ account_id: val });
+                    }}
+                >
+                    <SelectTrigger className="h-9 w-full min-w-[140px]">
+                        <SelectValue placeholder="All Accounts" />
+                    </SelectTrigger>
+                    <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                        <SelectItem value="all">All Accounts</SelectItem>
+                        {accounts.map((acc) => (
+                            <SelectItem key={acc.id} value={String(acc.id)}>
+                                {acc.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {/* Start Date */}
+            <div>
+                <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => {
+                        setStartDate(e.target.value);
+                        applyFilters({ start_date: e.target.value });
+                    }}
+                    className="h-9 w-full"
+                />
+            </div>
+
+            {/* End Date */}
+            <div>
+                <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => {
+                        setEndDate(e.target.value);
+                        applyFilters({ end_date: e.target.value });
+                    }}
+                    className="h-9 w-full"
+                />
+            </div>
+        </div>
+
+        {hasActiveFilters && (
+            <div className="flex justify-end pt-1">
+                <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleResetFilters}
+                    className="text-xs text-muted-foreground hover:text-foreground gap-1 h-8"
+                >
+                    <X className="h-3.5 w-3.5" /> Clear Filters
+                </Button>
+            </div>
+        )}
+    </CardContent>
+</Card>
+
                         <Card>
                             <CardHeader>
                                 <CardTitle>Transaction History</CardTitle>
@@ -249,7 +409,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                         ) : (
                                             <TableRow>
                                                 <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                                                    No transactions found.
+                                                    No transactions match your criteria.
                                                 </TableCell>
                                             </TableRow>
                                         )}
@@ -266,7 +426,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                                 variant={link.active ? 'default' : 'outline'}
                                                 size="sm"
                                                 disabled={!link.url}
-                                                onClick={() => link.url && router.visit(link.url)}
+                                                onClick={() => link.url && router.visit(link.url, { preserveState: true, preserveScroll: true })}
                                                 dangerouslySetInnerHTML={{ __html: link.label }}
                                             />
                                         ))}
