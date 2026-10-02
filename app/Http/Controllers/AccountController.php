@@ -3,24 +3,32 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\AccountType;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class AccountController extends Controller
 {
     /**
-     * Display a listing of user financial accounts.
+     * Display a listing of user financial accounts along with available account types.
      */
     public function index(Request $request)
     {
-        $accounts = Account::where('user_id', $request->user()->id)
+        $user = $request->user();
+
+        $accounts = Account::where('user_id', $user->id)
             ->withCount('transactions')
             ->orderBy('is_active', 'desc')
             ->orderBy('name')
             ->get();
 
+        $accountTypes = AccountType::where('user_id', $user->id)
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Accounts/Index', [
-            'accounts' => $accounts,
+            'accounts'     => $accounts,
+            'accountTypes' => $accountTypes,
         ]);
     }
 

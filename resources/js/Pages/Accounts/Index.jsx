@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import { 
     Plus, 
@@ -7,8 +7,7 @@ import {
     Trash2, 
     Wallet, 
     BadgeCheck, 
-    BadgeX,
-    Check
+    BadgeX
 } from 'lucide-react';
 
 import { AppSidebar } from '@/components/app-sidebar';
@@ -47,38 +46,18 @@ import {
     AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
 
-const DEFAULT_TYPES = [
-    'Bank Account',
-    'Cash / Wallet',
-    'Credit Card',
-    'E-Wallet',
-    'Investment',
-];
-
-export default function AccountIndex({ auth, accounts }) {
+export default function AccountIndex({ auth, accounts = [], accountTypes = [] }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingAccount, setEditingAccount] = useState(null);
     const [deletingAccount, setDeletingAccount] = useState(null);
-    
-    // Custom option creation state
-    const [customTypes, setCustomTypes] = useState([]);
-    const [isAddingNewType, setIsAddingNewType] = useState(false);
-    const [newTypeInput, setNewTypeInput] = useState('');
 
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         name: '',
-        type: 'Bank Account',
+        type: accountTypes[0]?.name || '',
         balance: '0.00',
         currency: 'USD',
         is_active: true,
     });
-
-    // Merge default options, custom dynamically added options, and any existing account types from DB
-    const availableTypes = useMemo(() => {
-        const dbTypes = accounts.map((acc) => acc.type);
-        const combined = [...new Set([...DEFAULT_TYPES, ...customTypes, ...dbTypes])];
-        return combined.filter(Boolean);
-    }, [accounts, customTypes]);
 
     const formatCurrency = (val, currency = 'USD') => 
         new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(val || 0);
@@ -86,17 +65,20 @@ export default function AccountIndex({ auth, accounts }) {
     const openCreateModal = () => {
         clearErrors();
         reset();
+        setData({
+            name: '',
+            type: accountTypes[0]?.name || '',
+            balance: '0.00',
+            currency: 'USD',
+            is_active: true,
+        });
         setEditingAccount(null);
-        setIsAddingNewType(false);
-        setNewTypeInput('');
         setIsModalOpen(true);
     };
 
     const openEditModal = (account) => {
         clearErrors();
         setEditingAccount(account);
-        setIsAddingNewType(false);
-        setNewTypeInput('');
 
         setData({
             name: account.name,
@@ -107,28 +89,6 @@ export default function AccountIndex({ auth, accounts }) {
         });
 
         setIsModalOpen(true);
-    };
-
-    const handleTypeSelectChange = (value) => {
-        if (value === '__add_new__') {
-            setIsAddingNewType(true);
-            setNewTypeInput('');
-        } else {
-            setIsAddingNewType(false);
-            setData('type', value);
-        }
-    };
-
-    const handleConfirmNewType = () => {
-        const trimmed = newTypeInput.trim();
-        if (!trimmed) return;
-
-        if (!customTypes.includes(trimmed)) {
-            setCustomTypes((prev) => [...prev, trimmed]);
-        }
-        setData('type', trimmed);
-        setIsAddingNewType(false);
-        setNewTypeInput('');
     };
 
     const handleSubmit = (e) => {
@@ -315,7 +275,7 @@ export default function AccountIndex({ auth, accounts }) {
 
                     {/* Create / Edit Account Modal */}
                     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                        <DialogContent className="sm:max-w-[425px]">
+                        <DialogContent className="sm:max-w-[480px]">
                             <DialogHeader>
                                 <DialogTitle>{editingAccount ? 'Edit Account' : 'Add New Account'}</DialogTitle>
                                 <DialogDescription>
@@ -334,62 +294,38 @@ export default function AccountIndex({ auth, accounts }) {
                                     {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                                 </div>
 
-                                {/* Dynamic Account Type Dropdown with Inline Creation */}
+                                {/* Dynamic Account Type Dropdown */}
                                 <div className="grid gap-2">
                                     <label className="text-sm font-medium">Account Type</label>
-                                    
-                                    {!isAddingNewType ? (
-                                        <Select 
-                                            value={data.type} 
-                                            onValueChange={handleTypeSelectChange}
-                                        >
-                                            <SelectTrigger>
-                                                <SelectValue placeholder="Select account type" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {availableTypes.map((typeOption) => (
-                                                    <SelectItem key={typeOption} value={typeOption}>
-                                                        {typeOption}
+                                    <Select 
+                                        value={data.type} 
+                                        onValueChange={(value) => setData('type', value)}
+                                    >
+                                        <SelectTrigger className="w-full h-10">
+                                            <SelectValue placeholder="Select account type" />
+                                        </SelectTrigger>
+                                        <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                            {accountTypes && accountTypes.length > 0 ? (
+                                                accountTypes.map((typeObj) => (
+                                                    <SelectItem key={typeObj.id} value={typeObj.name}>
+                                                        <div className="flex items-center gap-2">
+                                                            {typeObj.color && (
+                                                                <span 
+                                                                    className="h-2.5 w-2.5 rounded-full shrink-0" 
+                                                                    style={{ backgroundColor: typeObj.color }}
+                                                                />
+                                                            )}
+                                                            <span>{typeObj.name}</span>
+                                                        </div>
                                                     </SelectItem>
-                                                ))}
-                                                <Separator className="my-1" />
-                                                <SelectItem value="__add_new__" className="font-semibold text-primary cursor-pointer">
-                                                    + Add Custom Type...
-                                                </SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <div className="flex items-center gap-2">
-                                            <Input
-                                                autoFocus
-                                                placeholder="Enter custom type name..."
-                                                value={newTypeInput}
-                                                onChange={(e) => setNewTypeInput(e.target.value)}
-                                                onKeyDown={(e) => {
-                                                    if (e.key === 'Enter') {
-                                                        e.preventDefault();
-                                                        handleConfirmNewType();
-                                                    }
-                                                }}
-                                            />
-                                            <Button 
-                                                type="button" 
-                                                size="icon" 
-                                                onClick={handleConfirmNewType}
-                                                disabled={!newTypeInput.trim()}
-                                            >
-                                                <Check className="h-4 w-4" />
-                                            </Button>
-                                            <Button 
-                                                type="button" 
-                                                variant="ghost" 
-                                                size="sm"
-                                                onClick={() => setIsAddingNewType(false)}
-                                            >
-                                                Cancel
-                                            </Button>
-                                        </div>
-                                    )}
+                                                ))
+                                            ) : (
+                                                <div className="p-2 text-xs text-center text-muted-foreground">
+                                                    No account types found. Create one under Account Types.
+                                                </div>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
                                     {errors.type && <p className="text-xs text-destructive">{errors.type}</p>}
                                 </div>
 

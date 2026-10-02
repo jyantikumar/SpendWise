@@ -2,51 +2,77 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Account;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Inertia\Inertia;
 
 class TransactionController extends Controller
 {
+    public function index(Request $request)
+    {
+        $user = $request->user();
+
+        $transactions = Transaction::where('user_id', $user->id)
+            ->with(['account', 'category'])
+            ->orderBy('date', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate(10)
+            ->withQueryString();
+
+        $accounts = $user->accounts()->where('is_active', true)->orderBy('name')->get();
+        $categories = $user->categories()->orderBy('name')->get();
+
+        return Inertia::render('Transactions/Index', [
+            'transactions' => $transactions,
+            'accounts'     => $accounts,
+            'categories'   => $categories,
+        ]);
+    }
+
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'type'                   => 'required|in:income,expense,transfer',
-            'amount'                 => 'required|numeric|min:0.01',
-            'category_id'            => 'nullable|required_if:type,income,expense|exists:categories,id',
-            'source_account_id'      => 'required|exists:accounts,id',
-            'destination_account_id' => 'nullable|required_if:type,transfer|different:source_account_id|exists:accounts,id',
-            'transaction_date'       => 'required|date',
-            'description'            => 'nullable|string|max:255',
+            'account_id'  => ['required', 'exists:accounts,id'],
+            'category_id' => ['nullable', 'exists:categories,id'],
+            'type'        => ['required', 'in:income,expense,transfer'],
+            'amount'      => ['required', 'numeric', 'min:0.01'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'date'        => ['required', 'date'],
         ]);
 
-        DB::transaction(function () use ($request, $validated) {
-            $transaction = Transaction::create([
-                'user_id'                => $request->user()->id,
-                'type'                   => $validated['type'],
-                'amount'                 => $validated['amount'],
-                'category_id'            => $validated['category_id'] ?? null,
-                'source_account_id'      => $validated['source_account_id'],
-                'destination_account_id' => $validated['destination_account_id'] ?? null,
-                'transaction_date'       => $validated['transaction_date'],
-                'description'            => $validated['description'] ?? null,
-            ]);
+        $request->user()->transactions()->create($validated);
 
-            // Adjust Account Balances atomically
-            $sourceAccount = Account::findOrFail($validated['source_account_id']);
+        return back()->with('success', 'Transaction logged successfully.');
+    }
 
-            if ($validated['type'] === 'income') {
-                $sourceAccount->increment('balance', $validated['amount']);
-            } elseif ($validated['type'] === 'expense') {
-                $sourceAccount->decrement('balance', $validated['amount']);
-            } elseif ($validated['type'] === 'transfer') {
-                $sourceAccount->decrement('balance', $validated['amount']);
-                $destinationAccount = Account::findOrFail($validated['destination_account_id']);
-                $destinationAccount->increment('balance', $validated['amount']);
-            }
-        });
+    public function update(Request $request, Transaction $transaction)
+    {
+        if ($transaction->user_id !== $request->user()->id) {
+            abort(403);
+        }
 
-        return redirect()->back()->with('success', 'Transaction logged successfully.');
+        $validated = $request->validate([
+            'account_id'  => ['required', 'exists:accounts,id'],
+            'category_id' => ['nullable', 'exists:categories,id'],
+            'type'        => ['required', 'in:income,expense,transfer'],
+            'amount'      => ['required', 'numeric', 'min:0.01'],
+            'description' => ['nullable', 'string', 'max:255'],
+            'date'        => ['required', 'date'],
+        ]);
+
+        $transaction->update($validated);
+
+        return back()->with('success', 'Transaction updated successfully.');
+    }
+
+    public function destroy(Request $request, Transaction $transaction)
+    {
+        if ($transaction->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $transaction->delete();
+
+        return back()->with('success', 'Transaction deleted successfully.');
     }
 }

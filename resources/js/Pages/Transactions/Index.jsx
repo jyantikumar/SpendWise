@@ -1,0 +1,410 @@
+import { useState } from 'react';
+import { Head, useForm, router, Link } from '@inertiajs/react';
+import { 
+    Plus, 
+    MoreHorizontal, 
+    Pencil, 
+    Trash2, 
+    ArrowUpRight, 
+    ArrowDownRight, 
+    ArrowLeftRight 
+} from 'lucide-react';
+
+import { AppSidebar } from '@/components/app-sidebar';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import { Separator } from '@/components/ui/separator';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogDescription, 
+    DialogFooter, 
+    DialogHeader, 
+    DialogTitle 
+} from '@/components/ui/dialog';
+import { 
+    DropdownMenu, 
+    DropdownMenuContent, 
+    DropdownMenuItem, 
+    DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { 
+    AlertDialog, 
+    AlertDialogAction, 
+    AlertDialogCancel, 
+    AlertDialogContent, 
+    AlertDialogDescription, 
+    AlertDialogFooter, 
+    AlertDialogHeader, 
+    AlertDialogTitle 
+} from '@/components/ui/alert-dialog';
+
+export default function TransactionIndex({ auth, transactions, accounts = [], categories = [] }) {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingTransaction, setEditingTransaction] = useState(null);
+    const [deletingTransaction, setDeletingTransaction] = useState(null);
+
+    const transactionList = Array.isArray(transactions) ? transactions : (transactions?.data || []);
+    const paginationLinks = transactions?.links || [];
+
+    const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
+        account_id: accounts[0]?.id?.toString() || '',
+        category_id: '',
+        type: 'expense',
+        amount: '',
+        description: '',
+        date: new Date().toISOString().split('T')[0],
+    });
+
+    const formatCurrency = (val) => 
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val || 0);
+
+    const openCreateModal = () => {
+        clearErrors();
+        reset();
+        setData({
+            account_id: accounts[0]?.id?.toString() || '',
+            category_id: '',
+            type: 'expense',
+            amount: '',
+            description: '',
+            date: new Date().toISOString().split('T')[0],
+        });
+        setEditingTransaction(null);
+        setIsModalOpen(true);
+    };
+
+    const openEditModal = (transaction) => {
+        clearErrors();
+        setEditingTransaction(transaction);
+        setData({
+            account_id: transaction.account_id?.toString() || '',
+            category_id: transaction.category_id?.toString() || '',
+            type: transaction.type,
+            amount: transaction.amount?.toString() || '',
+            description: transaction.description || '',
+            date: transaction.date || new Date().toISOString().split('T')[0],
+        });
+        setIsModalOpen(true);
+    };
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        if (editingTransaction) {
+            put(route('transactions.update', editingTransaction.id), {
+                onSuccess: () => {
+                    setIsModalOpen(false);
+                    reset();
+                },
+            });
+        } else {
+            post(route('transactions.store'), {
+                onSuccess: () => {
+                    setIsModalOpen(false);
+                    reset();
+                },
+            });
+        }
+    };
+
+    const handleDelete = () => {
+        if (!deletingTransaction) return;
+        router.delete(route('transactions.destroy', deletingTransaction.id), {
+            onSuccess: () => setDeletingTransaction(null),
+        });
+    };
+
+    const handleTypeChange = (value) => {
+        setData((prevData) => ({
+            ...prevData,
+            type: value,
+            category_id: '',
+        }));
+    };
+
+    const filteredCategories = categories.filter((c) => c.type === data.type);
+
+    const getTypeBadge = (type) => {
+        switch (type) {
+            case 'income':
+                return (
+                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1 font-medium">
+                        <ArrowUpRight className="h-3.5 w-3.5" /> Income
+                    </Badge>
+                );
+            case 'expense':
+                return (
+                    <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 gap-1 font-medium">
+                        <ArrowDownRight className="h-3.5 w-3.5" /> Expense
+                    </Badge>
+                );
+            case 'transfer':
+                return (
+                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1 font-medium">
+                        <ArrowLeftRight className="h-3.5 w-3.5" /> Transfer
+                    </Badge>
+                );
+            default:
+                return <Badge variant="outline">{type}</Badge>;
+        }
+    };
+
+    return (
+        <TooltipProvider>
+            <SidebarProvider>
+                <Head title="Transactions - SpendWise" />
+
+                <AppSidebar user={auth.user} />
+
+                <SidebarInset>
+                    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                        <SidebarTrigger className="-ml-1" />
+                        <Separator orientation="vertical" className="mr-2 h-4" />
+                        <h1 className="text-lg font-semibold tracking-tight">Transaction Management</h1>
+                    </header>
+
+                    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div>
+                                <h2 className="text-2xl font-bold tracking-tight">Transactions</h2>
+                                <p className="text-sm text-muted-foreground">
+                                    Log and view income, expenses, and account transfers.
+                                </p>
+                            </div>
+
+                            <Button onClick={openCreateModal} className="gap-2">
+                                <Plus className="h-4 w-4" /> Add Transaction
+                            </Button>
+                        </div>
+
+                        <Card>
+                            <CardHeader>
+                                <CardTitle>Transaction History</CardTitle>
+                                <CardDescription>Recent financial activity recorded across all accounts.</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Date</TableHead>
+                                            <TableHead>Type</TableHead>
+                                            <TableHead>Description</TableHead>
+                                            <TableHead>Account</TableHead>
+                                            <TableHead>Category</TableHead>
+                                            <TableHead className="text-right">Amount</TableHead>
+                                            <TableHead className="w-[80px] text-center">Actions</TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {transactionList.length > 0 ? (
+                                            transactionList.map((tx) => (
+                                                <TableRow key={tx.id}>
+                                                    <TableCell className="font-medium whitespace-nowrap">
+                                                        {tx.date}
+                                                    </TableCell>
+                                                    <TableCell>{getTypeBadge(tx.type)}</TableCell>
+                                                    <TableCell className="max-w-[200px] truncate">
+                                                        {tx.description || <span className="text-muted-foreground text-xs font-italic">No description</span>}
+                                                    </TableCell>
+                                                    <TableCell>{tx.account?.name || '—'}</TableCell>
+                                                    <TableCell>{tx.category?.name || '—'}</TableCell>
+                                                    <TableCell className={`text-right font-semibold whitespace-nowrap ${
+                                                        tx.type === 'income' ? 'text-emerald-600' : tx.type === 'expense' ? 'text-rose-600' : 'text-slate-900'
+                                                    }`}>
+                                                        {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
+                                                        {formatCurrency(tx.amount)}
+                                                    </TableCell>
+                                                    <TableCell className="text-center">
+                                                        <DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                </Button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onClick={() => openEditModal(tx)} className="cursor-pointer">
+                                                                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem 
+                                                                    onClick={() => setDeletingTransaction(tx)} 
+                                                                    className="cursor-pointer text-rose-600 focus:text-rose-600"
+                                                                >
+                                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                                                    No transactions found.
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </CardContent>
+
+                            {paginationLinks.length > 3 && (
+                                <CardFooter className="flex items-center justify-between border-t px-6 py-4">
+                                    <div className="flex gap-1">
+                                        {paginationLinks.map((link, idx) => (
+                                            <Button
+                                                key={idx}
+                                                variant={link.active ? 'default' : 'outline'}
+                                                size="sm"
+                                                disabled={!link.url}
+                                                onClick={() => link.url && router.visit(link.url)}
+                                                dangerouslySetInnerHTML={{ __html: link.label }}
+                                            />
+                                        ))}
+                                    </div>
+                                </CardFooter>
+                            )}
+                        </Card>
+                    </main>
+                </SidebarInset>
+
+                {/* Create / Edit Dialog */}
+                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                    <DialogContent className="sm:max-w-[425px]">
+                        <DialogHeader>
+                            <DialogTitle>{editingTransaction ? 'Edit Transaction' : 'Add Transaction'}</DialogTitle>
+                            <DialogDescription>
+                                {editingTransaction 
+                                    ? 'Update the details for this transaction.' 
+                                    : 'Enter the details to record a new transaction.'}
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <form onSubmit={handleSubmit} className="space-y-4 py-2">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Type</label>
+                                <Select value={data.type} onValueChange={handleTypeChange}>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="expense">Expense</SelectItem>
+                                        <SelectItem value="income">Income</SelectItem>
+                                        <SelectItem value="transfer">Transfer</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {errors.type && <p className="text-xs text-rose-500">{errors.type}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Account</label>
+                                <Select 
+                                    value={data.account_id} 
+                                    onValueChange={(val) => setData('account_id', val)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select account" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {accounts.map((acc) => (
+                                            <SelectItem key={acc.id} value={acc.id.toString()}>
+                                                {acc.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors.account_id && <p className="text-xs text-rose-500">{errors.account_id}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Category</label>
+                                <Select 
+                                    value={data.category_id} 
+                                    onValueChange={(val) => setData('category_id', val)}
+                                >
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select category (optional)" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {filteredCategories.map((cat) => (
+                                            <SelectItem key={cat.id} value={cat.id.toString()}>
+                                                {cat.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                                {errors.category_id && <p className="text-xs text-rose-500">{errors.category_id}</p>}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium leading-none">Amount</label>
+                                    <Input 
+                                        type="number" 
+                                        step="0.01" 
+                                        placeholder="0.00" 
+                                        value={data.amount} 
+                                        onChange={(e) => setData('amount', e.target.value)} 
+                                    />
+                                    {errors.amount && <p className="text-xs text-rose-500">{errors.amount}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium leading-none">Date</label>
+                                    <Input 
+                                        type="date" 
+                                        value={data.date} 
+                                        onChange={(e) => setData('date', e.target.value)} 
+                                    />
+                                    {errors.date && <p className="text-xs text-rose-500">{errors.date}</p>}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Description</label>
+                                <Input 
+                                    placeholder="e.g. Grocery shopping" 
+                                    value={data.description} 
+                                    onChange={(e) => setData('description', e.target.value)} 
+                                />
+                                {errors.description && <p className="text-xs text-rose-500">{errors.description}</p>}
+                            </div>
+
+                            <DialogFooter className="pt-4">
+                                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                                    Cancel
+                                </Button>
+                                <Button type="submit" disabled={processing}>
+                                    {editingTransaction ? 'Save Changes' : 'Create Transaction'}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+
+                {/* Delete Confirmation Alert */}
+                <AlertDialog open={!!deletingTransaction} onOpenChange={(open) => !open && setDeletingTransaction(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the transaction record.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700">
+                                Delete
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            </SidebarProvider>
+        </TooltipProvider>
+    );
+}

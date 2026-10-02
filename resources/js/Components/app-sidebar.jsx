@@ -6,6 +6,7 @@ import {
     Tags, 
     User, 
     LogOut,
+    Layers,
     DollarSign,
     ChevronUp
 } from 'lucide-react';
@@ -34,6 +35,7 @@ const navItems = [
     { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
     { title: 'Transactions', url: '/transactions', icon: ReceiptText },
     { title: 'Accounts', url: '/accounts', icon: Wallet },
+    { title: 'Account Types', url: '/account-types', icon: Layers },
     { title: 'Categories', url: '/categories', icon: Tags },
 ];
 

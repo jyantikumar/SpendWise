@@ -4,7 +4,7 @@ namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasMany; 
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -47,19 +47,27 @@ class User extends Authenticatable
     }
 
     /**
-     * Get all categories belonging to the user.
-     */
-    public function categories(): HasMany
-    {
-        return $this->hasMany(Category::class);
-    }
-
-    /**
-     * Get all financial accounts belonging to the user.
+     * Get all financial accounts owned by the user.
      */
     public function accounts(): HasMany
     {
         return $this->hasMany(Account::class);
+    }
+
+    /**
+     * Get all custom account types configured by the user.
+     */
+    public function accountTypes(): HasMany 
+    {
+        return $this->hasMany(AccountType::class);
+    }
+
+    /**
+     * Get all transaction categories owned by the user.
+     */
+    public function categories(): HasMany
+    {
+        return $this->hasMany(Category::class);
     }
 
     /**
