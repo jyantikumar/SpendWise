@@ -42,6 +42,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
     // Quick Transaction Form
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         account_id: accounts[0]?.id ? String(accounts[0].id) : '',
+        destination_account_id: '',
         category_id: '',
         type: 'expense',
         amount: '',
@@ -54,6 +55,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
         reset();
         setData({
             account_id: accounts[0]?.id ? String(accounts[0].id) : '',
+            destination_account_id: '',
             category_id: '',
             type: 'expense',
             amount: '',
@@ -78,6 +80,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
             ...prevData,
             type: value,
             category_id: '',
+            destination_account_id: '',
         }));
     };
 
@@ -88,19 +91,15 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
             <SidebarProvider>
                 <Head title="Dashboard - SpendWise" />
 
-                {/* Sidebar Navigation */}
                 <AppSidebar user={auth.user} />
 
-                {/* Main Content Area */}
                 <SidebarInset>
-                    {/* Top Bar */}
                     <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
                         <SidebarTrigger className="-ml-1" />
                         <Separator orientation="vertical" className="mr-2 h-4" />
                         <h1 className="text-lg font-semibold tracking-tight">Personal Dashboard</h1>
                     </header>
 
-                    {/* Dashboard Body */}
                     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div>
@@ -280,11 +279,20 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
                                 {errors.type && <p className="text-xs text-rose-500">{errors.type}</p>}
                             </div>
 
+                            {/* Source Account */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium leading-none">Account</label>
+                                <label className="text-sm font-medium leading-none">
+                                    {data.type === 'transfer' ? 'From Account' : 'Account'}
+                                </label>
                                 <Select 
                                     value={data.account_id} 
-                                    onValueChange={(val) => setData('account_id', val)}
+                                    onValueChange={(val) => {
+                                        setData((prev) => ({
+                                            ...prev,
+                                            account_id: val,
+                                            destination_account_id: prev.destination_account_id === val ? '' : prev.destination_account_id
+                                        }));
+                                    }}
                                 >
                                     <SelectTrigger className="w-full h-10">
                                         <SelectValue placeholder="Select account" />
@@ -305,6 +313,39 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
                                 </Select>
                                 {errors.account_id && <p className="text-xs text-rose-500">{errors.account_id}</p>}
                             </div>
+
+                            {/* Destination Account */}
+                            {data.type === 'transfer' && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium leading-none">To Account (Destination)</label>
+                                    <Select 
+                                        value={data.destination_account_id} 
+                                        onValueChange={(val) => setData('destination_account_id', val)}
+                                    >
+                                        <SelectTrigger className="w-full h-10">
+                                            <SelectValue placeholder="Select destination account" />
+                                        </SelectTrigger>
+                                        <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                            {accounts && accounts.length > 0 ? (
+                                                accounts
+                                                    .filter((acc) => String(acc.id) !== String(data.account_id))
+                                                    .map((acc) => (
+                                                        <SelectItem key={acc.id} value={String(acc.id)}>
+                                                            {acc.name} {acc.type ? `(${acc.type})` : ''}
+                                                        </SelectItem>
+                                                    ))
+                                            ) : (
+                                                <div className="p-2 text-xs text-center text-muted-foreground">
+                                                    No additional accounts available.
+                                                </div>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.destination_account_id && (
+                                        <p className="text-xs text-rose-500">{errors.destination_account_id}</p>
+                                    )}
+                                </div>
+                            )}
 
                             <div className="space-y-2">
                                 <label className="text-sm font-medium leading-none">Category</label>
@@ -359,7 +400,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
                             <div className="space-y-2">
                                 <label className="text-sm font-medium leading-none">Description</label>
                                 <Input 
-                                    placeholder="e.g. Grocery shopping" 
+                                    placeholder="e.g. Bank transfer" 
                                     value={data.description} 
                                     onChange={(e) => setData('description', e.target.value)} 
                                 />

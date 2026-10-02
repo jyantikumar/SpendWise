@@ -14,30 +14,29 @@ class TransactionController extends Controller
     {
         $user = $request->user();
 
-    $search    = $request->input('search');
+        $search    = $request->input('search');
         $type      = $request->input('type');
         $accountId = $request->input('account_id');
         $startDate = $request->input('start_date');
         $endDate   = $request->input('end_date');
 
         $transactions = Transaction::where('user_id', $user->id)
-            ->with(['account', 'category'])
-            // Search filter (Description or Reference Number)
+           ->with(['account', 'destinationAccount', 'category'])
             ->when($search, function ($query, $search) {
                 $query->where(function ($q) use ($search) {
                     $q->where('description', 'like', "%{$search}%")
                       ->orWhere('reference_number', 'like', "%{$search}%");
                 });
             })
-            // Transaction Type filter
             ->when($type, function ($query, $type) {
                 $query->where('type', $type);
             })
-            // Account filter
             ->when($accountId, function ($query, $accountId) {
-                $query->where('account_id', $accountId);
+                $query->where(function ($q) use ($accountId) {
+                    $q->where('account_id', $accountId)
+                      ->orWhere('destination_account_id', $accountId);
+                });
             })
-            // Date Range filter
             ->when($startDate, function ($query, $startDate) {
                 $query->whereDate('transaction_date', '>=', $startDate);
             })
@@ -69,25 +68,33 @@ class TransactionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'account_id'       => ['required', 'exists:accounts,id'],
-            'category_id'      => ['nullable', 'exists:categories,id'],
-            'type'             => ['required', 'in:income,expense,transfer'],
-            'amount'           => ['required', 'numeric', 'min:0.01'],
-            'description'      => ['nullable', 'string', 'max:255'],
-            'transaction_date' => ['required', 'date'],
+            'account_id'             => ['required', 'exists:accounts,id'],
+            'destination_account_id' => ['required_if:type,transfer', 'nullable', 'different:account_id', 'exists:accounts,id'],
+            'category_id'            => ['nullable', 'exists:categories,id'],
+            'type'                   => ['required', 'in:income,expense,transfer'],
+            'amount'                 => ['required', 'numeric', 'min:0.01'],
+            'description'            => ['nullable', 'string', 'max:255'],
+            'transaction_date'       => ['required', 'date'],
         ]);
 
         DB::transaction(function () use ($request, $validated) {
-            // 1. Create the transaction record
             $request->user()->transactions()->create($validated);
 
-            // 2. Adjust account balance
             $account = Account::findOrFail($validated['account_id']);
 
             if ($validated['type'] === 'income') {
                 $account->increment('balance', $validated['amount']);
-            } elseif ($validated['type'] === 'expense' || $validated['type'] === 'transfer') {
+            } elseif ($validated['type'] === 'expense') {
                 $account->decrement('balance', $validated['amount']);
+            } elseif ($validated['type'] === 'transfer') {
+                // Deduct from source account
+                $account->decrement('balance', $validated['amount']);
+
+                // Add to destination account
+                if (!empty($validated['destination_account_id'])) {
+                    $destAccount = Account::findOrFail($validated['destination_account_id']);
+                    $destAccount->increment('balance', $validated['amount']);
+                }
             }
         });
 
@@ -101,32 +108,45 @@ class TransactionController extends Controller
         }
 
         $validated = $request->validate([
-            'account_id'       => ['required', 'exists:accounts,id'],
-            'category_id'      => ['nullable', 'exists:categories,id'],
-            'type'             => ['required', 'in:income,expense,transfer'],
-            'amount'           => ['required', 'numeric', 'min:0.01'],
-            'description'      => ['nullable', 'string', 'max:255'],
-            'transaction_date' => ['required', 'date'],
+            'account_id'             => ['required', 'exists:accounts,id'],
+            'destination_account_id' => ['required_if:type,transfer', 'nullable', 'different:account_id', 'exists:accounts,id'],
+            'category_id'            => ['nullable', 'exists:categories,id'],
+            'type'                   => ['required', 'in:income,expense,transfer'],
+            'amount'                 => ['required', 'numeric', 'min:0.01'],
+            'description'            => ['nullable', 'string', 'max:255'],
+            'transaction_date'       => ['required', 'date'],
         ]);
 
         DB::transaction(function () use ($transaction, $validated) {
-            // 1. Revert previous transaction impact on the original account
+            // 1. Revert previous transaction impacts
             $oldAccount = Account::findOrFail($transaction->account_id);
             if ($transaction->type === 'income') {
                 $oldAccount->decrement('balance', $transaction->amount);
-            } elseif ($transaction->type === 'expense' || $transaction->type === 'transfer') {
+            } elseif ($transaction->type === 'expense') {
                 $oldAccount->increment('balance', $transaction->amount);
+            } elseif ($transaction->type === 'transfer') {
+                $oldAccount->increment('balance', $transaction->amount);
+                if ($transaction->destination_account_id) {
+                    $oldDestAccount = Account::findOrFail($transaction->destination_account_id);
+                    $oldDestAccount->decrement('balance', $transaction->amount);
+                }
             }
 
             // 2. Update transaction
             $transaction->update($validated);
 
-            // 3. Apply new transaction impact on the target account
+            // 3. Apply new transaction impacts
             $newAccount = Account::findOrFail($validated['account_id']);
             if ($validated['type'] === 'income') {
                 $newAccount->increment('balance', $validated['amount']);
-            } elseif ($validated['type'] === 'expense' || $validated['type'] === 'transfer') {
+            } elseif ($validated['type'] === 'expense') {
                 $newAccount->decrement('balance', $validated['amount']);
+            } elseif ($validated['type'] === 'transfer') {
+                $newAccount->decrement('balance', $validated['amount']);
+                if (!empty($validated['destination_account_id'])) {
+                    $newDestAccount = Account::findOrFail($validated['destination_account_id']);
+                    $newDestAccount->increment('balance', $validated['amount']);
+                }
             }
         });
 
@@ -142,11 +162,16 @@ class TransactionController extends Controller
         DB::transaction(function () use ($transaction) {
             $account = Account::findOrFail($transaction->account_id);
 
-            // Revert transaction impact before deleting
             if ($transaction->type === 'income') {
                 $account->decrement('balance', $transaction->amount);
-            } elseif ($transaction->type === 'expense' || $transaction->type === 'transfer') {
+            } elseif ($transaction->type === 'expense') {
                 $account->increment('balance', $transaction->amount);
+            } elseif ($transaction->type === 'transfer') {
+                $account->increment('balance', $transaction->amount);
+                if ($transaction->destination_account_id) {
+                    $destAccount = Account::findOrFail($transaction->destination_account_id);
+                    $destAccount->decrement('balance', $transaction->amount);
+                }
             }
 
             $transaction->delete();

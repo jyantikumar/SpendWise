@@ -109,6 +109,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
 
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         account_id: accounts[0]?.id ? String(accounts[0].id) : '',
+        destination_account_id: '',
         category_id: '',
         type: 'expense',
         amount: '',
@@ -124,6 +125,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
         reset();
         setData({
             account_id: accounts[0]?.id ? String(accounts[0].id) : '',
+            destination_account_id: '',
             category_id: '',
             type: 'expense',
             amount: '',
@@ -143,6 +145,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
 
         setData({
             account_id: transaction.account_id ? String(transaction.account_id) : '',
+            destination_account_id: transaction.destination_account_id ? String(transaction.destination_account_id) : '',
             category_id: transaction.category_id ? String(transaction.category_id) : '',
             type: transaction.type,
             amount: transaction.amount ? String(transaction.amount) : '',
@@ -183,6 +186,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
             ...prevData,
             type: value,
             category_id: '',
+            destination_account_id: '',
         }));
     };
 
@@ -242,111 +246,112 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                         </div>
 
                         {/* Filters Card */}
-<Card>
-    <CardHeader className="pb-3">
-        <CardTitle className="text-base font-medium flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" /> Filter Transactions
-        </CardTitle>
-    </CardHeader>
-    <CardContent className="space-y-3">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-            {/* Search Input */}
-            <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                    placeholder="Search description..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="pl-8 h-9 w-full"
-                />
-            </div>
+                        <Card>
+                            <CardHeader className="pb-3">
+                                <CardTitle className="text-base font-medium flex items-center gap-2">
+                                    <Filter className="h-4 w-4 text-muted-foreground" /> Filter Transactions
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-3">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+                                    {/* Search Input */}
+                                    <div className="relative">
+                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            placeholder="Search description..."
+                                            value={search}
+                                            onChange={(e) => setSearch(e.target.value)}
+                                            className="pl-8 h-9 w-full"
+                                        />
+                                    </div>
 
-            {/* Type Filter */}
-            <div>
-                <Select 
-                    value={selectedType} 
-                    onValueChange={(val) => {
-                        setSelectedType(val);
-                        applyFilters({ type: val });
-                    }}
-                >
-                    <SelectTrigger className="h-9 w-full min-w-[140px]">
-                        <SelectValue placeholder="All Types" />
-                    </SelectTrigger>
-                    <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="expense">Expense</SelectItem>
-                        <SelectItem value="income">Income</SelectItem>
-                        <SelectItem value="transfer">Transfer</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
+                                    {/* Type Filter */}
+                                    <div>
+                                        <Select 
+                                            value={selectedType} 
+                                            onValueChange={(val) => {
+                                                setSelectedType(val);
+                                                applyFilters({ type: val });
+                                            }}
+                                        >
+                                            <SelectTrigger className="h-9 w-full min-w-[140px]">
+                                                <SelectValue placeholder="All Types" />
+                                            </SelectTrigger>
+                                            <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                                                <SelectItem value="all">All Types</SelectItem>
+                                                <SelectItem value="expense">Expense</SelectItem>
+                                                <SelectItem value="income">Income</SelectItem>
+                                                <SelectItem value="transfer">Transfer</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
 
-            {/* Account Filter */}
-            <div>
-                <Select 
-                    value={selectedAccount} 
-                    onValueChange={(val) => {
-                        setSelectedAccount(val);
-                        applyFilters({ account_id: val });
-                    }}
-                >
-                    <SelectTrigger className="h-9 w-full min-w-[140px]">
-                        <SelectValue placeholder="All Accounts" />
-                    </SelectTrigger>
-                    <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                        <SelectItem value="all">All Accounts</SelectItem>
-                        {accounts.map((acc) => (
-                            <SelectItem key={acc.id} value={String(acc.id)}>
-                                {acc.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
+                                    {/* Account Filter */}
+                                    <div>
+                                        <Select 
+                                            value={selectedAccount} 
+                                            onValueChange={(val) => {
+                                                setSelectedAccount(val);
+                                                applyFilters({ account_id: val });
+                                            }}
+                                        >
+                                            <SelectTrigger className="h-9 w-full min-w-[140px]">
+                                                <SelectValue placeholder="All Accounts" />
+                                            </SelectTrigger>
+                                            <SelectContent className="w-[var(--radix-select-trigger-width)]">
+                                                <SelectItem value="all">All Accounts</SelectItem>
+                                                {accounts.map((acc) => (
+                                                    <SelectItem key={acc.id} value={String(acc.id)}>
+                                                        {acc.name}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
 
-            {/* Start Date */}
-            <div>
-                <Input
-                    type="date"
-                    value={startDate}
-                    onChange={(e) => {
-                        setStartDate(e.target.value);
-                        applyFilters({ start_date: e.target.value });
-                    }}
-                    className="h-9 w-full"
-                />
-            </div>
+                                    {/* Start Date */}
+                                    <div>
+                                        <Input
+                                            type="date"
+                                            value={startDate}
+                                            onChange={(e) => {
+                                                setStartDate(e.target.value);
+                                                applyFilters({ start_date: e.target.value });
+                                            }}
+                                            className="h-9 w-full"
+                                        />
+                                    </div>
 
-            {/* End Date */}
-            <div>
-                <Input
-                    type="date"
-                    value={endDate}
-                    onChange={(e) => {
-                        setEndDate(e.target.value);
-                        applyFilters({ end_date: e.target.value });
-                    }}
-                    className="h-9 w-full"
-                />
-            </div>
-        </div>
+                                    {/* End Date */}
+                                    <div>
+                                        <Input
+                                            type="date"
+                                            value={endDate}
+                                            onChange={(e) => {
+                                                setEndDate(e.target.value);
+                                                applyFilters({ end_date: e.target.value });
+                                            }}
+                                            className="h-9 w-full"
+                                        />
+                                    </div>
+                                </div>
 
-        {hasActiveFilters && (
-            <div className="flex justify-end pt-1">
-                <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={handleResetFilters}
-                    className="text-xs text-muted-foreground hover:text-foreground gap-1 h-8"
-                >
-                    <X className="h-3.5 w-3.5" /> Clear Filters
-                </Button>
-            </div>
-        )}
-    </CardContent>
-</Card>
+                                {hasActiveFilters && (
+                                    <div className="flex justify-end pt-1">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            onClick={handleResetFilters}
+                                            className="text-xs text-muted-foreground hover:text-foreground gap-1 h-8"
+                                        >
+                                            <X className="h-3.5 w-3.5" /> Clear Filters
+                                        </Button>
+                                    </div>
+                                )}
+                            </CardContent>
+                        </Card>
 
+                        {/* Transaction History Table */}
                         <Card>
                             <CardHeader>
                                 <CardTitle>Transaction History</CardTitle>
@@ -376,7 +381,19 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                                     <TableCell className="max-w-[200px] truncate">
                                                         {tx.description || <span className="text-muted-foreground text-xs italic">No description</span>}
                                                     </TableCell>
-                                                    <TableCell>{tx.account?.name || '—'}</TableCell>
+                                                    <TableCell>
+                                                        {tx.type === 'transfer' ? (
+                                                            <span className="inline-flex items-center gap-1.5 font-medium">
+                                                                <span>{tx.account?.name || '—'}</span>
+                                                                <span className="text-muted-foreground font-normal text-xs">→</span>
+                                                                <span className="text-emerald-600 dark:text-emerald-400">
+                                                                    {tx.destination_account?.name || accounts.find(a => String(a.id) === String(tx.destination_account_id))?.name || '—'}
+                                                                </span>
+                                                            </span>
+                                                        ) : (
+                                                            tx.account?.name || '—'
+                                                        )}
+                                                    </TableCell>
                                                     <TableCell>{tx.category?.name || '—'}</TableCell>
                                                     <TableCell className={`text-right font-semibold whitespace-nowrap ${
                                                         tx.type === 'income' ? 'text-emerald-600' : tx.type === 'expense' ? 'text-rose-600' : 'text-slate-900'
@@ -450,6 +467,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                         </DialogHeader>
 
                         <form onSubmit={handleSubmit} className="space-y-4 py-2">
+                            {/* Transaction Type */}
                             <div className="space-y-2">
                                 <label className="text-sm font-medium leading-none">Type</label>
                                 <Select value={data.type} onValueChange={handleTypeChange}>
@@ -465,11 +483,20 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                 {errors.type && <p className="text-xs text-rose-500">{errors.type}</p>}
                             </div>
 
+                            {/* Source Account (From) */}
                             <div className="space-y-2">
-                                <label className="text-sm font-medium leading-none">Account</label>
+                                <label className="text-sm font-medium leading-none">
+                                    {data.type === 'transfer' ? 'From Account' : 'Account'}
+                                </label>
                                 <Select 
                                     value={data.account_id} 
-                                    onValueChange={(val) => setData('account_id', val)}
+                                    onValueChange={(val) => {
+                                        setData((prev) => ({
+                                            ...prev,
+                                            account_id: val,
+                                            destination_account_id: prev.destination_account_id === val ? '' : prev.destination_account_id
+                                        }));
+                                    }}
                                 >
                                     <SelectTrigger className="w-full h-10">
                                         <SelectValue placeholder="Select account" />
@@ -491,6 +518,40 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                 {errors.account_id && <p className="text-xs text-rose-500">{errors.account_id}</p>}
                             </div>
 
+                            {/* Destination Account (To) - Visible only when Type === 'transfer' */}
+                            {data.type === 'transfer' && (
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium leading-none">To Account (Destination)</label>
+                                    <Select 
+                                        value={data.destination_account_id} 
+                                        onValueChange={(val) => setData('destination_account_id', val)}
+                                    >
+                                        <SelectTrigger className="w-full h-10">
+                                            <SelectValue placeholder="Select destination account" />
+                                        </SelectTrigger>
+                                        <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                            {accounts && accounts.length > 0 ? (
+                                                accounts
+                                                    .filter((acc) => String(acc.id) !== String(data.account_id))
+                                                    .map((acc) => (
+                                                        <SelectItem key={acc.id} value={String(acc.id)}>
+                                                            {acc.name} {acc.type ? `(${acc.type})` : ''}
+                                                        </SelectItem>
+                                                    ))
+                                            ) : (
+                                                <div className="p-2 text-xs text-center text-muted-foreground">
+                                                    No additional accounts available.
+                                                </div>
+                                            )}
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.destination_account_id && (
+                                        <p className="text-xs text-rose-500">{errors.destination_account_id}</p>
+                                    )}
+                                </div>
+                            )}
+
+                            {/* Category */}
                             <div className="space-y-2">
                                 <label className="text-sm font-medium leading-none">Category</label>
                                 <Select 
@@ -517,6 +578,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                 {errors.category_id && <p className="text-xs text-rose-500">{errors.category_id}</p>}
                             </div>
 
+                            {/* Amount & Date */}
                             <div className="grid grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium leading-none">Amount</label>
@@ -541,10 +603,11 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                 </div>
                             </div>
 
+                            {/* Description */}
                             <div className="space-y-2">
                                 <label className="text-sm font-medium leading-none">Description</label>
                                 <Input 
-                                    placeholder="e.g. Grocery shopping" 
+                                    placeholder="e.g. Bank transfer to Maya" 
                                     value={data.description} 
                                     onChange={(e) => setData('description', e.target.value)} 
                                 />
