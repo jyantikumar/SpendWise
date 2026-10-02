@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, useForm, router, Link } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { 
     Plus, 
     MoreHorizontal, 
@@ -54,12 +54,12 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
     const paginationLinks = transactions?.links || [];
 
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
-        account_id: accounts[0]?.id?.toString() || '',
+        account_id: accounts[0]?.id ? String(accounts[0].id) : '',
         category_id: '',
         type: 'expense',
         amount: '',
         description: '',
-        date: new Date().toISOString().split('T')[0],
+        transaction_date: new Date().toISOString().split('T')[0],
     });
 
     const formatCurrency = (val) => 
@@ -69,12 +69,12 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
         clearErrors();
         reset();
         setData({
-            account_id: accounts[0]?.id?.toString() || '',
+            account_id: accounts[0]?.id ? String(accounts[0].id) : '',
             category_id: '',
             type: 'expense',
             amount: '',
             description: '',
-            date: new Date().toISOString().split('T')[0],
+            transaction_date: new Date().toISOString().split('T')[0],
         });
         setEditingTransaction(null);
         setIsModalOpen(true);
@@ -83,13 +83,17 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
     const openEditModal = (transaction) => {
         clearErrors();
         setEditingTransaction(transaction);
+        
+        const rawDate = transaction.transaction_date || transaction.date;
+        const formattedDate = rawDate ? String(rawDate).split('T')[0] : new Date().toISOString().split('T')[0];
+
         setData({
-            account_id: transaction.account_id?.toString() || '',
-            category_id: transaction.category_id?.toString() || '',
+            account_id: transaction.account_id ? String(transaction.account_id) : '',
+            category_id: transaction.category_id ? String(transaction.category_id) : '',
             type: transaction.type,
-            amount: transaction.amount?.toString() || '',
+            amount: transaction.amount ? String(transaction.amount) : '',
             description: transaction.description || '',
-            date: transaction.date || new Date().toISOString().split('T')[0],
+            transaction_date: formattedDate,
         });
         setIsModalOpen(true);
     };
@@ -206,11 +210,11 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                             transactionList.map((tx) => (
                                                 <TableRow key={tx.id}>
                                                     <TableCell className="font-medium whitespace-nowrap">
-                                                        {tx.date}
+                                                        {tx.transaction_date ? String(tx.transaction_date).split('T')[0] : (tx.date || '—')}
                                                     </TableCell>
                                                     <TableCell>{getTypeBadge(tx.type)}</TableCell>
                                                     <TableCell className="max-w-[200px] truncate">
-                                                        {tx.description || <span className="text-muted-foreground text-xs font-italic">No description</span>}
+                                                        {tx.description || <span className="text-muted-foreground text-xs italic">No description</span>}
                                                     </TableCell>
                                                     <TableCell>{tx.account?.name || '—'}</TableCell>
                                                     <TableCell>{tx.category?.name || '—'}</TableCell>
@@ -275,7 +279,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
 
                 {/* Create / Edit Dialog */}
                 <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent className="sm:max-w-[480px]">
                         <DialogHeader>
                             <DialogTitle>{editingTransaction ? 'Edit Transaction' : 'Add Transaction'}</DialogTitle>
                             <DialogDescription>
@@ -289,10 +293,10 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                             <div className="space-y-2">
                                 <label className="text-sm font-medium leading-none">Type</label>
                                 <Select value={data.type} onValueChange={handleTypeChange}>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="w-full h-10">
                                         <SelectValue placeholder="Select type" />
                                     </SelectTrigger>
-                                    <SelectContent>
+                                    <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
                                         <SelectItem value="expense">Expense</SelectItem>
                                         <SelectItem value="income">Income</SelectItem>
                                         <SelectItem value="transfer">Transfer</SelectItem>
@@ -307,15 +311,21 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                     value={data.account_id} 
                                     onValueChange={(val) => setData('account_id', val)}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="w-full h-10">
                                         <SelectValue placeholder="Select account" />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        {accounts.map((acc) => (
-                                            <SelectItem key={acc.id} value={acc.id.toString()}>
-                                                {acc.name}
-                                            </SelectItem>
-                                        ))}
+                                    <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                        {accounts && accounts.length > 0 ? (
+                                            accounts.map((acc) => (
+                                                <SelectItem key={acc.id} value={String(acc.id)}>
+                                                    {acc.name} {acc.type ? `(${acc.type})` : ''}
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            <div className="p-2 text-xs text-center text-muted-foreground">
+                                                No accounts available. Create one under Accounts.
+                                            </div>
+                                        )}
                                     </SelectContent>
                                 </Select>
                                 {errors.account_id && <p className="text-xs text-rose-500">{errors.account_id}</p>}
@@ -327,15 +337,21 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                     value={data.category_id} 
                                     onValueChange={(val) => setData('category_id', val)}
                                 >
-                                    <SelectTrigger>
+                                    <SelectTrigger className="w-full h-10">
                                         <SelectValue placeholder="Select category (optional)" />
                                     </SelectTrigger>
-                                    <SelectContent>
-                                        {filteredCategories.map((cat) => (
-                                            <SelectItem key={cat.id} value={cat.id.toString()}>
-                                                {cat.name}
-                                            </SelectItem>
-                                        ))}
+                                    <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                        {filteredCategories.length > 0 ? (
+                                            filteredCategories.map((cat) => (
+                                                <SelectItem key={cat.id} value={String(cat.id)}>
+                                                    {cat.name}
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            <div className="p-2 text-xs text-center text-muted-foreground">
+                                                No categories available for this transaction type.
+                                            </div>
+                                        )}
                                     </SelectContent>
                                 </Select>
                                 {errors.category_id && <p className="text-xs text-rose-500">{errors.category_id}</p>}
@@ -358,10 +374,10 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                     <label className="text-sm font-medium leading-none">Date</label>
                                     <Input 
                                         type="date" 
-                                        value={data.date} 
-                                        onChange={(e) => setData('date', e.target.value)} 
+                                        value={data.transaction_date} 
+                                        onChange={(e) => setData('transaction_date', e.target.value)} 
                                     />
-                                    {errors.date && <p className="text-xs text-rose-500">{errors.date}</p>}
+                                    {errors.transaction_date && <p className="text-xs text-rose-500">{errors.transaction_date}</p>}
                                 </div>
                             </div>
 

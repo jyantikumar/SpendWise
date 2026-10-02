@@ -14,12 +14,12 @@ class TransactionController extends Controller
 
         $transactions = Transaction::where('user_id', $user->id)
             ->with(['account', 'category'])
-            ->orderBy('date', 'desc')
+            ->orderBy('transaction_date', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(10)
             ->withQueryString();
 
-        $accounts = $user->accounts()->where('is_active', true)->orderBy('name')->get();
+        $accounts = $user->accounts()->orderBy('name')->get();
         $categories = $user->categories()->orderBy('name')->get();
 
         return Inertia::render('Transactions/Index', [
@@ -32,12 +32,12 @@ class TransactionController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'account_id'  => ['required', 'exists:accounts,id'],
-            'category_id' => ['nullable', 'exists:categories,id'],
-            'type'        => ['required', 'in:income,expense,transfer'],
-            'amount'      => ['required', 'numeric', 'min:0.01'],
-            'description' => ['nullable', 'string', 'max:255'],
-            'date'        => ['required', 'date'],
+            'account_id'       => ['required', 'exists:accounts,id'],
+            'category_id'      => ['nullable', 'exists:categories,id'],
+            'type'             => ['required', 'in:income,expense,transfer'],
+            'amount'           => ['required', 'numeric', 'min:0.01'],
+            'description'      => ['nullable', 'string', 'max:255'],
+            'transaction_date' => ['required', 'date'],
         ]);
 
         $request->user()->transactions()->create($validated);
@@ -52,12 +52,12 @@ class TransactionController extends Controller
         }
 
         $validated = $request->validate([
-            'account_id'  => ['required', 'exists:accounts,id'],
-            'category_id' => ['nullable', 'exists:categories,id'],
-            'type'        => ['required', 'in:income,expense,transfer'],
-            'amount'      => ['required', 'numeric', 'min:0.01'],
-            'description' => ['nullable', 'string', 'max:255'],
-            'date'        => ['required', 'date'],
+            'account_id'       => ['required', 'exists:accounts,id'],
+            'category_id'      => ['nullable', 'exists:categories,id'],
+            'type'             => ['required', 'in:income,expense,transfer'],
+            'amount'           => ['required', 'numeric', 'min:0.01'],
+            'description'      => ['nullable', 'string', 'max:255'],
+            'transaction_date' => ['required', 'date'],
         ]);
 
         $transaction->update($validated);
