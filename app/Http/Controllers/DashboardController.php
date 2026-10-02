@@ -6,7 +6,6 @@ use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Carbon\Carbon;
 
@@ -24,52 +23,69 @@ class DashboardController extends Controller
             default        => [now()->startOfMonth(), now()->endOfMonth()],
         };
 
+        $startStr = $startDate->format('Y-m-d H:i:s');
+        $endStr   = $endDate->format('Y-m-d H:i:s');
+
         // 1. KPI Aggregations
         $totalBalance = Account::where('user_id', $userId)->sum('balance');
 
         $periodIncomes = Transaction::where('user_id', $userId)
             ->where('type', 'income')
-            ->whereBetween('transaction_date', [$startDate, $endDate])
+            ->whereBetween('transaction_date', [$startStr, $endStr])
             ->sum('amount');
 
         $periodExpenses = Transaction::where('user_id', $userId)
             ->where('type', 'expense')
-            ->whereBetween('transaction_date', [$startDate, $endDate])
+            ->whereBetween('transaction_date', [$startStr, $endStr])
             ->sum('amount');
 
         $netCashFlow = $periodIncomes - $periodExpenses;
 
-        // 2. Daily Trends & Comparison Data
+        // 2. Daily Trends
         $dailyRaw = Transaction::where('user_id', $userId)
             ->whereIn('type', ['income', 'expense'])
-            ->whereBetween('transaction_date', [$startDate, $endDate])
-            ->selectRaw('transaction_date as date, type, SUM(amount) as total')
-            ->groupBy('transaction_date', 'type')
-            ->orderBy('transaction_date')
+            ->whereBetween('transaction_date', [$startStr, $endStr])
+            ->selectRaw('DATE(transaction_date) as date, type, SUM(amount) as total')
+            ->groupBy('date', 'type')
+            ->orderBy('date')
             ->get();
 
         $dailyTrends = [];
         $current = $startDate->copy();
         while ($current <= $endDate) {
             $formattedDate = $current->format('Y-m-d');
-            $incomeMatch = $dailyRaw->firstWhere(fn ($i) => $i->date === $formattedDate && $i->type === 'income');
-            $expenseMatch = $dailyRaw->firstWhere(fn ($i) => $i->date === $formattedDate && $i->type === 'expense');
+
+            $incomeMatch = $dailyRaw->firstWhere(function ($i) use ($formattedDate) {
+                $rawDate = $i->date instanceof Carbon ? $i->date->format('Y-m-d') : (string) $i->date;
+                return $rawDate === $formattedDate && $i->type === 'income';
+            });
+
+            $expenseMatch = $dailyRaw->firstWhere(function ($i) use ($formattedDate) {
+                $rawDate = $i->date instanceof Carbon ? $i->date->format('Y-m-d') : (string) $i->date;
+                return $rawDate === $formattedDate && $i->type === 'expense';
+            });
 
             $dailyTrends[] = [
                 'transaction_date' => $current->format('M d'),
-                'income' => (float) ($incomeMatch->total ?? 0),
+                'income'  => (float) ($incomeMatch->total ?? 0),
                 'expense' => (float) ($expenseMatch->total ?? 0),
             ];
             $current->addDay();
         }
 
-        // 3. Category Breakdown Data
+        // 3. Category Breakdown Data (Left Joined to include Uncategorized transactions)
         $categoryBreakdown = Transaction::where('transactions.user_id', $userId)
             ->whereIn('transactions.type', ['income', 'expense'])
-            ->whereBetween('transactions.transaction_date', [$startDate, $endDate])
-            ->join('categories', 'transactions.category_id', '=', 'categories.id')
-            ->selectRaw('categories.id, categories.name, categories.type, categories.color, SUM(transactions.amount) as total')
-            ->groupBy('categories.id', 'categories.name', 'categories.type', 'categories.color')
+            ->whereBetween('transactions.transaction_date', [$startStr, $endStr])
+            ->leftJoin('categories', 'transactions.category_id', '=', 'categories.id')
+            ->selectRaw("
+                COALESCE(categories.id, 0) as id,
+                COALESCE(categories.name, 'Uncategorized') as name,
+                transactions.type as type,
+                COALESCE(categories.color, '#94a3b8') as color,
+                SUM(transactions.amount) as total
+            ")
+            ->groupBy('categories.id', 'categories.name', 'transactions.type', 'categories.color')
             ->get()
             ->groupBy('type');
 
@@ -85,8 +101,8 @@ class DashboardController extends Controller
                 'expense' => $categoryBreakdown->get('expense', collect())->values(),
                 'income'  => $categoryBreakdown->get('income', collect())->values(),
             ],
-            'accounts' => Account::where('user_id', $userId)->get(['id', 'name', 'type', 'balance']),
-            'categories' => Category::where('user_id', $userId)->get(['id', 'name', 'type', 'color', 'icon']),
+            'accounts' => Account::where('user_id', $userId)->orderBy('name')->get(['id', 'name', 'type', 'balance']),
+            'categories' => Category::where('user_id', $userId)->orderBy('name')->get(['id', 'name', 'type', 'color', 'icon']),
             'currentFilter' => $filter,
         ]);
     }

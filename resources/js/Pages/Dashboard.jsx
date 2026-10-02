@@ -1,5 +1,5 @@
-// resources/js/Pages/Dashboard.jsx
-import { Head, Link, router } from '@inertiajs/react';
+import { useState } from 'react';
+import { Head, Link, useForm, router } from '@inertiajs/react';
 import { 
     Wallet, 
     TrendingUp, 
@@ -13,14 +13,25 @@ import {
 
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { TooltipProvider } from '@/components/ui/tooltip'; // 👈 Import TooltipProvider
+import { TooltipProvider } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+    Dialog, 
+    DialogContent, 
+    DialogDescription, 
+    DialogFooter, 
+    DialogHeader, 
+    DialogTitle 
+} from '@/components/ui/dialog';
 
-export default function Dashboard({ auth, kpis, categoryBreakdown, accounts, currentFilter }) {
+export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = [], categories = [], currentFilter }) {
+    const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+
     const formatCurrency = (val) => 
         new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(val || 0);
 
@@ -28,8 +39,52 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts, cur
         router.get(route('dashboard'), { range: value }, { preserveState: true });
     };
 
+    // Quick Transaction Form
+    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
+        account_id: accounts[0]?.id ? String(accounts[0].id) : '',
+        category_id: '',
+        type: 'expense',
+        amount: '',
+        description: '',
+        transaction_date: new Date().toISOString().split('T')[0],
+    });
+
+    const openTransactionModal = () => {
+        clearErrors();
+        reset();
+        setData({
+            account_id: accounts[0]?.id ? String(accounts[0].id) : '',
+            category_id: '',
+            type: 'expense',
+            amount: '',
+            description: '',
+            transaction_date: new Date().toISOString().split('T')[0],
+        });
+        setIsTransactionModalOpen(true);
+    };
+
+    const handleTransactionSubmit = (e) => {
+        e.preventDefault();
+        post(route('transactions.store'), {
+            onSuccess: () => {
+                setIsTransactionModalOpen(false);
+                reset();
+            },
+        });
+    };
+
+    const handleTypeChange = (value) => {
+        setData((prevData) => ({
+            ...prevData,
+            type: value,
+            category_id: '',
+        }));
+    };
+
+    const filteredCategories = categories.filter((c) => c.type === data.type);
+
     return (
-        <TooltipProvider> {/* 👈 Wrap outer tree with TooltipProvider */}
+        <TooltipProvider>
             <SidebarProvider>
                 <Head title="Dashboard - SpendWise" />
 
@@ -47,7 +102,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts, cur
 
                     {/* Dashboard Body */}
                     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-                        <div className="flex items-center justify-between">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div>
                                 <h2 className="text-2xl font-bold tracking-tight">Overview</h2>
                                 <p className="text-sm text-muted-foreground">Monitor your account balance and income against expenses.</p>
@@ -55,7 +110,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts, cur
 
                             <div className="flex items-center gap-3">
                                 <Select defaultValue={currentFilter} onValueChange={handleFilterChange}>
-                                    <SelectTrigger className="w-[160px]">
+                                    <SelectTrigger className="w-[160px] h-10">
                                         <SlidersHorizontal className="mr-2 h-4 w-4" />
                                         <SelectValue placeholder="Range" />
                                     </SelectTrigger>
@@ -66,7 +121,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts, cur
                                     </SelectContent>
                                 </Select>
 
-                                <Button className="gap-2">
+                                <Button onClick={openTransactionModal} className="gap-2">
                                     <Plus className="h-4 w-4" /> New Transaction
                                 </Button>
                             </div>
@@ -81,7 +136,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts, cur
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold">{formatCurrency(kpis?.totalBalance)}</div>
-                                    <p className="text-xs text-muted-foreground">Across all liquid accounts</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Across all liquid accounts</p>
                                 </CardContent>
                             </Card>
 
@@ -94,7 +149,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts, cur
                                     <div className={`text-2xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                                         {formatCurrency(kpis?.netCashFlow)}
                                     </div>
-                                    <p className="text-xs text-muted-foreground">Income minus expenses</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Income minus expenses</p>
                                 </CardContent>
                             </Card>
 
@@ -105,7 +160,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts, cur
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold text-emerald-600">{formatCurrency(kpis?.totalIncome)}</div>
-                                    <p className="text-xs text-muted-foreground">Earned this period</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Earned this period</p>
                                 </CardContent>
                             </Card>
 
@@ -116,7 +171,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts, cur
                                 </CardHeader>
                                 <CardContent>
                                     <div className="text-2xl font-bold text-rose-600">{formatCurrency(kpis?.totalExpense)}</div>
-                                    <p className="text-xs text-muted-foreground">Spent this period</p>
+                                    <p className="text-xs text-muted-foreground mt-1">Spent this period</p>
                                 </CardContent>
                             </Card>
                         </div>
@@ -156,7 +211,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts, cur
                                                 ))
                                             ) : (
                                                 <TableRow>
-                                                    <TableCell colSpan={3} className="text-center text-muted-foreground">
+                                                    <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
                                                         No accounts created yet.
                                                     </TableCell>
                                                 </TableRow>
@@ -180,7 +235,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts, cur
                                             <div key={cat.id} className="flex items-center justify-between border-b pb-3 last:border-0 last:pb-0">
                                                 <div className="flex items-center gap-3">
                                                     <div 
-                                                        className="h-3 w-3 rounded-full" 
+                                                        className="h-3 w-3 rounded-full shrink-0" 
                                                         style={{ backgroundColor: cat.color || '#3b82f6' }}
                                                     />
                                                     <span className="font-medium text-sm">{cat.name}</span>
@@ -198,6 +253,130 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts, cur
                         </div>
                     </main>
                 </SidebarInset>
+
+                {/* Quick Add Transaction Modal */}
+                <Dialog open={isTransactionModalOpen} onOpenChange={setIsTransactionModalOpen}>
+                    <DialogContent className="sm:max-w-[480px]">
+                        <DialogHeader>
+                            <DialogTitle>New Transaction</DialogTitle>
+                            <DialogDescription>
+                                Log income, expenses, or transfers directly to your accounts.
+                            </DialogDescription>
+                        </DialogHeader>
+
+                        <form onSubmit={handleTransactionSubmit} className="space-y-4 py-2">
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Type</label>
+                                <Select value={data.type} onValueChange={handleTypeChange}>
+                                    <SelectTrigger className="w-full h-10">
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                        <SelectItem value="expense">Expense</SelectItem>
+                                        <SelectItem value="income">Income</SelectItem>
+                                        <SelectItem value="transfer">Transfer</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                {errors.type && <p className="text-xs text-rose-500">{errors.type}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Account</label>
+                                <Select 
+                                    value={data.account_id} 
+                                    onValueChange={(val) => setData('account_id', val)}
+                                >
+                                    <SelectTrigger className="w-full h-10">
+                                        <SelectValue placeholder="Select account" />
+                                    </SelectTrigger>
+                                    <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                        {accounts && accounts.length > 0 ? (
+                                            accounts.map((acc) => (
+                                                <SelectItem key={acc.id} value={String(acc.id)}>
+                                                    {acc.name} {acc.type ? `(${acc.type})` : ''}
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            <div className="p-2 text-xs text-center text-muted-foreground">
+                                                No accounts available. Create one under Accounts.
+                                            </div>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                                {errors.account_id && <p className="text-xs text-rose-500">{errors.account_id}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Category</label>
+                                <Select 
+                                    value={data.category_id} 
+                                    onValueChange={(val) => setData('category_id', val)}
+                                >
+                                    <SelectTrigger className="w-full h-10">
+                                        <SelectValue placeholder="Select category (optional)" />
+                                    </SelectTrigger>
+                                    <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                        {filteredCategories.length > 0 ? (
+                                            filteredCategories.map((cat) => (
+                                                <SelectItem key={cat.id} value={String(cat.id)}>
+                                                    {cat.name}
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            <div className="p-2 text-xs text-center text-muted-foreground">
+                                                No categories available for this transaction type.
+                                            </div>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                                {errors.category_id && <p className="text-xs text-rose-500">{errors.category_id}</p>}
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium leading-none">Amount</label>
+                                    <Input 
+                                        type="number" 
+                                        step="0.01" 
+                                        placeholder="0.00" 
+                                        value={data.amount} 
+                                        onChange={(e) => setData('amount', e.target.value)} 
+                                    />
+                                    {errors.amount && <p className="text-xs text-rose-500">{errors.amount}</p>}
+                                </div>
+
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium leading-none">Date</label>
+                                    <Input 
+                                        type="date" 
+                                        value={data.transaction_date} 
+                                        onChange={(e) => setData('transaction_date', e.target.value)} 
+                                    />
+                                    {errors.transaction_date && <p className="text-xs text-rose-500">{errors.transaction_date}</p>}
+                                </div>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Description</label>
+                                <Input 
+                                    placeholder="e.g. Grocery shopping" 
+                                    value={data.description} 
+                                    onChange={(e) => setData('description', e.target.value)} 
+                                />
+                                {errors.description && <p className="text-xs text-rose-500">{errors.description}</p>}
+                            </div>
+
+                            <DialogFooter className="pt-4">
+                                <Button type="button" variant="outline" onClick={() => setIsTransactionModalOpen(false)}>
+                                    Cancel
+                                </Button>
+                                <Button type="submit" disabled={processing}>
+                                    Create Transaction
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
             </SidebarProvider>
         </TooltipProvider>
     );
