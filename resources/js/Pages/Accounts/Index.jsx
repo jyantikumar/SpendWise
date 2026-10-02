@@ -7,7 +7,9 @@ import {
     Trash2, 
     Wallet, 
     BadgeCheck, 
-    BadgeX
+    BadgeX,
+    CreditCard,
+    CheckCircle2
 } from 'lucide-react';
 
 import { AppSidebar } from '@/components/app-sidebar';
@@ -55,12 +57,12 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
         name: '',
         type: accountTypes[0]?.name || '',
         balance: '0.00',
-        currency: 'USD',
+        currency: 'PHP',
         is_active: true,
     });
 
-    const formatCurrency = (val, currency = 'USD') => 
-        new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(val || 0);
+    const formatCurrency = (val, currency = 'PHP') => 
+        new Intl.NumberFormat('en-PH', { style: 'currency', currency }).format(val || 0);
 
     const openCreateModal = () => {
         clearErrors();
@@ -69,7 +71,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
             name: '',
             type: accountTypes[0]?.name || '',
             balance: '0.00',
-            currency: 'USD',
+            currency: 'PHP',
             is_active: true,
         });
         setEditingAccount(null);
@@ -84,7 +86,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
             name: account.name,
             type: account.type,
             balance: account.balance,
-            currency: account.currency || 'USD',
+            currency: account.currency || 'PHP',
             is_active: Boolean(account.is_active),
         });
 
@@ -122,6 +124,9 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
         0
     );
 
+    const activeAccountCount = accounts.filter((a) => a.is_active).length;
+    const inactiveAccountCount = accounts.filter((a) => !a.is_active).length;
+
     return (
         <TooltipProvider>
             <SidebarProvider>
@@ -150,36 +155,42 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
                             </Button>
                         </div>
 
-                        {/* Portfolio Summary Header */}
+                        {/* KPI Summary */}
                         <div className="grid gap-4 md:grid-cols-3">
-                            <Card className="md:col-span-1">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground">Total Portfolio Balance</CardTitle>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Total Portfolio Balance</CardTitle>
+                                    <Wallet className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-3xl font-bold tracking-tight">
-                                        {formatCurrency(totalPortfolioBalance)}
-                                    </div>
+                                    <div className="text-2xl font-bold">{formatCurrency(totalPortfolioBalance)}</div>
                                     <p className="text-xs text-muted-foreground mt-1">Across all active accounts</p>
                                 </CardContent>
                             </Card>
 
-                            <Card className="md:col-span-2">
-                                <CardHeader className="pb-2">
-                                    <CardTitle className="text-sm font-medium text-muted-foreground">Account Summary</CardTitle>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Total Accounts</CardTitle>
+                                    <CreditCard className="h-4 w-4 text-muted-foreground" />
                                 </CardHeader>
-                                <CardContent className="flex items-center gap-6">
-                                    <div>
-                                        <div className="text-2xl font-bold">{accounts.length}</div>
-                                        <p className="text-xs text-muted-foreground">Total Accounts</p>
-                                    </div>
-                                    <Separator orientation="vertical" className="h-8" />
-                                    <div>
-                                        <div className="text-2xl font-bold text-emerald-600">
-                                            {accounts.filter((a) => a.is_active).length}
-                                        </div>
-                                        <p className="text-xs text-muted-foreground">Active</p>
-                                    </div>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{accounts.length}</div>
+                                    <p className="text-xs text-muted-foreground mt-1">Registered financial accounts</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Active Accounts</CardTitle>
+                                    <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold text-emerald-600">{activeAccountCount}</div>
+                                    <p className="text-xs text-muted-foreground mt-1">
+                                        {inactiveAccountCount > 0 
+                                            ? `${inactiveAccountCount} inactive ${inactiveAccountCount === 1 ? 'account' : 'accounts'}` 
+                                            : 'All accounts active'}
+                                    </p>
                                 </CardContent>
                             </Card>
                         </div>
@@ -212,7 +223,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
                                                             </div>
                                                             <div>
                                                                 <div className="font-semibold">{acc.name}</div>
-                                                                <div className="text-xs text-muted-foreground">{acc.currency}</div>
+                                                                <div className="text-xs text-muted-foreground">{acc.currency || 'PHP'}</div>
                                                             </div>
                                                         </div>
                                                     </TableCell>
@@ -233,17 +244,18 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
                                                         )}
                                                     </TableCell>
                                                     <TableCell className="text-right font-bold text-base">
-                                                        {formatCurrency(acc.balance, acc.currency)}
+                                                        {formatCurrency(acc.balance, acc.currency || 'PHP')}
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>
-                                                                <button
-                                                                    type="button"
-                                                                    className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground outline-none"
+                                                                <Button
+                                                                    variant="ghost"
+                                                                    size="icon-sm"
+                                                                    className="h-8 w-8 p-0"
                                                                 >
                                                                     <MoreHorizontal className="h-4 w-4" />
-                                                                </button>
+                                                                </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
                                                                 <DropdownMenuItem onClick={() => openEditModal(acc)} className="cursor-pointer">
@@ -287,7 +299,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
                                 <div className="grid gap-2">
                                     <label className="text-sm font-medium">Account Name</label>
                                     <Input
-                                        placeholder="e.g., Chase Checking, BDO Savings, GCash"
+                                        placeholder="e.g., BDO Savings, GCash, Maya"
                                         value={data.name}
                                         onChange={(e) => setData('name', e.target.value)}
                                     />
@@ -346,7 +358,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
                                         <Input
                                             maxLength={3}
                                             className="uppercase"
-                                            placeholder="USD"
+                                            placeholder="PHP"
                                             value={data.currency}
                                             onChange={(e) => setData('currency', e.target.value.toUpperCase())}
                                         />
@@ -354,9 +366,21 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
                                     </div>
                                 </div>
 
+                                {/* Enhanced Switch Container with Clear Active / Inactive Badge Feedback */}
                                 <div className="flex items-center justify-between border rounded-lg p-3">
                                     <div className="space-y-0.5">
-                                        <label className="text-sm font-medium">Active Status</label>
+                                        <div className="flex items-center gap-2">
+                                            <label className="text-sm font-medium">Active Status</label>
+                                            {data.is_active ? (
+                                                <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 gap-1 text-[11px] px-2 py-0">
+                                                    <BadgeCheck className="h-3 w-3" /> Active
+                                                </Badge>
+                                            ) : (
+                                                <Badge variant="secondary" className="gap-1 text-muted-foreground text-[11px] px-2 py-0">
+                                                    <BadgeX className="h-3 w-3" /> Inactive
+                                                </Badge>
+                                            )}
+                                        </div>
                                         <p className="text-xs text-muted-foreground">Include in overall portfolio balance</p>
                                     </div>
                                     <Switch
