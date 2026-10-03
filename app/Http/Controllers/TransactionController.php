@@ -20,41 +20,68 @@ class TransactionController extends Controller
         $startDate = $request->input('start_date');
         $endDate   = $request->input('end_date');
 
-        $transactions = Transaction::where('user_id', $user->id)
-           ->with(['account', 'destinationAccount', 'category'])
-            ->when($search, function ($query, $search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('description', 'like', "%{$search}%")
-                      ->orWhere('reference_number', 'like', "%{$search}%");
+        // 1. Build filtered query
+        $query = Transaction::where('user_id', $user->id)
+            ->when($search, function ($q, $search) {
+                $q->where(function ($sub) use ($search) {
+                    $sub->where('description', 'like', "%{$search}%")
+                        ->orWhere('reference_number', 'like', "%{$search}%");
                 });
             })
-            ->when($type, function ($query, $type) {
-                $query->where('type', $type);
+            ->when($type, function ($q, $type) {
+                $q->where('type', $type);
             })
-            ->when($accountId, function ($query, $accountId) {
-                $query->where(function ($q) use ($accountId) {
-                    $q->where('account_id', $accountId)
-                      ->orWhere('destination_account_id', $accountId);
+            ->when($accountId, function ($q, $accountId) {
+                $q->where(function ($sub) use ($accountId) {
+                    $sub->where('account_id', $accountId)
+                        ->orWhere('destination_account_id', $accountId);
                 });
             })
-            ->when($startDate, function ($query, $startDate) {
-                $query->whereDate('transaction_date', '>=', $startDate);
+            ->when($startDate, function ($q, $startDate) {
+                $q->whereDate('transaction_date', '>=', $startDate);
             })
-            ->when($endDate, function ($query, $endDate) {
-                $query->whereDate('transaction_date', '<=', $endDate);
-            })
+            ->when($endDate, function ($q, $endDate) {
+                $q->whereDate('transaction_date', '<=', $endDate);
+            });
+
+        // 2. Dynamic KPI Calculations
+        $totalIncome  = (clone $query)->where('type', 'income')->sum('amount');
+        $totalExpense = (clone $query)->where('type', 'expense')->sum('amount');
+
+        // Total balance: reflects selected account's balance or overall portfolio balance
+        if ($accountId && $accountId !== 'all') {
+            $totalBalance = Account::where('user_id', $user->id)
+                ->where('id', $accountId)
+                ->value('balance') ?? 0;
+        } else {
+            $totalBalance = Account::where('user_id', $user->id)
+                ->where('is_active', true)
+                ->sum('balance');
+        }
+
+        $kpis = [
+            'totalBalance' => $totalBalance,
+            'netCashFlow'  => $totalIncome - $totalExpense,
+            'totalIncome'  => $totalIncome,
+            'totalExpense' => $totalExpense,
+        ];
+
+        // 3. Paginated transactions
+        $transactions = (clone $query)
+            ->with(['account', 'destinationAccount', 'category'])
             ->orderBy('transaction_date', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(10)
             ->withQueryString();
 
-        $accounts = $user->accounts()->orderBy('name')->get();
+        $accounts   = $user->accounts()->orderBy('name')->get();
         $categories = $user->categories()->orderBy('name')->get();
 
         return Inertia::render('Transactions/Index', [
             'transactions' => $transactions,
             'accounts'     => $accounts,
             'categories'   => $categories,
+            'kpis'         => $kpis,
             'filters'      => [
                 'search'     => $search ?? '',
                 'type'       => $type ?? 'all',
@@ -87,10 +114,8 @@ class TransactionController extends Controller
             } elseif ($validated['type'] === 'expense') {
                 $account->decrement('balance', $validated['amount']);
             } elseif ($validated['type'] === 'transfer') {
-                // Deduct from source account
                 $account->decrement('balance', $validated['amount']);
 
-                // Add to destination account
                 if (!empty($validated['destination_account_id'])) {
                     $destAccount = Account::findOrFail($validated['destination_account_id']);
                     $destAccount->increment('balance', $validated['amount']);
@@ -118,7 +143,6 @@ class TransactionController extends Controller
         ]);
 
         DB::transaction(function () use ($transaction, $validated) {
-            // 1. Revert previous transaction impacts
             $oldAccount = Account::findOrFail($transaction->account_id);
             if ($transaction->type === 'income') {
                 $oldAccount->decrement('balance', $transaction->amount);
@@ -132,10 +156,8 @@ class TransactionController extends Controller
                 }
             }
 
-            // 2. Update transaction
             $transaction->update($validated);
 
-            // 3. Apply new transaction impacts
             $newAccount = Account::findOrFail($validated['account_id']);
             if ($validated['type'] === 'income') {
                 $newAccount->increment('balance', $validated['amount']);

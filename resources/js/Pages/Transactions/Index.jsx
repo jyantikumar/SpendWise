@@ -10,7 +10,11 @@ import {
     ArrowLeftRight,
     Search,
     X,
-    Filter
+    Filter,
+    Wallet,
+    DollarSign,
+    TrendingUp,
+    TrendingDown
 } from 'lucide-react';
 
 import { AppSidebar } from '@/components/app-sidebar';
@@ -48,7 +52,7 @@ import {
     AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
 
-export default function TransactionIndex({ auth, transactions, accounts = [], categories = [], filters = {} }) {
+export default function TransactionIndex({ auth, transactions, accounts = [], categories = [], filters = {}, kpis = {} }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [deletingTransaction, setDeletingTransaction] = useState(null);
@@ -243,6 +247,53 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                             <Button onClick={openCreateModal} className="gap-2">
                                 <Plus className="h-4 w-4" /> Add Transaction
                             </Button>
+                        </div>
+
+                        {/* KPI Cards (Exact Dashboard Layout) */}
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
+                                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold">{formatCurrency(kpis?.totalBalance)}</div>
+                                    <p className="text-xs text-muted-foreground mt-1">Across liquid accounts</p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+                                    <TrendingUp className="h-4 w-4 text-emerald-500" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold text-emerald-600">{formatCurrency(kpis?.totalIncome)}</div>
+                                    <p className="text-xs text-muted-foreground mt-1">Earned for current filter</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+                                    <TrendingDown className="h-4 w-4 text-rose-500" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className="text-2xl font-bold text-rose-600">{formatCurrency(kpis?.totalExpense)}</div>
+                                    <p className="text-xs text-muted-foreground mt-1">Spent for current filter</p>
+                                </CardContent>
+                            </Card>
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Net Cash Flow</CardTitle>
+                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className={`text-2xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        {formatCurrency(kpis?.netCashFlow)}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">Income minus expenses</p>
+                                </CardContent>
+                            </Card>
                         </div>
 
                         {/* Filters Card */}
@@ -522,7 +573,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                 {errors.account_id && <p className="text-xs text-rose-500">{errors.account_id}</p>}
                             </div>
 
-                            {/* Destination Account (To) - Visible only when Type === 'transfer' */}
+                            {/* Destination Account (To) */}
                             {data.type === 'transfer' && (
                                 <div className="space-y-2">
                                     <label className="text-sm font-medium leading-none">To Account (Destination)</label>
@@ -619,7 +670,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                             </div>
 
                             <DialogFooter className="pt-4">
-                                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
+                                <Button type="button" variant="outline" onClick={() => setIsTransactionModalOpen(false)}>
                                     Cancel
                                 </Button>
                                 <Button type="submit" disabled={processing}>
