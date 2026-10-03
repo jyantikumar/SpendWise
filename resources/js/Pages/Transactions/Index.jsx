@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { Head, useForm, router } from '@inertiajs/react';
 import { 
     Plus, 
-    MoreHorizontal, 
     Pencil, 
     Trash2, 
     ArrowUpRight, 
@@ -36,12 +35,6 @@ import {
     DialogTitle 
 } from '@/components/ui/dialog';
 import { 
-    DropdownMenu, 
-    DropdownMenuContent, 
-    DropdownMenuItem, 
-    DropdownMenuTrigger 
-} from '@/components/ui/dropdown-menu';
-import { 
     AlertDialog, 
     AlertDialogAction, 
     AlertDialogCancel, 
@@ -52,10 +45,13 @@ import {
     AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
 
+import { TransactionDetailSheet } from '@/components/TransactionDetailSheet';
+
 export default function TransactionIndex({ auth, transactions, accounts = [], categories = [], filters = {}, kpis = {} }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [deletingTransaction, setDeletingTransaction] = useState(null);
+    const [selectedDetailTransaction, setSelectedDetailTransaction] = useState(null);
 
     // Filter states initialized from server props
     const [search, setSearch] = useState(filters.search || '');
@@ -249,7 +245,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                             </Button>
                         </div>
 
-                        {/* KPI Cards (Exact Dashboard Layout) */}
+                        {/* KPI Cards */}
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -406,29 +402,31 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                         <Card>
                             <CardHeader>
                                 <CardTitle>Transaction History</CardTitle>
-                                <CardDescription>Recent financial activity recorded across all accounts.</CardDescription>
+                                <CardDescription>Recent financial activity recorded across all accounts. Click any row to view details.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Table>
                                     <TableHeader>
                                         <TableRow>
                                             <TableHead>Date</TableHead>
-                                            <TableHead>Type</TableHead>
                                             <TableHead>Description</TableHead>
                                             <TableHead>Account</TableHead>
                                             <TableHead>Category</TableHead>
                                             <TableHead className="text-right">Amount</TableHead>
-                                            <TableHead className="w-[80px] text-center">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {transactionList.length > 0 ? (
                                             transactionList.map((tx) => (
-                                                <TableRow key={tx.id}>
+                                                <TableRow 
+                                                    key={tx.id} 
+                                                    className="cursor-pointer hover:bg-muted/50 transition-colors"
+                                                    onClick={() => setSelectedDetailTransaction(tx)}
+                                                >
                                                     <TableCell className="font-medium whitespace-nowrap">
                                                         {tx.transaction_date ? String(tx.transaction_date).split('T')[0] : (tx.date || '—')}
                                                     </TableCell>
-                                                    <TableCell>{getTypeBadge(tx.type)}</TableCell>
+                                                    
                                                     <TableCell className="max-w-[200px] truncate">
                                                         {tx.description || <span className="text-muted-foreground text-xs italic">No description</span>}
                                                     </TableCell>
@@ -456,31 +454,11 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                                         {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
                                                         {formatCurrency(tx.amount)}
                                                     </TableCell>
-                                                    <TableCell className="text-center">
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                                    <MoreHorizontal className="h-4 w-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onClick={() => openEditModal(tx)} className="cursor-pointer">
-                                                                    <Pencil className="mr-2 h-4 w-4" /> Edit
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem 
-                                                                    onClick={() => setDeletingTransaction(tx)} 
-                                                                    className="cursor-pointer text-rose-600 focus:text-rose-600"
-                                                                >
-                                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </TableCell>
                                                 </TableRow>
                                             ))
                                         ) : (
                                             <TableRow>
-                                                <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
+                                                <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                                                     No transactions match your criteria.
                                                 </TableCell>
                                             </TableRow>
@@ -508,6 +486,15 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                         </Card>
                     </main>
                 </SidebarInset>
+
+                {/* Reusable Detail Side Sheet */}
+                <TransactionDetailSheet 
+                    open={!!selectedDetailTransaction}
+                    onOpenChange={(open) => !open && setSelectedDetailTransaction(null)}
+                    transaction={selectedDetailTransaction}
+                    onEdit={openEditModal}
+                    onDelete={setDeletingTransaction}
+                />
 
                 {/* Create / Edit Dialog */}
                 <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
@@ -670,7 +657,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                             </div>
 
                             <DialogFooter className="pt-4">
-                                <Button type="button" variant="outline" onClick={() => setIsTransactionModalOpen(false)}>
+                                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
                                     Cancel
                                 </Button>
                                 <Button type="submit" disabled={processing}>
