@@ -271,7 +271,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
                                                                 <DropdownMenuItem onClick={() => openTransactionsModal(acc)} className="cursor-pointer">
-                                                                    <ListFilter className="mr-2 h-4 w-4" /> View Transactions
+                                                                    <ListFilter className="mr-2 h-4 w-4" /> View
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem onClick={() => openEditModal(acc)} className="cursor-pointer">
                                                                     <Pencil className="mr-2 h-4 w-4" /> Edit
