@@ -29,8 +29,10 @@ import {
     DialogTitle 
 } from '@/components/ui/dialog';
 
+import CategoryTransactionsModal from '@/components/CategoryTransactionsModal';
+
 // Custom SVG Donut / Pie Chart Component
-function ExpensePieChart({ data = [], formatCurrency }) {
+function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
     const [hoveredIndex, setHoveredIndex] = useState(null);
 
     const total = data.reduce((sum, item) => sum + (parseFloat(item.total) || 0), 0);
@@ -44,7 +46,6 @@ function ExpensePieChart({ data = [], formatCurrency }) {
         );
     }
 
-    // Angle calculation for SVG paths
     let cumulativeAngle = 0;
     const slices = data.map((item, index) => {
         const value = parseFloat(item.total) || 0;
@@ -100,11 +101,12 @@ function ExpensePieChart({ data = [], formatCurrency }) {
                             fill={slice.color}
                             className="transition-all duration-200 cursor-pointer hover:opacity-90"
                             style={{
-                                transform: hoveredIndex === index ? 'scale(1.04)' : 'scale(1)',
+                                transform: hoveredIndex === index ? 'scale(1.05)' : 'scale(1)',
                                 transformOrigin: '100px 100px',
                             }}
                             onMouseEnter={() => setHoveredIndex(index)}
                             onMouseLeave={() => setHoveredIndex(null)}
+                            onClick={() => onCategoryClick && onCategoryClick(slice)}
                         />
                     ))}
                 </svg>
@@ -135,6 +137,7 @@ function ExpensePieChart({ data = [], formatCurrency }) {
                         }`}
                         onMouseEnter={() => setHoveredIndex(index)}
                         onMouseLeave={() => setHoveredIndex(null)}
+                        onClick={() => onCategoryClick && onCategoryClick(slice)}
                     >
                         <div className="flex items-center gap-2 truncate pr-2">
                             <span
@@ -159,11 +162,41 @@ function ExpensePieChart({ data = [], formatCurrency }) {
 export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = [], categories = [], currentFilter }) {
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
 
+    // Category Drilldown Modal State
+    const [selectedCategory, setSelectedCategory] = useState(null);
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
     const formatCurrency = (val) => 
         new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
 
     const handleFilterChange = (value) => {
         router.get(route('dashboard'), { range: value }, { preserveState: true });
+    };
+
+    // Calculate default dates for category modal based on current dashboard range
+    const getDateBoundaries = () => {
+        const today = new Date();
+        const formatDate = (d) => d.toISOString().split('T')[0];
+
+        if (currentFilter === 'last_30_days') {
+            const past = new Date();
+            past.setDate(today.getDate() - 30);
+            return { startDate: formatDate(past), endDate: formatDate(today) };
+        } else if (currentFilter === 'this_year') {
+            const yearStart = new Date(today.getFullYear(), 0, 1);
+            return { startDate: formatDate(yearStart), endDate: formatDate(today) };
+        } else {
+            // default: this_month
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            return { startDate: formatDate(monthStart), endDate: formatDate(today) };
+        }
+    };
+
+    const { startDate: initialModalStart, endDate: initialModalEnd } = getDateBoundaries();
+
+    const handleCategoryClick = (category) => {
+        setSelectedCategory(category);
+        setIsCategoryModalOpen(true);
     };
 
     // Quick Transaction Form
@@ -287,6 +320,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
                                     <p className="text-xs text-muted-foreground mt-1">Spent this period</p>
                                 </CardContent>
                             </Card>
+
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">Net Cash Flow</CardTitle>
@@ -334,7 +368,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
                                                 ))
                                             ) : (
                                                 <TableRow>
-                                                    <TableCell colSpan={3} className="text-center text-muted-foreground py-6">
+                                                    <TableCell colSpan={2} className="text-center text-muted-foreground py-6">
                                                         No accounts created yet.
                                                     </TableCell>
                                                 </TableRow>
@@ -351,18 +385,29 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
                                         <PieChartIcon className="h-5 w-5 text-muted-foreground" />
                                         Expense Categories
                                     </CardTitle>
-                                    <CardDescription>Breakdown by spending category.</CardDescription>
+                                    <CardDescription>Click a slice or legend item to view transactions.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <ExpensePieChart 
                                         data={categoryBreakdown?.expense || []} 
                                         formatCurrency={formatCurrency} 
+                                        onCategoryClick={handleCategoryClick}
                                     />
                                 </CardContent>
                             </Card>
                         </div>
                     </main>
                 </SidebarInset>
+
+                {/* Category Transactions Modal */}
+                <CategoryTransactionsModal
+                    isOpen={isCategoryModalOpen}
+                    onClose={() => setIsCategoryModalOpen(false)}
+                    category={selectedCategory}
+                    accounts={accounts}
+                    initialStartDate={initialModalStart}
+                    initialEndDate={initialModalEnd}
+                />
 
                 {/* Quick Add Transaction Modal */}
                 <Dialog open={isTransactionModalOpen} onOpenChange={setIsTransactionModalOpen}>
