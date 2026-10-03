@@ -6,6 +6,7 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountTypeController; 
+use App\Http\Controllers\AnalysisController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -49,6 +50,9 @@ Route::get('/accounts/{account}/transactions', [AccountController::class, 'accou
     Route::post('/account-types', [AccountTypeController::class, 'store'])->name('account-types.store');
     Route::put('/account-types/{accountType}', [AccountTypeController::class, 'update'])->name('account-types.update');
     Route::delete('/account-types/{accountType}', [AccountTypeController::class, 'destroy'])->name('account-types.destroy');
+
+    // Analysis Analytics Page
+    Route::get('/analysis', [AnalysisController::class, 'index'])->name('analysis.index');
 });
 
 require __DIR__.'/auth.php';

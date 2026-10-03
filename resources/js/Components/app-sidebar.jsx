@@ -8,7 +8,8 @@ import {
     LogOut,
     Layers,
     DollarSign,
-    ChevronUp
+    ChevronUp,
+    ChartLine 
 } from 'lucide-react';
 import { Link, router, usePage } from '@inertiajs/react';
 
@@ -37,6 +38,7 @@ const navItems = [
     { title: 'Accounts', url: '/accounts', icon: Wallet },
     { title: 'Account Types', url: '/account-types', icon: Layers },
     { title: 'Categories', url: '/categories', icon: Tags },
+    { title: 'Analysis', url: '/analysis', icon: ChartLine },
 ];
 
 export function AppSidebar({ user }) {
