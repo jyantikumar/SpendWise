@@ -304,10 +304,10 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">Peak Activity Day</CardTitle>
-                                    <CalendarIcon className="h-4 w-4 text-blue-500" />
+                                    <CalendarIcon className="h-4 w-4 text-white-500" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold text-blue-600">{formatCurrency(kpis?.peakAmount)}</div>
+                                    <div className="text-2xl font-bold text-white-600">{formatCurrency(kpis?.peakAmount)}</div>
                                     <p className="text-xs text-muted-foreground mt-1">
                                         {kpis?.peakDate ? `Highest on ${kpis.peakDate}` : 'No activity recorded'}
                                     </p>
@@ -365,9 +365,21 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                                     tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
                                                 />
                                                 <Tooltip 
-                                                    formatter={(val) => [formatCurrency(val), type === 'all' ? 'Net Flow' : 'Amount']}
-                                                    contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
-                                                />
+    labelFormatter={(label, payload) => {
+        const rawDate = payload?.[0]?.payload?.rawDate;
+        return rawDate ? `Date: ${rawDate} (${label})` : `Date: ${label}`;
+    }}
+    formatter={(val) => [formatCurrency(val), type === 'all' ? 'Net Flow' : 'Amount']}
+    contentStyle={{ 
+        backgroundColor: '#18181b', 
+        borderColor: '#27272a', 
+        borderRadius: '8px', 
+        fontSize: '12px',
+        color: '#f4f4f5'
+    }}
+    itemStyle={{ color: '#f4f4f5' }}
+    labelStyle={{ color: '#a1a1aa', fontWeight: '600', marginBottom: '2px' }}
+/>
                                                 <Area 
                                                     type="monotone" 
                                                     dataKey={type === 'all' ? 'Net' : 'Amount'} 
