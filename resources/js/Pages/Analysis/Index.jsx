@@ -122,106 +122,104 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                     </header>
 
                     <main className="flex flex-1 flex-col gap-6 p-4 md:gap-8 md:p-8">
-                        {/* Page Header & Controls */}
-                        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
-                            <div>
-                                <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
-                                    <BarChart3 className="h-6 w-6 text-primary" /> Visual Analytics
-                                </h2>
-                                <p className="text-sm text-muted-foreground">
-                                    Track cash velocity, daily spending activity, and category distribution.
-                                </p>
-                            </div>
+                        {/* Page Header */}
+                        <div>
+                            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                                <BarChart3 className="h-6 w-6 text-primary" /> Visual Analytics
+                            </h2>
+                            <p className="text-sm text-muted-foreground">
+                                Track cash velocity, daily spending activity, and category distribution.
+                            </p>
+                        </div>
 
-                            {/* Controls Bar */}
-                            <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto">
-                                {/* Type Selector */}
-                                <Select 
-                                    value={type} 
-                                    onValueChange={(val) => {
-                                        setType(val);
-                                        applyFilters({ type: val });
-                                    }}
-                                >
-                                    <SelectTrigger className="w-[130px] h-9">
-                                        <SelectValue placeholder="Type" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="expense">Expenses</SelectItem>
-                                        <SelectItem value="income">Income</SelectItem>
-                                        <SelectItem value="all">All Flow</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                        {/* Controls Bar with Wider Select Triggers */}
+                        <div className="flex flex-wrap items-center gap-3 w-full">
+                            {/* Type Selector */}
+                            <Select 
+                                value={type} 
+                                onValueChange={(val) => {
+                                    setType(val);
+                                    applyFilters({ type: val });
+                                }}
+                            >
+                                <SelectTrigger className="w-[180px] h-9">
+                                    <SelectValue placeholder="Type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="expense">Expenses</SelectItem>
+                                    <SelectItem value="income">Income</SelectItem>
+                                    <SelectItem value="all">All Flow</SelectItem>
+                                </SelectContent>
+                            </Select>
 
-                                {/* Account Filter */}
-                                <Select 
-                                    value={accountId} 
-                                    onValueChange={(val) => {
-                                        setAccountId(val);
-                                        applyFilters({ account_id: val });
-                                    }}
-                                >
-                                    <SelectTrigger className="w-[150px] h-9">
-                                        <Wallet className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                                        <SelectValue placeholder="All Accounts" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">All Accounts</SelectItem>
-                                        {accounts.map((acc) => (
-                                            <SelectItem key={acc.id} value={String(acc.id)}>
-                                                {acc.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                            {/* Account Filter */}
+                            <Select 
+                                value={accountId} 
+                                onValueChange={(val) => {
+                                    setAccountId(val);
+                                    applyFilters({ account_id: val });
+                                }}
+                            >
+                                <SelectTrigger className="w-[210px] h-9">
+                                    <Wallet className="mr-2 h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                    <SelectValue placeholder="All Accounts" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">All Accounts</SelectItem>
+                                    {accounts.map((acc) => (
+                                        <SelectItem key={acc.id} value={String(acc.id)}>
+                                            {acc.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
 
-                                {/* Time Horizon Picker */}
-                                <Select 
-                                    value={range} 
-                                    onValueChange={(val) => {
-                                        setRange(val);
-                                        applyFilters({ range: val });
-                                    }}
-                                >
-                                    <SelectTrigger className="w-[140px] h-9">
-                                        <SlidersHorizontal className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                                        <SelectValue placeholder="Range" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="1_week">1 Week</SelectItem>
-                                        <SelectItem value="this_month">This Month</SelectItem>
-                                        <SelectItem value="6_months">6 Months</SelectItem>
-                                        <SelectItem value="this_year">This Year</SelectItem>
-                                        <SelectItem value="custom">Custom Range</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            {/* Time Horizon Picker */}
+                            <Select 
+                                value={range} 
+                                onValueChange={(val) => {
+                                    setRange(val);
+                                    applyFilters({ range: val });
+                                }}
+                            >
+                                <SelectTrigger className="w-[200px] h-9">
+                                    <SlidersHorizontal className="mr-2 h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                    <SelectValue placeholder="Range" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="1_week">1 Week</SelectItem>
+                                    <SelectItem value="this_month">This Month</SelectItem>
+                                    <SelectItem value="6_months">6 Months</SelectItem>
+                                    <SelectItem value="this_year">This Year</SelectItem>
+                                    <SelectItem value="custom">Custom Range</SelectItem>
+                                </SelectContent>
+                            </Select>
 
-                                {/* Custom Date Range Inputs */}
-                                {range === 'custom' && (
-                                    <div className="flex items-center gap-2">
-                                        <Input
-                                            type="date"
-                                            value={startDate}
-                                            onChange={(e) => setStartDate(e.target.value)}
-                                            className="h-9 w-[130px] text-xs"
-                                        />
-                                        <span className="text-xs text-muted-foreground">to</span>
-                                        <Input
-                                            type="date"
-                                            value={endDate}
-                                            onChange={(e) => setEndDate(e.target.value)}
-                                            className="h-9 w-[130px] text-xs"
-                                        />
-                                        <Button 
-                                            size="sm" 
-                                            onClick={() => applyFilters({ range: 'custom' })}
-                                            className="h-9 px-3 text-xs"
-                                        >
-                                            Apply
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
+                            {/* Custom Date Range Inputs */}
+                            {range === 'custom' && (
+                                <div className="flex items-center gap-2">
+                                    <Input
+                                        type="date"
+                                        value={startDate}
+                                        onChange={(e) => setStartDate(e.target.value)}
+                                        className="h-9 w-[140px] text-xs"
+                                    />
+                                    <span className="text-xs text-muted-foreground">to</span>
+                                    <Input
+                                        type="date"
+                                        value={endDate}
+                                        onChange={(e) => setEndDate(e.target.value)}
+                                        className="h-9 w-[140px] text-xs"
+                                    />
+                                    <Button 
+                                        size="sm" 
+                                        onClick={() => applyFilters({ range: 'custom' })}
+                                        className="h-9 px-3 text-xs"
+                                    >
+                                        Apply
+                                    </Button>
+                                </div>
+                            )}
                         </div>
 
                         {/* Bento KPI Summary Tiles */}
@@ -365,21 +363,21 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                                     tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
                                                 />
                                                 <Tooltip 
-    labelFormatter={(label, payload) => {
-        const rawDate = payload?.[0]?.payload?.rawDate;
-        return rawDate ? `Date: ${rawDate} (${label})` : `Date: ${label}`;
-    }}
-    formatter={(val) => [formatCurrency(val), type === 'all' ? 'Net Flow' : 'Amount']}
-    contentStyle={{ 
-        backgroundColor: '#18181b', 
-        borderColor: '#27272a', 
-        borderRadius: '8px', 
-        fontSize: '12px',
-        color: '#f4f4f5'
-    }}
-    itemStyle={{ color: '#f4f4f5' }}
-    labelStyle={{ color: '#a1a1aa', fontWeight: '600', marginBottom: '2px' }}
-/>
+                                                    labelFormatter={(label, payload) => {
+                                                        const rawDate = payload?.[0]?.payload?.rawDate;
+                                                        return rawDate ? `Date: ${rawDate} (${label})` : `Date: ${label}`;
+                                                    }}
+                                                    formatter={(val) => [formatCurrency(val), type === 'all' ? 'Net Flow' : 'Amount']}
+                                                    contentStyle={{ 
+                                                        backgroundColor: '#18181b', 
+                                                        borderColor: '#27272a', 
+                                                        borderRadius: '8px', 
+                                                        fontSize: '12px',
+                                                        color: '#f4f4f5'
+                                                    }}
+                                                    itemStyle={{ color: '#f4f4f5' }}
+                                                    labelStyle={{ color: '#a1a1aa', fontWeight: '600', marginBottom: '2px' }}
+                                                />
                                                 <Area 
                                                     type="monotone" 
                                                     dataKey={type === 'all' ? 'Net' : 'Amount'} 
