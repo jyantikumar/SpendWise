@@ -111,7 +111,6 @@ export function DateTransactionsDialog({ open, onOpenChange, date, dayData }) {
                     <Table>
                         <TableHeader className="bg-muted/40 sticky top-0">
                             <TableRow>
-                                <TableHead className="text-xs font-semibold">Type</TableHead>
                                 <TableHead className="text-xs font-semibold">Description</TableHead>
                                 <TableHead className="text-xs font-semibold">Account</TableHead>
                                 <TableHead className="text-xs font-semibold text-right">Amount</TableHead>
@@ -121,9 +120,6 @@ export function DateTransactionsDialog({ open, onOpenChange, date, dayData }) {
                             {transactions.length > 0 ? (
                                 transactions.map((tx) => (
                                     <TableRow key={tx.id} className="border-border/50">
-                                        <TableCell className="py-2.5">
-                                            {getTypeBadge(tx.type)}
-                                        </TableCell>
                                         <TableCell className="py-2.5 max-w-[180px] truncate">
                                             <span className="text-xs font-medium text-foreground block truncate">
                                                 {tx.description || <span className="text-muted-foreground italic">No description</span>}

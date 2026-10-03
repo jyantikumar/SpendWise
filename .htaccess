@@ -1,0 +1,10 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Direct storage assets to storage/app/public without [END]
+    RewriteRule ^storage/(.*)$ storage/app/public/$1 [L]
+
+    # Funnel all other requests into the public folder
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
