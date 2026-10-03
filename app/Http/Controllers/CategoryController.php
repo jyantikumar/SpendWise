@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
@@ -22,8 +23,13 @@ class CategoryController extends Controller
             ->orderBy('name')
             ->get();
 
+        $accounts = Account::where('user_id', $user->id)
+            ->orderBy('name')
+            ->get();
+
         return Inertia::render('Categories/Index', [
             'categories' => $categories,
+            'accounts'   => $accounts,
         ]);
     }
 

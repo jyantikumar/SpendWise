@@ -8,7 +8,8 @@ import {
     Tag, 
     ArrowUpCircle, 
     ArrowDownCircle, 
-    ArrowLeftRight 
+    ArrowLeftRight,
+    ListFilter
 } from 'lucide-react';
 
 import { AppSidebar } from '@/components/app-sidebar';
@@ -46,17 +47,23 @@ import {
     AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
 
+import CategoryTransactionsModal from '@/components/CategoryTransactionsModal';
+
 const PRESET_COLORS = [
     '#ef4444', '#f97316', '#f59e0b', '#10b981', 
     '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', 
     '#ec4899', '#64748b'
 ];
 
-export default function CategoryIndex({ auth, categories }) {
+export default function CategoryIndex({ auth, categories = [], accounts = [] }) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
     const [deletingCategory, setDeletingCategory] = useState(null);
     const [selectedTab, setSelectedTab] = useState('all');
+
+    // Category Transactions Modal State
+    const [selectedCategoryForModal, setSelectedCategoryForModal] = useState(null);
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
     // Inertia form state for Store & Update
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
@@ -83,6 +90,11 @@ export default function CategoryIndex({ auth, categories }) {
             icon: category.icon || '',
         });
         setIsCreateOpen(true);
+    };
+
+    const openTransactionsModal = (category) => {
+        setSelectedCategoryForModal(category);
+        setIsCategoryModalOpen(true);
     };
 
     const handleSubmit = (e) => {
@@ -175,7 +187,7 @@ export default function CategoryIndex({ auth, categories }) {
                             <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                 <div>
                                     <CardTitle>All Categories</CardTitle>
-                                    <CardDescription>Manage your transaction tags and color schemes.</CardDescription>
+                                    <CardDescription>Click any row to view transactions recorded under that category.</CardDescription>
                                 </div>
 
                                 {/* Type Filter Buttons */}
@@ -208,11 +220,15 @@ export default function CategoryIndex({ auth, categories }) {
                                     <TableBody>
                                         {filteredCategories.length > 0 ? (
                                             filteredCategories.map((cat) => (
-                                                <TableRow key={cat.id}>
+                                                <TableRow 
+                                                    key={cat.id}
+                                                    className="cursor-pointer hover:bg-muted/60 transition-colors"
+                                                    onClick={() => openTransactionsModal(cat)}
+                                                >
                                                     <TableCell className="font-medium">
                                                         <div className="flex items-center gap-3">
                                                             <div 
-                                                                className="h-3.5 w-3.5 rounded-full" 
+                                                                className="h-3.5 w-3.5 rounded-full shrink-0" 
                                                                 style={{ backgroundColor: cat.color || '#3b82f6' }}
                                                             />
                                                             <span>{cat.name}</span>
@@ -222,28 +238,31 @@ export default function CategoryIndex({ auth, categories }) {
                                                     <TableCell className="text-muted-foreground">
                                                         {cat.transactions_count || 0} transactions
                                                     </TableCell>
-                                                    <TableCell className="text-right">
+                                                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                                         <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-        <button 
-            type="button"
-            className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground outline-none transition-colors"
-        >
-            <MoreHorizontal className="h-4 w-4" />
-        </button>
-    </DropdownMenuTrigger>
-    <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => openEditModal(cat)} className="cursor-pointer">
-            <Pencil className="mr-2 h-4 w-4" /> Edit
-        </DropdownMenuItem>
-        <DropdownMenuItem 
-            onClick={() => setDeletingCategory(cat)} 
-            className="text-destructive cursor-pointer"
-        >
-            <Trash2 className="mr-2 h-4 w-4" /> Delete
-        </DropdownMenuItem>
-    </DropdownMenuContent>
-</DropdownMenu>
+                                                            <DropdownMenuTrigger asChild>
+                                                                <button 
+                                                                    type="button"
+                                                                    className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground outline-none transition-colors"
+                                                                >
+                                                                    <MoreHorizontal className="h-4 w-4" />
+                                                                </button>
+                                                            </DropdownMenuTrigger>
+                                                            <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onClick={() => openTransactionsModal(cat)} className="cursor-pointer">
+                                                                    <ListFilter className="mr-2 h-4 w-4" /> View Transactions
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => openEditModal(cat)} className="cursor-pointer">
+                                                                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem 
+                                                                    onClick={() => setDeletingCategory(cat)} 
+                                                                    className="text-destructive cursor-pointer"
+                                                                >
+                                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                                </DropdownMenuItem>
+                                                            </DropdownMenuContent>
+                                                        </DropdownMenu>
                                                     </TableCell>
                                                 </TableRow>
                                             ))
@@ -259,6 +278,14 @@ export default function CategoryIndex({ auth, categories }) {
                             </CardContent>
                         </Card>
                     </main>
+
+                    {/* Category Transactions Modal */}
+                    <CategoryTransactionsModal
+                        isOpen={isCategoryModalOpen}
+                        onClose={() => setIsCategoryModalOpen(false)}
+                        category={selectedCategoryForModal}
+                        accounts={accounts}
+                    />
 
                     {/* Create / Edit Category Modal */}
                     <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
