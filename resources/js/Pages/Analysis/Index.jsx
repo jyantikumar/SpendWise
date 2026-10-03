@@ -17,7 +17,6 @@ import {
 import { 
     BarChart3, 
     TrendingUp, 
-    TrendingDown, 
     DollarSign, 
     Calendar as CalendarIcon, 
     SlidersHorizontal,
@@ -34,9 +33,10 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+import { DateTransactionsDialog } from '@/components/DateTransactionsDialog';
 
 export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendData = [], categoryData = [], calendar = {}, filters = {} }) {
     const [range, setRange] = useState(filters.range || 'this_month');
@@ -45,6 +45,9 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
     const [calendarMonth, setCalendarMonth] = useState(filters.calendar_month || new Date().toISOString().slice(0, 7));
+
+    // Interactive Dialog State
+    const [selectedDayObj, setSelectedDayObj] = useState(null);
 
     const formatCurrency = (val) => 
         new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
@@ -74,7 +77,6 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
         });
     };
 
-    // Month Navigation Handlers
     const handlePrevMonth = () => {
         const [year, month] = (calendar.month || calendarMonth).split('-').map(Number);
         const prevDate = new Date(year, month - 2, 1);
@@ -97,7 +99,6 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
         applyFilters({ calendar_month: val });
     };
 
-    // Income vs Expense Donut Data
     const incomeVal = kpis?.totalIncome || 0;
     const expenseVal = kpis?.totalExpense || 0;
     const totalFlow = incomeVal + expenseVal;
@@ -122,7 +123,6 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                     </header>
 
                     <main className="flex flex-1 flex-col gap-6 p-4 md:gap-8 md:p-8">
-                        {/* Page Header */}
                         <div>
                             <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
                                 <BarChart3 className="h-6 w-6 text-primary" /> Visual Analytics
@@ -132,9 +132,8 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                             </p>
                         </div>
 
-                        {/* Controls Bar with Wider Select Triggers */}
+                        {/* Controls Bar */}
                         <div className="flex flex-wrap items-center gap-3 w-full">
-                            {/* Type Selector */}
                             <Select 
                                 value={type} 
                                 onValueChange={(val) => {
@@ -152,7 +151,6 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 </SelectContent>
                             </Select>
 
-                            {/* Account Filter */}
                             <Select 
                                 value={accountId} 
                                 onValueChange={(val) => {
@@ -174,7 +172,6 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 </SelectContent>
                             </Select>
 
-                            {/* Time Horizon Picker */}
                             <Select 
                                 value={range} 
                                 onValueChange={(val) => {
@@ -195,7 +192,6 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 </SelectContent>
                             </Select>
 
-                            {/* Custom Date Range Inputs */}
                             {range === 'custom' && (
                                 <div className="flex items-center gap-2">
                                     <Input
@@ -222,9 +218,8 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                             )}
                         </div>
 
-                        {/* Bento KPI Summary Tiles */}
+                        {/* KPI Summary Tiles */}
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                            {/* Card 1: Income vs Expense Donut Chart */}
                             <Card className="flex flex-col justify-between">
                                 <CardHeader className="pb-1 pt-3 px-4 flex flex-row items-center justify-between space-y-0">
                                     <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -286,7 +281,6 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 </CardContent>
                             </Card>
 
-                            {/* Card 2: Daily Average */}
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">Daily Average ({type})</CardTitle>
@@ -298,7 +292,6 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 </CardContent>
                             </Card>
 
-                            {/* Card 3: Peak Activity Day */}
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">Peak Activity Day</CardTitle>
@@ -312,7 +305,6 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 </CardContent>
                             </Card>
 
-                            {/* Card 4: Net Cash Flow */}
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">Net Cash Flow</CardTitle>
@@ -327,9 +319,9 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                             </Card>
                         </div>
 
-                        {/* Bento Main Layout Grid */}
+                        {/* Main Charts & Calendar Layout */}
                         <div className="grid gap-6 lg:grid-cols-3">
-                            {/* Bento Tile 1: Cash Flow Trajectory Area Chart */}
+                            {/* Area Chart */}
                             <Card className="lg:col-span-2 flex flex-col justify-between">
                                 <CardHeader>
                                     <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -392,7 +384,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 </CardContent>
                             </Card>
 
-                            {/* Bento Tile 2: Selectable Interactive Calendar */}
+                            {/* Calendar Grid */}
                             <Card className="flex flex-col justify-between">
                                 <CardHeader className="pb-3">
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
@@ -400,7 +392,6 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                             <CalendarIcon className="h-4 w-4 text-primary" /> Daily Activity Calendar
                                         </CardTitle>
 
-                                        {/* Month Selector Controls */}
                                         <div className="flex items-center gap-1">
                                             <Button 
                                                 variant="outline" 
@@ -431,7 +422,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                         </div>
                                     </div>
                                     <CardDescription className="text-xs">
-                                        Daily income (<span className="text-emerald-600 font-semibold">+</span>) and expenses (<span className="text-rose-600 font-semibold">-</span>).
+                                        Click any day to view recorded transactions.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
@@ -444,12 +435,14 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                         {calendar.days?.map((dayObj, idx) => (
                                             <div key={idx} className="aspect-square flex items-center justify-center p-0.5">
                                                 {dayObj ? (
-                                                    <div
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setSelectedDayObj(dayObj)}
                                                         title={`${dayObj.date} | Income: ${formatCurrency(dayObj.income)} | Expense: ${formatCurrency(dayObj.expense)}`}
-                                                        className={`w-full h-full rounded-md flex flex-col items-center justify-between p-1 transition-all border ${
+                                                        className={`w-full h-full rounded-md flex flex-col items-center justify-between p-1 transition-all border cursor-pointer ${
                                                             dayObj.isToday 
                                                                 ? 'ring-2 ring-primary ring-offset-1 border-primary bg-primary/5' 
-                                                                : 'bg-card border-border/50 hover:bg-muted/50'
+                                                                : 'bg-card border-border/50 hover:bg-muted/80'
                                                         }`}
                                                     >
                                                         <span className="text-[10px] font-semibold text-muted-foreground self-start leading-none">
@@ -468,7 +461,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                                                 </span>
                                                             )}
                                                         </div>
-                                                    </div>
+                                                    </button>
                                                 ) : (
                                                     <div className="w-full h-full rounded-md bg-transparent" />
                                                 )}
@@ -478,7 +471,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 </CardContent>
                             </Card>
 
-                            {/* Bento Tile 3: Expense Category Distribution Bar Chart */}
+                            {/* Category Distribution Bar Chart */}
                             <Card className="lg:col-span-3">
                                 <CardHeader>
                                     <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -526,6 +519,13 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                         </div>
                     </main>
                 </SidebarInset>
+
+                {/* Dialog to view transactions for the clicked date */}
+                <DateTransactionsDialog
+                    open={!!selectedDayObj}
+                    onOpenChange={(open) => !open && setSelectedDayObj(null)}
+                    dayData={selectedDayObj}
+                />
             </SidebarProvider>
         </TooltipProvider>
     );

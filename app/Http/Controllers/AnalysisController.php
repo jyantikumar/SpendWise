@@ -59,7 +59,7 @@ class AnalysisController extends Controller
                 $q->where('type', $type);
             });
 
-        $transactions = $typeFilteredQuery->with(['category', 'account'])->get();
+        $transactions = $typeFilteredQuery->with(['category', 'account', 'destinationAccount'])->get();
 
         // 3. Period Summary KPIs
         $totalIncome  = (clone $baseQuery)->where('type', 'income')->sum('amount');
@@ -136,7 +136,7 @@ class AnalysisController extends Controller
             ->values()
             ->take(8);
 
-        // 6. Selectable Calendar Grid (Daily Income & Expenses)
+        // 6. Selectable Calendar Grid (Eager load relationships for detail modal)
         try {
             $calendarCarbon = Carbon::parse($calendarMonth)->startOfMonth();
         } catch (\Exception $e) {
@@ -154,6 +154,8 @@ class AnalysisController extends Controller
                         ->orWhere('destination_account_id', $accountId);
                 });
             })
+            ->with(['category', 'account', 'destinationAccount']) // 👈 Added eager loading here
+            ->orderBy('transaction_date', 'asc')
             ->get();
 
         $calendarDays   = [];
@@ -173,11 +175,12 @@ class AnalysisController extends Controller
             $expenseSum = $dayTransactions->where('type', 'expense')->sum('amount');
 
             $calendarDays[] = [
-                'dayNumber' => $day,
-                'date'      => $currentDateStr,
-                'income'    => (float) $incomeSum,
-                'expense'   => (float) $expenseSum,
-                'isToday'   => $currentDateStr === $today->format('Y-m-d'),
+                'dayNumber'    => $day,
+                'date'         => $currentDateStr,
+                'income'       => (float) $incomeSum,
+                'expense'      => (float) $expenseSum,
+                'isToday'      => $currentDateStr === $today->format('Y-m-d'),
+                'transactions' => $dayTransactions->values()->toArray(), // 👈 Passed transaction objects here
             ];
         }
 
