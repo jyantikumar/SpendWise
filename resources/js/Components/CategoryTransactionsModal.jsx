@@ -195,7 +195,6 @@ export default function CategoryTransactionsModal({
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>Date</TableHead>
-                                    <TableHead>Type</TableHead>
                                     <TableHead>Description</TableHead>
                                     <TableHead>Account</TableHead>
                                     <TableHead className="text-right">Amount</TableHead>
@@ -207,7 +206,6 @@ export default function CategoryTransactionsModal({
                                         <TableCell className="font-medium text-xs whitespace-nowrap">
                                             {tx.transaction_date ? String(tx.transaction_date).split('T')[0] : '—'}
                                         </TableCell>
-                                        <TableCell>{getTypeBadge(tx.type)}</TableCell>
                                         <TableCell className="max-w-[200px] truncate text-xs">
                                             {tx.description || <span className="text-muted-foreground italic">No description</span>}
                                         </TableCell>

@@ -9,7 +9,8 @@ import {
     BadgeCheck, 
     BadgeX,
     CreditCard,
-    CheckCircle2
+    CheckCircle2,
+    ListFilter
 } from 'lucide-react';
 
 import { AppSidebar } from '@/components/app-sidebar';
@@ -48,10 +49,16 @@ import {
     AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
 
-export default function AccountIndex({ auth, accounts = [], accountTypes = [] }) {
+import AccountTransactionsModal from '@/components/AccountTransactionsModal';
+
+export default function AccountIndex({ auth, accounts = [], accountTypes = [], categories = [] }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingAccount, setEditingAccount] = useState(null);
     const [deletingAccount, setDeletingAccount] = useState(null);
+
+    // Account Transactions Modal State
+    const [selectedAccount, setSelectedAccount] = useState(null);
+    const [isTxModalOpen, setIsTxModalOpen] = useState(false);
 
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         name: '',
@@ -91,6 +98,11 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
         });
 
         setIsModalOpen(true);
+    };
+
+    const openTransactionsModal = (account) => {
+        setSelectedAccount(account);
+        setIsTxModalOpen(true);
     };
 
     const handleSubmit = (e) => {
@@ -199,7 +211,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
                         <Card>
                             <CardHeader>
                                 <CardTitle>All Accounts</CardTitle>
-                                <CardDescription>View active balances and account classifications.</CardDescription>
+                                <CardDescription>View active balances and account classifications. Click an account row or action menu to view transactions.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Table>
@@ -215,7 +227,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
                                     <TableBody>
                                         {accounts.length > 0 ? (
                                             accounts.map((acc) => (
-                                                <TableRow key={acc.id}>
+                                                <TableRow key={acc.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openTransactionsModal(acc)}>
                                                     <TableCell className="font-medium">
                                                         <div className="flex items-center gap-3">
                                                             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-foreground">
@@ -246,7 +258,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
                                                     <TableCell className="text-right font-bold text-base">
                                                         {formatCurrency(acc.balance, acc.currency || 'PHP')}
                                                     </TableCell>
-                                                    <TableCell className="text-right">
+                                                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>
                                                                 <Button
@@ -258,6 +270,9 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
+                                                                <DropdownMenuItem onClick={() => openTransactionsModal(acc)} className="cursor-pointer">
+                                                                    <ListFilter className="mr-2 h-4 w-4" /> View Transactions
+                                                                </DropdownMenuItem>
                                                                 <DropdownMenuItem onClick={() => openEditModal(acc)} className="cursor-pointer">
                                                                     <Pencil className="mr-2 h-4 w-4" /> Edit
                                                                 </DropdownMenuItem>
@@ -285,6 +300,14 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
                         </Card>
                     </main>
 
+                    {/* Account Transactions Modal */}
+                    <AccountTransactionsModal
+                        isOpen={isTxModalOpen}
+                        onClose={() => setIsTxModalOpen(false)}
+                        account={selectedAccount}
+                        categories={categories}
+                    />
+
                     {/* Create / Edit Account Modal */}
                     <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                         <DialogContent className="sm:max-w-[480px]">
@@ -306,7 +329,6 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
                                     {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
                                 </div>
 
-                                {/* Dynamic Account Type Dropdown */}
                                 <div className="grid gap-2">
                                     <label className="text-sm font-medium">Account Type</label>
                                     <Select 
@@ -366,7 +388,6 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [] })
                                     </div>
                                 </div>
 
-                                {/* Enhanced Switch Container with Clear Active / Inactive Badge Feedback */}
                                 <div className="flex items-center justify-between border rounded-lg p-3">
                                     <div className="space-y-0.5">
                                         <div className="flex items-center gap-2">

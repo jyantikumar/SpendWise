@@ -42,7 +42,8 @@ Route::get('/categories/{category}/transactions', [CategoryController::class, 'c
     Route::post('/accounts', [AccountController::class, 'store'])->name('accounts.store');
     Route::put('/accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
     Route::delete('/accounts/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
-
+// Account Transactions Modal API Endpoint
+Route::get('/accounts/{account}/transactions', [AccountController::class, 'accountTransactions'])->name('accounts.transactions');
     // Account Type Routes
     Route::get('/account-types', [AccountTypeController::class, 'index'])->name('account-types.index');
     Route::post('/account-types', [AccountTypeController::class, 'store'])->name('account-types.store');
