@@ -389,7 +389,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 <CardHeader className="pb-3">
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                                         <CardTitle className="text-base font-semibold flex items-center gap-2">
-                                            <CalendarIcon className="h-4 w-4 text-primary" /> Daily Activity Calendar
+                                             Daily Activity Calendar
                                         </CardTitle>
 
                                         <div className="flex items-center gap-1">

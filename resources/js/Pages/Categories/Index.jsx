@@ -250,7 +250,7 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end">
                                                                 <DropdownMenuItem onClick={() => openTransactionsModal(cat)} className="cursor-pointer">
-                                                                    <ListFilter className="mr-2 h-4 w-4" /> View Transactions
+                                                                    <ListFilter className="mr-2 h-4 w-4" /> View
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem onClick={() => openEditModal(cat)} className="cursor-pointer">
                                                                     <Pencil className="mr-2 h-4 w-4" /> Edit
