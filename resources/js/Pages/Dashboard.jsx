@@ -29,8 +29,10 @@ import {
     DialogTitle 
 } from '@/components/ui/dialog';
 
-// Custom SVG Donut / Pie Chart Component
-function ExpensePieChart({ data = [], formatCurrency }) {
+import CategoryTransactionsModal from '@/components/CategoryTransactionsModal';
+
+// Custom Interactive Donut Chart with Click Handlers
+function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
     const [hoveredIndex, setHoveredIndex] = useState(null);
 
     const total = data.reduce((sum, item) => sum + (parseFloat(item.total) || 0), 0);
@@ -44,7 +46,6 @@ function ExpensePieChart({ data = [], formatCurrency }) {
         );
     }
 
-    // Angle calculation for SVG paths
     let cumulativeAngle = 0;
     const slices = data.map((item, index) => {
         const value = parseFloat(item.total) || 0;
@@ -90,7 +91,6 @@ function ExpensePieChart({ data = [], formatCurrency }) {
 
     return (
         <div className="flex flex-col sm:flex-row items-center gap-6">
-            {/* SVG Pie / Donut Canvas */}
             <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
                 <svg viewBox="0 0 200 200" className="w-full h-full">
                     {slices.map((slice, index) => (
@@ -100,16 +100,16 @@ function ExpensePieChart({ data = [], formatCurrency }) {
                             fill={slice.color}
                             className="transition-all duration-200 cursor-pointer hover:opacity-90"
                             style={{
-                                transform: hoveredIndex === index ? 'scale(1.04)' : 'scale(1)',
+                                transform: hoveredIndex === index ? 'scale(1.05)' : 'scale(1)',
                                 transformOrigin: '100px 100px',
                             }}
                             onMouseEnter={() => setHoveredIndex(index)}
                             onMouseLeave={() => setHoveredIndex(null)}
+                            onClick={() => onCategoryClick && onCategoryClick(slice)}
                         />
                     ))}
                 </svg>
 
-                {/* Center Content readout */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none p-2">
                     <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider truncate max-w-[90px]">
                         {activeItem ? activeItem.name : 'Total Expense'}
@@ -125,7 +125,6 @@ function ExpensePieChart({ data = [], formatCurrency }) {
                 </div>
             </div>
 
-            {/* Interactive Category Legend */}
             <div className="flex-1 w-full space-y-2 max-h-[190px] overflow-y-auto pr-1">
                 {slices.map((slice, index) => (
                     <div
@@ -135,6 +134,7 @@ function ExpensePieChart({ data = [], formatCurrency }) {
                         }`}
                         onMouseEnter={() => setHoveredIndex(index)}
                         onMouseLeave={() => setHoveredIndex(null)}
+                        onClick={() => onCategoryClick && onCategoryClick(slice)}
                     >
                         <div className="flex items-center gap-2 truncate pr-2">
                             <span
@@ -158,6 +158,10 @@ function ExpensePieChart({ data = [], formatCurrency }) {
 
 export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = [], categories = [], currentFilter }) {
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+    
+    // Category Drilldown Modal State
+    const [selectedCategory, setSelectedCategory] = useState(null);
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
     const formatCurrency = (val) => 
         new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
@@ -166,7 +170,33 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
         router.get(route('dashboard'), { range: value }, { preserveState: true });
     };
 
-    // Quick Transaction Form
+    // Calculate default dates for category modal based on current dashboard range
+    const getDateBoundaries = () => {
+        const today = new Date();
+        const formatDate = (d) => d.toISOString().split('T')[0];
+
+        if (currentFilter === 'last_30_days') {
+            const past = new Date();
+            past.setDate(today.getDate() - 30);
+            return { startDate: formatDate(past), endDate: formatDate(today) };
+        } else if (currentFilter === 'this_year') {
+            const yearStart = new Date(today.getFullYear(), 0, 1);
+            return { startDate: formatDate(yearStart), endDate: formatDate(today) };
+        } else {
+            // default: this_month
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            return { startDate: formatDate(monthStart), endDate: formatDate(today) };
+        }
+    };
+
+    const { startDate: initialModalStart, endDate: initialModalEnd } = getDateBoundaries();
+
+    const handleCategoryClick = (category) => {
+        setSelectedCategory(category);
+        setIsCategoryModalOpen(true);
+    };
+
+    // Quick Add Transaction Form
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         account_id: accounts[0]?.id ? String(accounts[0].id) : '',
         destination_account_id: '',
@@ -268,6 +298,19 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
 
                             <Card>
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                                    <CardTitle className="text-sm font-medium">Net Cash Flow</CardTitle>
+                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                </CardHeader>
+                                <CardContent>
+                                    <div className={`text-2xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                        {formatCurrency(kpis?.netCashFlow)}
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-1">Income minus expenses</p>
+                                </CardContent>
+                            </Card>
+
+                            <Card>
+                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium">Total Income</CardTitle>
                                     <TrendingUp className="h-4 w-4 text-emerald-500" />
                                 </CardHeader>
@@ -285,18 +328,6 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
                                 <CardContent>
                                     <div className="text-2xl font-bold text-rose-600">{formatCurrency(kpis?.totalExpense)}</div>
                                     <p className="text-xs text-muted-foreground mt-1">Spent this period</p>
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Net Cash Flow</CardTitle>
-                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className={`text-2xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                                        {formatCurrency(kpis?.netCashFlow)}
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-1">Income minus expenses</p>
                                 </CardContent>
                             </Card>
                         </div>
@@ -321,6 +352,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
                                         <TableHeader>
                                             <TableRow>
                                                 <TableHead>Account Name</TableHead>
+                                                <TableHead>Type</TableHead>
                                                 <TableHead className="text-right">Balance</TableHead>
                                             </TableRow>
                                         </TableHeader>
@@ -329,6 +361,7 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
                                                 accounts.map((acc) => (
                                                     <TableRow key={acc.id}>
                                                         <TableCell className="font-medium">{acc.name}</TableCell>
+                                                        <TableCell className="capitalize text-muted-foreground">{acc.type}</TableCell>
                                                         <TableCell className="text-right font-semibold">{formatCurrency(acc.balance)}</TableCell>
                                                     </TableRow>
                                                 ))
@@ -351,18 +384,29 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
                                         <PieChartIcon className="h-5 w-5 text-muted-foreground" />
                                         Expense Categories
                                     </CardTitle>
-                                    <CardDescription>Breakdown by spending category.</CardDescription>
+                                    <CardDescription>Click a slice or legend item to view transactions.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <ExpensePieChart 
                                         data={categoryBreakdown?.expense || []} 
                                         formatCurrency={formatCurrency} 
+                                        onCategoryClick={handleCategoryClick}
                                     />
                                 </CardContent>
                             </Card>
                         </div>
                     </main>
                 </SidebarInset>
+
+                {/* Category Transactions Modal */}
+                <CategoryTransactionsModal
+                    isOpen={isCategoryModalOpen}
+                    onClose={() => setIsCategoryModalOpen(false)}
+                    category={selectedCategory}
+                    accounts={accounts}
+                    initialStartDate={initialModalStart}
+                    initialEndDate={initialModalEnd}
+                />
 
                 {/* Quick Add Transaction Modal */}
                 <Dialog open={isTransactionModalOpen} onOpenChange={setIsTransactionModalOpen}>

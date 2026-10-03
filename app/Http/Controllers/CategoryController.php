@@ -3,8 +3,8 @@
 namespace App\Http\Controllers;
 
 use App\Models\Category;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class CategoryController extends Controller
@@ -14,7 +14,9 @@ class CategoryController extends Controller
      */
     public function index(Request $request)
     {
-        $categories = Category::where('user_id', $request->user()->id)
+        $user = $request->user();
+
+        $categories = Category::where('user_id', $user->id)
             ->withCount('transactions')
             ->orderBy('type')
             ->orderBy('name')
@@ -32,8 +34,8 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name'  => ['required', 'string', 'max:255'],
-            'type'  => ['required', Rule::in(['income', 'expense', 'transfer'])],
-            'color' => ['nullable', 'string', 'max:7'],
+            'type'  => ['required', 'in:income,expense'],
+            'color' => ['nullable', 'string', 'max:20'],
             'icon'  => ['nullable', 'string', 'max:50'],
         ]);
 
@@ -47,15 +49,14 @@ class CategoryController extends Controller
      */
     public function update(Request $request, Category $category)
     {
-        // Prevent updating categories belonging to other users
         if ($category->user_id !== $request->user()->id) {
             abort(403);
         }
 
         $validated = $request->validate([
             'name'  => ['required', 'string', 'max:255'],
-            'type'  => ['required', Rule::in(['income', 'expense', 'transfer'])],
-            'color' => ['nullable', 'string', 'max:7'],
+            'type'  => ['required', 'in:income,expense'],
+            'color' => ['nullable', 'string', 'max:20'],
             'icon'  => ['nullable', 'string', 'max:50'],
         ]);
 
@@ -76,5 +77,58 @@ class CategoryController extends Controller
         $category->delete();
 
         return back()->with('success', 'Category deleted successfully.');
+    }
+
+    /**
+     * Fetch filtered transactions for a specific category (returns JSON for modal).
+     */
+    public function categoryTransactions(Request $request, $categoryId)
+    {
+        $userId = $request->user()->id;
+
+        // Support Uncategorized (ID 0) vs standard Category models
+        if ((int) $categoryId === 0) {
+            $category = (object) [
+                'id'    => 0,
+                'name'  => 'Uncategorized',
+                'color' => '#94a3b8',
+            ];
+            $query = Transaction::where('user_id', $userId)->whereNull('category_id');
+        } else {
+            $category = Category::where('user_id', $userId)->findOrFail($categoryId);
+            $query = Transaction::where('user_id', $userId)->where('category_id', $category->id);
+        }
+
+        $search    = $request->input('search');
+        $accountId = $request->input('account_id');
+        $startDate = $request->input('start_date');
+        $endDate   = $request->input('end_date');
+
+        $transactions = $query
+            ->with(['account', 'destinationAccount', 'category'])
+            ->when($search, function ($q, $search) {
+                $q->where('description', 'like', "%{$search}%");
+            })
+            ->when($accountId && $accountId !== 'all', function ($q, $accountId) {
+                $q->where(function ($sub) use ($accountId) {
+                    $sub->where('account_id', $accountId)
+                        ->orWhere('destination_account_id', $accountId);
+                });
+            })
+            ->when($startDate, function ($q, $startDate) {
+                $q->whereDate('transaction_date', '>=', $startDate);
+            })
+            ->when($endDate, function ($q, $endDate) {
+                $q->whereDate('transaction_date', '<=', $endDate);
+            })
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->get();
+
+        return response()->json([
+            'category'     => $category,
+            'transactions' => $transactions,
+            'totalAmount'  => $transactions->sum('amount'),
+        ]);
     }
 }
