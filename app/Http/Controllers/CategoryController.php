@@ -10,9 +10,6 @@ use Inertia\Inertia;
 
 class CategoryController extends Controller
 {
-    /**
-     * Display a listing of user categories.
-     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -33,9 +30,6 @@ class CategoryController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created category.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -50,9 +44,6 @@ class CategoryController extends Controller
         return back()->with('success', 'Category created successfully.');
     }
 
-    /**
-     * Update the specified category.
-     */
     public function update(Request $request, Category $category)
     {
         if ($category->user_id !== $request->user()->id) {
@@ -71,9 +62,6 @@ class CategoryController extends Controller
         return back()->with('success', 'Category updated successfully.');
     }
 
-    /**
-     * Remove the specified category.
-     */
     public function destroy(Request $request, Category $category)
     {
         if ($category->user_id !== $request->user()->id) {
@@ -86,60 +74,73 @@ class CategoryController extends Controller
     }
 
     /**
-     * Fetch filtered transactions for a specific category (returns JSON for modal).
+     * Fetch paginated transactions for a specific category (JSON response).
      */
-  public function categoryTransactions(Request $request, $categoryId)
-{
-    $userId = $request->user()->id;
+    public function categoryTransactions(Request $request, $categoryId)
+    {
+        $userId = $request->user()->id;
 
-    if ((int) $categoryId === 0) {
-        $category = (object) [
-            'id'    => 0,
-            'name'  => 'Uncategorized',
-            'color' => '#94a3b8',
-        ];
-        $query = Transaction::where('user_id', $userId)->whereNull('category_id');
-    } else {
-        $category = Category::where('user_id', $userId)->select('id', 'name', 'color')->findOrFail($categoryId);
-        $query = Transaction::where('user_id', $userId)->where('category_id', $category->id);
-    }
+        if ((int) $categoryId === 0) {
+            $category = (object) [
+                'id'    => 0,
+                'name'  => 'Uncategorized',
+                'color' => '#94a3b8',
+            ];
+            $query = Transaction::where('user_id', $userId)->whereNull('category_id');
+        } else {
+            $category = Category::where('user_id', $userId)->select('id', 'name', 'color')->findOrFail($categoryId);
+            $query = Transaction::where('user_id', $userId)->where('category_id', $category->id);
+        }
 
-    $search    = $request->input('search');
-    $accountId = $request->input('account_id');
-    $startDate = $request->input('start_date');
-    $endDate   = $request->input('end_date');
+        $search    = $request->input('search');
+        $accountId = $request->input('account_id');
+        $startDate = $request->input('start_date');
+        $endDate   = $request->input('end_date');
 
-    $transactions = $query
-        ->select('id', 'user_id', 'account_id', 'destination_account_id', 'category_id', 'type', 'amount', 'description', 'transaction_date')
-        ->with([
-            'account:id,name', 
-            'destinationAccount:id,name', 
-            'category:id,name'
-        ])
-        ->when($search, function ($q, $search) {
-            $q->where('description', 'like', "%{$search}%");
-        })
-        ->when(!empty($accountId) && $accountId !== 'all', function ($q) use ($accountId) {
-            $id = (int) $accountId;
-            $q->where(function ($sub) use ($id) {
-                $sub->where('account_id', $id)
-                    ->orWhere('destination_account_id', $id);
+        // Filter base query for calculations
+        $filteredQuery = (clone $query)
+            ->when($search, function ($q, $search) {
+                $q->where('description', 'like', "%{$search}%");
+            })
+            ->when(!empty($accountId) && $accountId !== 'all', function ($q) use ($accountId) {
+                $id = (int) $accountId;
+                $q->where(function ($sub) use ($id) {
+                    $sub->where('account_id', $id)
+                        ->orWhere('destination_account_id', $id);
+                });
+            })
+            ->when($startDate, function ($q, $startDate) {
+                $q->whereDate('transaction_date', '>=', $startDate);
+            })
+            ->when($endDate, function ($q, $endDate) {
+                $q->whereDate('transaction_date', '<=', $endDate);
             });
-        })
-        ->when($startDate, function ($q, $startDate) {
-            $q->whereDate('transaction_date', '>=', $startDate);
-        })
-        ->when($endDate, function ($q, $endDate) {
-            $q->whereDate('transaction_date', '<=', $endDate);
-        })
-        ->orderBy('transaction_date', 'desc')
-        ->orderBy('id', 'desc')
-        ->get();
 
-    return response()->json([
-        'category'     => $category,
-        'transactions' => $transactions,
-        'totalAmount'  => $transactions->sum('amount'),
-    ]);
-}
+        $totalAmount = (clone $filteredQuery)->sum('amount');
+
+        // Paginate 8 items per page
+        $paginatedTransactions = $filteredQuery
+            ->select('id', 'user_id', 'account_id', 'destination_account_id', 'category_id', 'type', 'amount', 'description', 'transaction_date')
+            ->with([
+                'account:id,name', 
+                'destinationAccount:id,name', 
+                'category:id,name'
+            ])
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate(8);
+
+        return response()->json([
+            'category'     => $category,
+            'transactions' => $paginatedTransactions->items(),
+            'totalAmount'  => $totalAmount,
+            'pagination'   => [
+                'current_page' => $paginatedTransactions->currentPage(),
+                'last_page'    => $paginatedTransactions->lastPage(),
+                'from'         => $paginatedTransactions->firstItem(),
+                'to'           => $paginatedTransactions->lastItem(),
+                'total'        => $paginatedTransactions->total(),
+            ],
+        ]);
+    }
 }
