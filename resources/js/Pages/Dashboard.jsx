@@ -24,7 +24,7 @@ import {
     Dialog, 
     DialogContent, 
     DialogDescription, 
-    DialogFooter, 
+    DialogFooter,
     DialogHeader, 
     DialogTitle 
 } from '@/components/ui/dialog';
@@ -41,7 +41,7 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
         return (
             <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
                 <PieChartIcon className="h-10 w-10 stroke-1 text-muted-foreground/50 mb-2" />
-                <p className="text-sm">No expense records for this period.</p>
+                <p className="text-sm text-zinc-400">No expense records for this period.</p>
             </div>
         );
     }
@@ -113,14 +113,14 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
 
                 {/* Center Content readout */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none p-2">
-                    <span className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wider truncate max-w-[90px]">
+                    <span className="text-[10px] uppercase font-semibold text-zinc-400 tracking-wider truncate max-w-[90px]">
                         {activeItem ? activeItem.name : 'Total Expense'}
                     </span>
-                    <span className="text-sm font-bold tracking-tight">
+                    <span className="text-sm font-bold tracking-tight text-zinc-300">
                         {activeItem ? formatCurrency(activeItem.value) : formatCurrency(total)}
                     </span>
                     {activeItem && (
-                        <span className="text-[10px] text-muted-foreground font-medium">
+                        <span className="text-[10px] text-zinc-400 font-medium">
                             {activeItem.percentage.toFixed(1)}%
                         </span>
                     )}
@@ -144,13 +144,13 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
                                 className="h-2.5 w-2.5 rounded-full shrink-0"
                                 style={{ backgroundColor: slice.color }}
                             />
-                            <span className="truncate">{slice.name}</span>
+                            <span className="truncate text-zinc-300">{slice.name}</span>
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-muted-foreground text-[11px]">
+                            <span className="text-zinc-400 text-[11px]">
                                 {slice.percentage.toFixed(0)}%
                             </span>
-                            <span className="font-semibold">{formatCurrency(slice.value)}</span>
+                            <span className="font-semibold text-zinc-300">{formatCurrency(slice.value)}</span>
                         </div>
                     </div>
                 ))}
@@ -163,7 +163,7 @@ export default function Dashboard({
     auth, 
     kpis, 
     categoryBreakdown, 
-    todayTransactions = [], 
+    latestTransactions = [], 
     accounts = [], 
     categories = [], 
     currentFilter 
@@ -265,24 +265,24 @@ export default function Dashboard({
                 <AppSidebar user={auth.user} />
 
                 <SidebarInset>
-                    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                    <header className="flex h-16 shrink-0 items-center gap-2 border-b border-zinc-800 px-4">
                         <SidebarTrigger className="-ml-1" />
-                        <Separator orientation="vertical" className="mr-2 h-4" />
-                        <h1 className="text-lg font-semibold tracking-tight">Personal Dashboard</h1>
+                        <Separator orientation="vertical" className="mr-2 h-4 bg-zinc-800" />
+                        <h1 className="text-lg font-semibold tracking-tight text-zinc-200">Personal Dashboard</h1>
                     </header>
 
                     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div>
-                                <h2 className="text-2xl font-bold tracking-tight">Overview</h2>
-                                <p className="text-sm text-muted-foreground">Monitor your account balance and income against expenses.</p>
+                                <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Overview</h2>
+                                <p className="text-sm text-zinc-400">Monitor your account balance and income against expenses.</p>
                             </div>
 
                             <div className="flex items-center gap-3">
                                 {/* Only show Range filter when viewing Accounts */}
                                 {activeView !== 'transactions' && (
                                     <Select defaultValue={currentFilter} onValueChange={handleFilterChange}>
-                                        <SelectTrigger className="w-[160px] h-10">
+                                        <SelectTrigger className="w-[160px] h-10 border-zinc-800 text-zinc-300">
                                             <SlidersHorizontal className="mr-2 h-4 w-4" />
                                             <SelectValue placeholder="Range" />
                                         </SelectTrigger>
@@ -302,60 +302,60 @@ export default function Dashboard({
 
                         {/* KPI Cards */}
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                            <Card>
+                            <Card className="border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Total Balance</CardTitle>
-                                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                                    <CardTitle className="text-sm font-medium text-zinc-400">Total Balance</CardTitle>
+                                    <Wallet className="h-4 w-4 text-zinc-400" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{formatCurrency(kpis?.totalBalance)}</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Across all liquid accounts</p>
+                                    <div className="text-2xl font-bold text-zinc-200">{formatCurrency(kpis?.totalBalance)}</div>
+                                    <p className="text-xs text-zinc-400 mt-1">Across all liquid accounts</p>
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card className="border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Total Income</CardTitle>
+                                    <CardTitle className="text-sm font-medium text-zinc-400">Total Income</CardTitle>
                                     <TrendingUp className="h-4 w-4 text-emerald-500" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold text-emerald-600">{formatCurrency(kpis?.totalIncome)}</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Earned this period</p>
+                                    <div className="text-2xl font-bold text-emerald-500">{formatCurrency(kpis?.totalIncome)}</div>
+                                    <p className="text-xs text-zinc-400 mt-1">Earned this period</p>
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card className="border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Total Expenses</CardTitle>
+                                    <CardTitle className="text-sm font-medium text-zinc-400">Total Expenses</CardTitle>
                                     <TrendingDown className="h-4 w-4 text-rose-500" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold text-rose-600">{formatCurrency(kpis?.totalExpense)}</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Spent this period</p>
+                                    <div className="text-2xl font-bold text-rose-500">{formatCurrency(kpis?.totalExpense)}</div>
+                                    <p className="text-xs text-zinc-400 mt-1">Spent this period</p>
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card className="border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Net Cash Flow</CardTitle>
-                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                    <CardTitle className="text-sm font-medium text-zinc-400">Net Cash Flow</CardTitle>
+                                    <DollarSign className="h-4 w-4 text-zinc-400" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className={`text-2xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                    <div className={`text-2xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                                         {formatCurrency(kpis?.netCashFlow)}
                                     </div>
-                                    <p className="text-xs text-muted-foreground mt-1">Income minus expenses</p>
+                                    <p className="text-xs text-zinc-400 mt-1">Income minus expenses</p>
                                 </CardContent>
                             </Card>
                         </div>
 
                         {/* Combined Table & Category Breakdown Chart */}
                         <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-                            <Card className="xl:col-span-2">
+                            <Card className="xl:col-span-2 border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
                                     <div className="flex items-center gap-3">
                                         <Select value={activeView} onValueChange={setActiveView}>
-                                            <SelectTrigger className="w-[200px] h-9 font-semibold">
+                                            <SelectTrigger className="w-[200px] h-9 font-semibold border-zinc-800 text-zinc-300">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent>
@@ -363,14 +363,14 @@ export default function Dashboard({
                                                 <SelectItem value="accounts">Accounts</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <CardDescription className="hidden sm:inline">
+                                        <CardDescription className="hidden sm:inline text-zinc-400">
                                             {activeView === 'transactions' 
                                                 ? "Transactions logged for today's date." 
                                                 : 'Active financial accounts.'}
                                         </CardDescription>
                                     </div>
 
-                                    <Button asChild size="sm" variant="outline" className="gap-1">
+                                    <Button asChild size="sm" variant="outline" className="gap-1 border-zinc-800 text-zinc-300">
                                         <Link href={activeView === 'transactions' ? '/transactions' : '/accounts'}>
                                             View All
                                             <ArrowUpRight className="h-4 w-4" />
@@ -382,39 +382,30 @@ export default function Dashboard({
                                     {activeView === 'transactions' ? (
                                         <Table>
                                             <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Date</TableHead>
-                                                    <TableHead>Description</TableHead>
-                                                    <TableHead>Account / Category</TableHead>
-                                                    <TableHead className="text-right">Amount</TableHead>
+                                                <TableRow className="border-b border-zinc-800">
+                                                    <TableHead className="text-zinc-400">Date</TableHead>
+                                                    <TableHead className="text-zinc-400">Description</TableHead>
+                                                    <TableHead className="text-right text-zinc-400">Amount</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
-                                                {todayTransactions && todayTransactions.length > 0 ? (
-                                                    todayTransactions.map((tx) => (
-                                                        <TableRow key={tx.id}>
-                                                            <TableCell className="font-medium whitespace-nowrap text-xs">
+                                                {latestTransactions && latestTransactions.length > 0 ? (
+                                                    latestTransactions.map((tx) => (
+                                                        <TableRow key={tx.id} className="border-b border-zinc-800">
+                                                            <TableCell className="font-medium whitespace-nowrap text-xs text-zinc-300">
                                                                 {tx.transaction_date}
                                                             </TableCell>
                                                             <TableCell className="max-w-[180px] truncate">
-                                                                <span className="font-medium text-sm block truncate">
+                                                                <span className="font-medium text-sm block truncate text-zinc-300">
                                                                     {tx.description || 'No description'}
                                                                 </span>
                                                             </TableCell>
-                                                            <TableCell className="text-xs text-muted-foreground">
-                                                                <div>{tx.account?.name || 'Unknown Account'}</div>
-                                                                {tx.category && (
-                                                                    <div className="text-[11px] text-muted-foreground/80">
-                                                                        {tx.category.name}
-                                                                    </div>
-                                                                )}
-                                                            </TableCell>
                                                             <TableCell className={`text-right font-semibold text-sm ${
                                                                 tx.type === 'income' 
-                                                                    ? 'text-emerald-600' 
+                                                                    ? 'text-emerald-500' 
                                                                     : tx.type === 'expense' 
-                                                                        ? 'text-rose-600' 
-                                                                        : 'text-blue-600'
+                                                                        ? 'text-rose-500' 
+                                                                        : 'text-blue-400'
                                                             }`}>
                                                                 {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
                                                                 {formatCurrency(tx.amount)}
@@ -422,8 +413,8 @@ export default function Dashboard({
                                                         </TableRow>
                                                     ))
                                                 ) : (
-                                                    <TableRow>
-                                                        <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                                                    <TableRow className="border-b border-zinc-800">
+                                                        <TableCell colSpan={4} className="text-center text-zinc-400 py-6">
                                                             No transactions logged for today.
                                                         </TableCell>
                                                     </TableRow>
@@ -433,22 +424,22 @@ export default function Dashboard({
                                     ) : (
                                         <Table>
                                             <TableHeader>
-                                                <TableRow>
-                                                    <TableHead>Account Name</TableHead>
-                                                    <TableHead className="text-right">Balance</TableHead>
+                                                <TableRow className="border-b border-zinc-800">
+                                                    <TableHead className="text-zinc-400">Account Name</TableHead>
+                                                    <TableHead className="text-right text-zinc-400">Balance</TableHead>
                                                 </TableRow>
                                             </TableHeader>
                                             <TableBody>
                                                 {accounts && accounts.length > 0 ? (
                                                     accounts.map((acc) => (
-                                                        <TableRow key={acc.id}>
-                                                            <TableCell className="font-medium">{acc.name}</TableCell>
-                                                            <TableCell className="text-right font-semibold">{formatCurrency(acc.balance)}</TableCell>
+                                                        <TableRow key={acc.id} className="border-b border-zinc-800">
+                                                            <TableCell className="font-medium text-zinc-300">{acc.name}</TableCell>
+                                                            <TableCell className="text-right font-semibold text-zinc-300">{formatCurrency(acc.balance)}</TableCell>
                                                         </TableRow>
                                                     ))
                                                 ) : (
-                                                    <TableRow>
-                                                        <TableCell colSpan={2} className="text-center text-muted-foreground py-6">
+                                                    <TableRow className="border-b border-zinc-800">
+                                                        <TableCell colSpan={2} className="text-center text-zinc-400 py-6">
                                                             No accounts created yet.
                                                         </TableCell>
                                                     </TableRow>
@@ -460,13 +451,13 @@ export default function Dashboard({
                             </Card>
 
                             {/* Expense Category Pie / Donut Chart */}
-                            <Card>
+                            <Card className="border-zinc-800">
                                 <CardHeader>
-                                    <CardTitle className="flex items-center gap-2">
-                                        <PieChartIcon className="h-5 w-5 text-muted-foreground" />
+                                    <CardTitle className="flex items-center gap-2 text-zinc-200">
+                                        <PieChartIcon className="h-5 w-5 text-zinc-400" />
                                         Expense Categories
                                     </CardTitle>
-                                    <CardDescription>Click a slice or legend item to view transactions.</CardDescription>
+                                    <CardDescription className="text-zinc-400">Click a slice or legend item to view transactions.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <ExpensePieChart 
