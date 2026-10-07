@@ -147,17 +147,17 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                 <AppSidebar user={auth.user} />
 
                 <SidebarInset>
-                    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                    <header className="flex h-16 shrink-0 items-center gap-2 border-b border-zinc-800 px-4">
                         <SidebarTrigger className="-ml-1" />
-                        <Separator orientation="vertical" className="mr-2 h-4" />
-                        <h1 className="text-lg font-semibold tracking-tight">Account Management</h1>
+                        <Separator orientation="vertical" className="mr-2 h-4 bg-zinc-800" />
+                        <h1 className="text-lg font-semibold tracking-tight text-zinc-200">Account Management</h1>
                     </header>
 
                     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div>
-                                <h2 className="text-2xl font-bold tracking-tight">Accounts & Assets</h2>
-                                <p className="text-sm text-muted-foreground">
+                                <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Accounts & Assets</h2>
+                                <p className="text-sm text-zinc-400">
                                     Manage your bank accounts, wallets, credit cards, and custom liquidity sources.
                                 </p>
                             </div>
@@ -169,36 +169,36 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
 
                         {/* KPI Summary */}
                         <div className="grid gap-4 md:grid-cols-3">
-                            <Card>
+                            <Card className="border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Total Portfolio Balance</CardTitle>
-                                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                                    <CardTitle className="text-sm font-medium text-zinc-400">Total Portfolio Balance</CardTitle>
+                                    <Wallet className="h-4 w-4 text-zinc-400" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{formatCurrency(totalPortfolioBalance)}</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Across all active accounts</p>
+                                    <div className="text-2xl font-bold text-zinc-200">{formatCurrency(totalPortfolioBalance)}</div>
+                                    <p className="text-xs text-zinc-400 mt-1">Across all active accounts</p>
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card className="border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Total Accounts</CardTitle>
-                                    <CreditCard className="h-4 w-4 text-muted-foreground" />
+                                    <CardTitle className="text-sm font-medium text-zinc-400">Total Accounts</CardTitle>
+                                    <CreditCard className="h-4 w-4 text-zinc-400" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{accounts.length}</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Registered financial accounts</p>
+                                    <div className="text-2xl font-bold text-zinc-200">{accounts.length}</div>
+                                    <p className="text-xs text-zinc-400 mt-1">Registered financial accounts</p>
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card className="border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Active Accounts</CardTitle>
+                                    <CardTitle className="text-sm font-medium text-zinc-400">Active Accounts</CardTitle>
                                     <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold text-emerald-600">{activeAccountCount}</div>
-                                    <p className="text-xs text-muted-foreground mt-1">
+                                    <div className="text-2xl font-bold text-emerald-500">{activeAccountCount}</div>
+                                    <p className="text-xs text-zinc-400 mt-1">
                                         {inactiveAccountCount > 0 
                                             ? `${inactiveAccountCount} inactive ${inactiveAccountCount === 1 ? 'account' : 'accounts'}` 
                                             : 'All accounts active'}
@@ -208,54 +208,54 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                         </div>
 
                         {/* Accounts List Table */}
-                        <Card>
+                        <Card className="border-zinc-800">
                             <CardHeader>
-                                <CardTitle>All Accounts</CardTitle>
-                                <CardDescription>View active balances and account classifications. Click an account row or action menu to view transactions.</CardDescription>
+                                <CardTitle className="text-zinc-200">All Accounts</CardTitle>
+                                <CardDescription className="text-zinc-400">View active balances and account classifications. Click an account row or action menu to view transactions.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Table>
                                     <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Account Name</TableHead>
-                                            <TableHead>Type</TableHead>
-                                            <TableHead>Status</TableHead>
-                                            <TableHead className="text-right">Current Balance</TableHead>
-                                            <TableHead className="text-right">Actions</TableHead>
+                                        <TableRow className="border-b border-zinc-800">
+                                            <TableHead className="text-zinc-400">Account Name</TableHead>
+                                            <TableHead className="text-zinc-400">Type</TableHead>
+                                            <TableHead className="text-zinc-400">Status</TableHead>
+                                            <TableHead className="text-right text-zinc-400">Current Balance</TableHead>
+                                            <TableHead className="text-right text-zinc-400">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {accounts.length > 0 ? (
                                             accounts.map((acc) => (
-                                                <TableRow key={acc.id} className="cursor-pointer hover:bg-muted/50" onClick={() => openTransactionsModal(acc)}>
+                                                <TableRow key={acc.id} className="cursor-pointer hover:bg-muted/50 border-b border-zinc-800 transition-colors" onClick={() => openTransactionsModal(acc)}>
                                                     <TableCell className="font-medium">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-foreground">
+                                                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700">
                                                                 <Wallet className="h-4 w-4" />
                                                             </div>
                                                             <div>
-                                                                <div className="font-semibold">{acc.name}</div>
-                                                                <div className="text-xs text-muted-foreground">{acc.currency || 'PHP'}</div>
+                                                                <div className="font-semibold text-zinc-200">{acc.name}</div>
+                                                                <div className="text-xs text-zinc-400">{acc.currency || 'PHP'}</div>
                                                             </div>
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>
-                                                        <Badge variant="outline">
+                                                        <Badge variant="outline" className="border-zinc-800 text-zinc-300">
                                                             {acc.type}
                                                         </Badge>
                                                     </TableCell>
                                                     <TableCell>
                                                         {acc.is_active ? (
-                                                            <Badge className="bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 border-emerald-500/20 gap-1">
+                                                            <Badge className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/20 gap-1">
                                                                 <BadgeCheck className="h-3 w-3" /> Active
                                                             </Badge>
                                                         ) : (
-                                                            <Badge variant="secondary" className="gap-1 text-muted-foreground">
+                                                            <Badge variant="secondary" className="gap-1 text-zinc-400 border-zinc-800">
                                                                 <BadgeX className="h-3 w-3" /> Inactive
                                                             </Badge>
                                                         )}
                                                     </TableCell>
-                                                    <TableCell className="text-right font-bold text-base">
+                                                    <TableCell className="text-right font-bold text-base text-zinc-200">
                                                         {formatCurrency(acc.balance, acc.currency || 'PHP')}
                                                     </TableCell>
                                                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -264,23 +264,23 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                                                 <Button
                                                                     variant="ghost"
                                                                     size="icon-sm"
-                                                                    className="h-8 w-8 p-0"
+                                                                    className="h-8 w-8 p-0 text-zinc-400 hover:text-zinc-200"
                                                                 >
                                                                     <MoreHorizontal className="h-4 w-4" />
                                                                 </Button>
                                                             </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onClick={() => openTransactionsModal(acc)} className="cursor-pointer">
-                                                                    <ListFilter className="mr-2 h-4 w-4" /> View
+                                                            <DropdownMenuContent align="end" className="border-zinc-800 bg-background text-zinc-300">
+                                                                <DropdownMenuItem onClick={() => openTransactionsModal(acc)} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800">
+                                                                    <ListFilter className="mr-2 h-4 w-4 text-zinc-400" /> View
                                                                 </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => openEditModal(acc)} className="cursor-pointer">
-                                                                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                                <DropdownMenuItem onClick={() => openEditModal(acc)} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800">
+                                                                    <Pencil className="mr-2 h-4 w-4 text-zinc-400" /> Edit
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem 
                                                                     onClick={() => setDeletingAccount(acc)} 
-                                                                    className="text-destructive cursor-pointer"
+                                                                    className="text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30 cursor-pointer"
                                                                 >
-                                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                                    <Trash2 className="mr-2 h-4 w-4 text-rose-400" /> Delete
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
@@ -288,8 +288,8 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                                 </TableRow>
                                             ))
                                         ) : (
-                                            <TableRow>
-                                                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                                            <TableRow className="border-b border-zinc-800">
+                                                <TableCell colSpan={5} className="text-center py-8 text-zinc-400">
                                                     No accounts created yet. Click "Add Account" to get started.
                                                 </TableCell>
                                             </TableRow>
@@ -326,7 +326,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                         value={data.name}
                                         onChange={(e) => setData('name', e.target.value)}
                                     />
-                                    {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+                                    {errors.name && <p className="text-xs text-rose-500">{errors.name}</p>}
                                 </div>
 
                                 <div className="grid gap-2">
@@ -335,7 +335,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                         value={data.type} 
                                         onValueChange={(value) => setData('type', value)}
                                     >
-                                        <SelectTrigger className="w-full h-10">
+                                        <SelectTrigger className="w-full h-10 border-zinc-800 text-zinc-300">
                                             <SelectValue placeholder="Select account type" />
                                         </SelectTrigger>
                                         <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
@@ -360,7 +360,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                             )}
                                         </SelectContent>
                                     </Select>
-                                    {errors.type && <p className="text-xs text-destructive">{errors.type}</p>}
+                                    {errors.type && <p className="text-xs text-rose-500">{errors.type}</p>}
                                 </div>
 
                                 <div className="grid grid-cols-2 gap-4">
@@ -372,7 +372,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                             value={data.balance}
                                             onChange={(e) => setData('balance', e.target.value)}
                                         />
-                                        {errors.balance && <p className="text-xs text-destructive">{errors.balance}</p>}
+                                        {errors.balance && <p className="text-xs text-rose-500">{errors.balance}</p>}
                                     </div>
 
                                     <div className="grid gap-2">
@@ -384,25 +384,25 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                             value={data.currency}
                                             onChange={(e) => setData('currency', e.target.value.toUpperCase())}
                                         />
-                                        {errors.currency && <p className="text-xs text-destructive">{errors.currency}</p>}
+                                        {errors.currency && <p className="text-xs text-rose-500">{errors.currency}</p>}
                                     </div>
                                 </div>
 
-                                <div className="flex items-center justify-between border rounded-lg p-3">
+                                <div className="flex items-center justify-between border border-zinc-800 rounded-lg p-3 bg-muted/20">
                                     <div className="space-y-0.5">
                                         <div className="flex items-center gap-2">
                                             <label className="text-sm font-medium">Active Status</label>
                                             {data.is_active ? (
-                                                <Badge className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 gap-1 text-[11px] px-2 py-0">
+                                                <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 gap-1 text-[11px] px-2 py-0">
                                                     <BadgeCheck className="h-3 w-3" /> Active
                                                 </Badge>
                                             ) : (
-                                                <Badge variant="secondary" className="gap-1 text-muted-foreground text-[11px] px-2 py-0">
+                                                <Badge variant="secondary" className="gap-1 text-zinc-400 border-zinc-800 text-[11px] px-2 py-0">
                                                     <BadgeX className="h-3 w-3" /> Inactive
                                                 </Badge>
                                             )}
                                         </div>
-                                        <p className="text-xs text-muted-foreground">Include in overall portfolio balance</p>
+                                        <p className="text-xs text-zinc-400">Include in overall portfolio balance</p>
                                     </div>
                                     <Switch
                                         checked={data.is_active}
@@ -438,7 +438,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700 text-white">
                                     Delete
                                 </AlertDialogAction>
                             </AlertDialogFooter>

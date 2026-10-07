@@ -5,7 +5,6 @@ import {
     MoreHorizontal, 
     Pencil, 
     Trash2, 
-    Tag, 
     ArrowUpCircle, 
     ArrowDownCircle, 
     ArrowLeftRight,
@@ -132,24 +131,24 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
         switch (type) {
             case 'income':
                 return (
-                    <Badge variant="outline" className="border-emerald-500 text-emerald-600 gap-1">
+                    <Badge variant="outline" className="border-emerald-500/30 bg-emerald-500/10 text-emerald-400 gap-1">
                         <ArrowUpCircle className="h-3 w-3" /> Income
                     </Badge>
                 );
             case 'expense':
                 return (
-                    <Badge variant="outline" className="border-rose-500 text-rose-600 gap-1">
+                    <Badge variant="outline" className="border-rose-500/30 bg-rose-500/10 text-rose-400 gap-1">
                         <ArrowDownCircle className="h-3 w-3" /> Expense
                     </Badge>
                 );
             case 'transfer':
                 return (
-                    <Badge variant="outline" className="border-blue-500 text-blue-600 gap-1">
+                    <Badge variant="outline" className="border-blue-500/30 bg-blue-500/10 text-blue-400 gap-1">
                         <ArrowLeftRight className="h-3 w-3" /> Transfer
                     </Badge>
                 );
             default:
-                return <Badge>{type}</Badge>;
+                return <Badge variant="outline" className="border-zinc-800 text-zinc-300">{type}</Badge>;
         }
     };
 
@@ -161,18 +160,18 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                 <AppSidebar user={auth.user} />
 
                 <SidebarInset>
-                    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                    <header className="flex h-16 shrink-0 items-center gap-2 border-b border-zinc-800 px-4">
                         <SidebarTrigger className="-ml-1" />
-                        <Separator orientation="vertical" className="mr-2 h-4" />
-                        <h1 className="text-lg font-semibold tracking-tight">Category Management</h1>
+                        <Separator orientation="vertical" className="mr-2 h-4 bg-zinc-800" />
+                        <h1 className="text-lg font-semibold tracking-tight text-zinc-200">Category Management</h1>
                     </header>
 
                     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
                         {/* Header Controls */}
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div>
-                                <h2 className="text-2xl font-bold tracking-tight">Categories</h2>
-                                <p className="text-sm text-muted-foreground">
+                                <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Categories</h2>
+                                <p className="text-sm text-zinc-400">
                                     Organize your cash flow into custom income, expense, and transfer categories.
                                 </p>
                             </div>
@@ -183,23 +182,23 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                         </div>
 
                         {/* Category Table Card */}
-                        <Card>
+                        <Card className="border-zinc-800">
                             <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                                 <div>
-                                    <CardTitle>All Categories</CardTitle>
-                                    <CardDescription>Click any row to view transactions recorded under that category.</CardDescription>
+                                    <CardTitle className="text-zinc-200">All Categories</CardTitle>
+                                    <CardDescription className="text-zinc-400">Click any row to view transactions recorded under that category.</CardDescription>
                                 </div>
 
                                 {/* Type Filter Buttons */}
-                                <div className="flex items-center gap-1 bg-muted p-1 rounded-lg text-xs">
+                                <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-1 rounded-lg text-xs">
                                     {['all', 'expense', 'income', 'transfer'].map((tab) => (
                                         <button
                                             key={tab}
                                             onClick={() => setSelectedTab(tab)}
                                             className={`px-3 py-1.5 rounded-md font-medium capitalize transition-colors ${
                                                 selectedTab === tab
-                                                    ? 'bg-background text-foreground shadow-sm'
-                                                    : 'text-muted-foreground hover:text-foreground'
+                                                    ? 'bg-zinc-800 text-zinc-100 shadow-sm'
+                                                    : 'text-zinc-400 hover:text-zinc-200'
                                             }`}
                                         >
                                             {tab}
@@ -210,11 +209,11 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                             <CardContent>
                                 <Table>
                                     <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Category Name</TableHead>
-                                            <TableHead>Type</TableHead>
-                                            <TableHead>Transactions Count</TableHead>
-                                            <TableHead className="text-right">Actions</TableHead>
+                                        <TableRow className="border-b border-zinc-800">
+                                            <TableHead className="text-zinc-400">Category Name</TableHead>
+                                            <TableHead className="text-zinc-400">Type</TableHead>
+                                            <TableHead className="text-zinc-400">Transactions Count</TableHead>
+                                            <TableHead className="text-right text-zinc-400">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -222,10 +221,10 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                             filteredCategories.map((cat) => (
                                                 <TableRow 
                                                     key={cat.id}
-                                                    className="cursor-pointer hover:bg-muted/60 transition-colors"
+                                                    className="cursor-pointer hover:bg-muted/50 border-b border-zinc-800 transition-colors"
                                                     onClick={() => openTransactionsModal(cat)}
                                                 >
-                                                    <TableCell className="font-medium">
+                                                    <TableCell className="font-medium text-zinc-300">
                                                         <div className="flex items-center gap-3">
                                                             <div 
                                                                 className="h-3.5 w-3.5 rounded-full shrink-0" 
@@ -235,7 +234,7 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>{renderTypeBadge(cat.type)}</TableCell>
-                                                    <TableCell className="text-muted-foreground">
+                                                    <TableCell className="text-zinc-400">
                                                         {cat.transactions_count || 0} transactions
                                                     </TableCell>
                                                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
@@ -243,23 +242,23 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                                             <DropdownMenuTrigger asChild>
                                                                 <button 
                                                                     type="button"
-                                                                    className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground outline-none transition-colors"
+                                                                    className="h-8 w-8 inline-flex items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 outline-none transition-colors"
                                                                 >
                                                                     <MoreHorizontal className="h-4 w-4" />
                                                                 </button>
                                                             </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onClick={() => openTransactionsModal(cat)} className="cursor-pointer">
-                                                                    <ListFilter className="mr-2 h-4 w-4" /> View
+                                                            <DropdownMenuContent align="end" className="border-zinc-800 bg-background text-zinc-300">
+                                                                <DropdownMenuItem onClick={() => openTransactionsModal(cat)} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800">
+                                                                    <ListFilter className="mr-2 h-4 w-4 text-zinc-400" /> View
                                                                 </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => openEditModal(cat)} className="cursor-pointer">
-                                                                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                                <DropdownMenuItem onClick={() => openEditModal(cat)} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800">
+                                                                    <Pencil className="mr-2 h-4 w-4 text-zinc-400" /> Edit
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem 
                                                                     onClick={() => setDeletingCategory(cat)} 
-                                                                    className="text-destructive cursor-pointer"
+                                                                    className="text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30 cursor-pointer"
                                                                 >
-                                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                                    <Trash2 className="mr-2 h-4 w-4 text-rose-400" /> Delete
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
@@ -267,8 +266,8 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                                 </TableRow>
                                             ))
                                         ) : (
-                                            <TableRow>
-                                                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
+                                            <TableRow className="border-b border-zinc-800">
+                                                <TableCell colSpan={4} className="text-center py-8 text-zinc-400">
                                                     No categories found for the selected filter.
                                                 </TableCell>
                                             </TableRow>
@@ -307,7 +306,7 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                         value={data.name}
                                         onChange={(e) => setData('name', e.target.value)}
                                     />
-                                    {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+                                    {errors.name && <p className="text-xs text-rose-500">{errors.name}</p>}
                                 </div>
 
                                 <div className="grid gap-2">
@@ -316,7 +315,7 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                         value={data.type} 
                                         onValueChange={(val) => setData('type', val)}
                                     >
-                                        <SelectTrigger>
+                                        <SelectTrigger className="border-zinc-800 text-zinc-300">
                                             <SelectValue placeholder="Select type" />
                                         </SelectTrigger>
                                         <SelectContent>
@@ -325,7 +324,7 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                             <SelectItem value="transfer">Transfer</SelectItem>
                                         </SelectContent>
                                     </Select>
-                                    {errors.type && <p className="text-xs text-destructive">{errors.type}</p>}
+                                    {errors.type && <p className="text-xs text-rose-500">{errors.type}</p>}
                                 </div>
 
                                 {/* Preset Color Picker */}
@@ -338,13 +337,13 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                                 type="button"
                                                 onClick={() => setData('color', color)}
                                                 className={`h-6 w-6 rounded-full transition-transform ${
-                                                    data.color === color ? 'scale-125 ring-2 ring-primary ring-offset-2' : ''
+                                                    data.color === color ? 'scale-125 ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
                                                 }`}
                                                 style={{ backgroundColor: color }}
                                             />
                                         ))}
                                     </div>
-                                    {errors.color && <p className="text-xs text-destructive">{errors.color}</p>}
+                                    {errors.color && <p className="text-xs text-rose-500">{errors.color}</p>}
                                 </div>
 
                                 <DialogFooter>
@@ -375,7 +374,7 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700 text-white">
                                     Delete Category
                                 </AlertDialogAction>
                             </AlertDialogFooter>

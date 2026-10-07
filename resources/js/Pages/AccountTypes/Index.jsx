@@ -103,17 +103,17 @@ export default function AccountTypeIndex({ auth, accountTypes }) {
                 <AppSidebar user={auth.user} />
 
                 <SidebarInset>
-                    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                    <header className="flex h-16 shrink-0 items-center gap-2 border-b border-zinc-800 px-4">
                         <SidebarTrigger className="-ml-1" />
-                        <Separator orientation="vertical" className="mr-2 h-4" />
-                        <h1 className="text-lg font-semibold tracking-tight">Account Types</h1>
+                        <Separator orientation="vertical" className="mr-2 h-4 bg-zinc-800" />
+                        <h1 className="text-lg font-semibold tracking-tight text-zinc-200">Account Types</h1>
                     </header>
 
                     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                             <div>
-                                <h2 className="text-2xl font-bold tracking-tight">Custom Account Types</h2>
-                                <p className="text-sm text-muted-foreground">
+                                <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Custom Account Types</h2>
+                                <p className="text-sm text-zinc-400">
                                     Define asset classes, banking types, and wallet classifications for your accounts.
                                 </p>
                             </div>
@@ -123,25 +123,25 @@ export default function AccountTypeIndex({ auth, accountTypes }) {
                             </Button>
                         </div>
 
-                        <Card>
+                        <Card className="border-zinc-800">
                             <CardHeader>
-                                <CardTitle>All Account Types</CardTitle>
-                                <CardDescription>Manage classifications and color badges.</CardDescription>
+                                <CardTitle className="text-zinc-200">All Account Types</CardTitle>
+                                <CardDescription className="text-zinc-400">Manage classifications and color badges.</CardDescription>
                             </CardHeader>
                             <CardContent>
                                 <Table>
                                     <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Type Name</TableHead>
-                                            <TableHead>Linked Accounts</TableHead>
-                                            <TableHead className="text-right">Actions</TableHead>
+                                        <TableRow className="border-b border-zinc-800">
+                                            <TableHead className="text-zinc-400">Type Name</TableHead>
+                                            <TableHead className="text-zinc-400">Linked Accounts</TableHead>
+                                            <TableHead className="text-right text-zinc-400">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
                                         {accountTypes && accountTypes.length > 0 ? (
                                             accountTypes.map((type) => (
-                                                <TableRow key={type.id}>
-                                                    <TableCell className="font-medium">
+                                                <TableRow key={type.id} className="border-b border-zinc-800 transition-colors hover:bg-muted/50">
+                                                    <TableCell className="font-medium text-zinc-300">
                                                         <div className="flex items-center gap-3">
                                                             <div 
                                                                 className="h-3.5 w-3.5 rounded-full" 
@@ -150,7 +150,7 @@ export default function AccountTypeIndex({ auth, accountTypes }) {
                                                             <span>{type.name}</span>
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell className="text-muted-foreground">
+                                                    <TableCell className="text-zinc-400">
                                                         {type.accounts_count || 0} accounts
                                                     </TableCell>
                                                     <TableCell className="text-right">
@@ -158,20 +158,20 @@ export default function AccountTypeIndex({ auth, accountTypes }) {
                                                             <DropdownMenuTrigger asChild>
                                                                 <button
                                                                     type="button"
-                                                                    className="h-8 w-8 inline-flex items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground outline-none"
+                                                                    className="h-8 w-8 inline-flex items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 outline-none transition-colors"
                                                                 >
                                                                     <MoreHorizontal className="h-4 w-4" />
                                                                 </button>
                                                             </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end">
-                                                                <DropdownMenuItem onClick={() => openEditModal(type)} className="cursor-pointer">
-                                                                    <Pencil className="mr-2 h-4 w-4" /> Edit
+                                                            <DropdownMenuContent align="end" className="border-zinc-800 bg-background text-zinc-300">
+                                                                <DropdownMenuItem onClick={() => openEditModal(type)} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800">
+                                                                    <Pencil className="mr-2 h-4 w-4 text-zinc-400" /> Edit
                                                                 </DropdownMenuItem>
                                                                 <DropdownMenuItem 
                                                                     onClick={() => setDeletingType(type)} 
-                                                                    className="text-destructive cursor-pointer"
+                                                                    className="text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30 cursor-pointer"
                                                                 >
-                                                                    <Trash2 className="mr-2 h-4 w-4" /> Delete
+                                                                    <Trash2 className="mr-2 h-4 w-4 text-rose-400" /> Delete
                                                                 </DropdownMenuItem>
                                                             </DropdownMenuContent>
                                                         </DropdownMenu>
@@ -179,8 +179,8 @@ export default function AccountTypeIndex({ auth, accountTypes }) {
                                                 </TableRow>
                                             ))
                                         ) : (
-                                            <TableRow>
-                                                <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
+                                            <TableRow className="border-b border-zinc-800">
+                                                <TableCell colSpan={3} className="text-center py-8 text-zinc-400">
                                                     No account types created yet.
                                                 </TableCell>
                                             </TableRow>
@@ -209,7 +209,7 @@ export default function AccountTypeIndex({ auth, accountTypes }) {
                                         value={data.name}
                                         onChange={(e) => setData('name', e.target.value)}
                                     />
-                                    {errors.name && <p className="text-xs text-destructive">{errors.name}</p>}
+                                    {errors.name && <p className="text-xs text-rose-500">{errors.name}</p>}
                                 </div>
 
                                 <div className="grid gap-2">
@@ -221,13 +221,13 @@ export default function AccountTypeIndex({ auth, accountTypes }) {
                                                 type="button"
                                                 onClick={() => setData('color', color)}
                                                 className={`h-6 w-6 rounded-full transition-transform ${
-                                                    data.color === color ? 'scale-125 ring-2 ring-primary ring-offset-2' : ''
+                                                    data.color === color ? 'scale-125 ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
                                                 }`}
                                                 style={{ backgroundColor: color }}
                                             />
                                         ))}
                                     </div>
-                                    {errors.color && <p className="text-xs text-destructive">{errors.color}</p>}
+                                    {errors.color && <p className="text-xs text-rose-500">{errors.color}</p>}
                                 </div>
 
                                 <DialogFooter>
@@ -258,7 +258,7 @@ export default function AccountTypeIndex({ auth, accountTypes }) {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700 text-white">
                                     Delete
                                 </AlertDialogAction>
                             </AlertDialogFooter>
