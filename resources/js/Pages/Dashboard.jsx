@@ -166,7 +166,8 @@ export default function Dashboard({
     latestTransactions = [], 
     accounts = [], 
     categories = [], 
-    currentFilter = 'this_day'
+    currentFilter = 'this_day',
+    customDates = {}
 }) {
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
     const [activeView, setActiveView] = useState('transactions');
@@ -174,11 +175,33 @@ export default function Dashboard({
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
+    // Custom Date Range State
+    const [startDateInput, setStartDateInput] = useState(customDates.startDate || '');
+    const [endDateInput, setEndDateInput] = useState(customDates.endDate || '');
+
     const formatCurrency = (val) => 
         new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
 
     const handleFilterChange = (value) => {
-        router.get(route('dashboard'), { range: value }, { preserveState: true });
+        if (value === 'custom') {
+            router.get(route('dashboard'), { 
+                range: 'custom',
+                start_date: startDateInput,
+                end_date: endDateInput
+            }, { preserveState: true });
+        } else {
+            router.get(route('dashboard'), { range: value }, { preserveState: true });
+        }
+    };
+
+    const handleApplyCustomDates = () => {
+        if (startDateInput && endDateInput) {
+            router.get(route('dashboard'), { 
+                range: 'custom', 
+                start_date: startDateInput, 
+                end_date: endDateInput 
+            }, { preserveState: true });
+        }
     };
 
     const getDateBoundaries = () => {
@@ -187,6 +210,10 @@ export default function Dashboard({
 
         if (currentFilter === 'this_day') {
             return { startDate: formatDate(today), endDate: formatDate(today) };
+        } else if (currentFilter === 'this_week') {
+            const first = today.getDate() - today.getDay();
+            const last = first + 6;
+            return { startDate: formatDate(new Date(today.setDate(first))), endDate: formatDate(new Date(today.setDate(last))) };
         } else if (currentFilter === 'last_30_days') {
             const past = new Date();
             past.setDate(today.getDate() - 30);
@@ -194,6 +221,8 @@ export default function Dashboard({
         } else if (currentFilter === 'this_year') {
             const yearStart = new Date(today.getFullYear(), 0, 1);
             return { startDate: formatDate(yearStart), endDate: formatDate(today) };
+        } else if (currentFilter === 'custom') {
+            return { startDate: startDateInput, endDate: endDateInput };
         } else {
             const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
             return { startDate: formatDate(monthStart), endDate: formatDate(today) };
@@ -274,23 +303,48 @@ export default function Dashboard({
                                 <p className="text-sm text-zinc-400">Monitor your account balance and income against expenses.</p>
                             </div>
 
-                            <div className="flex items-center gap-3">
-                                {/* Global Range Filter */}
+                            <div className="flex flex-wrap items-center gap-3">
                                 {/* Global Range Filter (Hidden when Transactions tab is active) */}
-{activeView !== 'transactions' && (
-    <Select value={currentFilter} onValueChange={handleFilterChange}>
-        <SelectTrigger className="w-[160px] h-10 border-zinc-800 text-zinc-300">
-            <SlidersHorizontal className="mr-2 h-4 w-4" />
-            <SelectValue placeholder="Range" />
-        </SelectTrigger>
-        <SelectContent>
-            <SelectItem value="this_day">This Day</SelectItem>
-            <SelectItem value="this_month">This Month</SelectItem>
-            <SelectItem value="last_30_days">Last 30 Days</SelectItem>
-            <SelectItem value="this_year">This Year</SelectItem>
-        </SelectContent>
-    </Select>
-)}
+                                {activeView !== 'transactions' && (
+                                    <>
+                                        <Select value={currentFilter} onValueChange={handleFilterChange}>
+                                            <SelectTrigger className="w-[160px] h-10 border-zinc-800 text-zinc-300">
+                                                <SlidersHorizontal className="mr-2 h-4 w-4" />
+                                                <SelectValue placeholder="Range" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="this_day">This Day</SelectItem>
+                                                <SelectItem value="this_week">This Week</SelectItem>
+                                                <SelectItem value="this_month">This Month</SelectItem>
+                                                <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                                                <SelectItem value="this_year">This Year</SelectItem>
+                                                <SelectItem value="custom">Custom</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+
+                                        {/* Inline Date Inputs when Custom filter is active */}
+                                        {currentFilter === 'custom' && (
+                                            <div className="flex items-center gap-2">
+                                                <Input 
+                                                    type="date" 
+                                                    value={startDateInput} 
+                                                    onChange={(e) => setStartDateInput(e.target.value)}
+                                                    className="w-[140px] h-10 border-zinc-800 text-zinc-300 text-xs bg-transparent"
+                                                />
+                                                <span className="text-xs text-zinc-400">to</span>
+                                                <Input 
+                                                    type="date" 
+                                                    value={endDateInput} 
+                                                    onChange={(e) => setEndDateInput(e.target.value)}
+                                                    className="w-[140px] h-10 border-zinc-800 text-zinc-300 text-xs bg-transparent"
+                                                />
+                                                <Button size="sm" variant="secondary" onClick={handleApplyCustomDates} className="h-10 px-3">
+                                                    Apply
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
 
                                 <Button onClick={openTransactionModal} className="gap-2">
                                     <Plus className="h-4 w-4" /> New Transaction

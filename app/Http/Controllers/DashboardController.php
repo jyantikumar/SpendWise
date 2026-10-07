@@ -14,16 +14,24 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $userId = $request->user()->id;
-        // Default range to 'this_day'
         $filter = $request->input('range', 'this_day');
 
-        // Resolve date boundaries based on global filter
-        [$startDate, $endDate] = match ($filter) {
-            'this_day'     => [now()->startOfDay(), now()->endOfDay()],
-            'last_30_days' => [now()->subDays(30)->startOfDay(), now()->endOfDay()],
-            'this_year'    => [now()->startOfYear(), now()->endOfYear()],
-            default        => [now()->startOfMonth(), now()->endOfMonth()],
-        };
+        $customStartDate = $request->input('start_date');
+        $customEndDate   = $request->input('end_date');
+
+        // Resolve date boundaries based on filter
+        if ($filter === 'custom' && $customStartDate && $customEndDate) {
+            $startDate = Carbon::parse($customStartDate)->startOfDay();
+            $endDate   = Carbon::parse($customEndDate)->endOfDay();
+        } else {
+            [$startDate, $endDate] = match ($filter) {
+                'this_day'     => [now()->startOfDay(), now()->endOfDay()],
+                'this_week'    => [now()->startOfWeek(), now()->endOfWeek()],
+                'last_30_days' => [now()->subDays(30)->startOfDay(), now()->endOfDay()],
+                'this_year'    => [now()->startOfYear(), now()->endOfYear()],
+                default        => [now()->startOfMonth(), now()->endOfMonth()],
+            };
+        }
 
         $startStr = $startDate->format('Y-m-d H:i:s');
         $endStr   = $endDate->format('Y-m-d H:i:s');
@@ -115,6 +123,10 @@ class DashboardController extends Controller
             'accounts' => Account::where('user_id', $userId)->orderBy('name')->get(['id', 'name', 'type', 'balance']),
             'categories' => Category::where('user_id', $userId)->orderBy('name')->get(['id', 'name', 'type', 'color', 'icon']),
             'currentFilter' => $filter,
+            'customDates' => [
+                'startDate' => $customStartDate ?? $startDate->format('Y-m-d'),
+                'endDate'   => $customEndDate ?? $endDate->format('Y-m-d'),
+            ],
         ]);
     }
 }
