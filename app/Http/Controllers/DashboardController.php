@@ -14,7 +14,8 @@ class DashboardController extends Controller
     public function index(Request $request)
     {
         $userId = $request->user()->id;
-        $filter = $request->input('range', 'this_month');
+        // Default range to 'this_day'
+        $filter = $request->input('range', 'this_day');
 
         // Resolve date boundaries based on global filter
         [$startDate, $endDate] = match ($filter) {
@@ -27,7 +28,7 @@ class DashboardController extends Controller
         $startStr = $startDate->format('Y-m-d H:i:s');
         $endStr   = $endDate->format('Y-m-d H:i:s');
 
-        // 1. KPI Aggregations
+        // 1. KPI Aggregations (Total Balance remains constant across all filters)
         $totalBalance = Account::where('user_id', $userId)->sum('balance');
 
         $periodIncomes = Transaction::where('user_id', $userId)

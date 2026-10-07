@@ -166,12 +166,11 @@ export default function Dashboard({
     latestTransactions = [], 
     accounts = [], 
     categories = [], 
-    currentFilter 
+    currentFilter = 'this_day'
 }) {
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
-    const [activeView, setActiveView] = useState('transactions'); // 'transactions' | 'accounts'
+    const [activeView, setActiveView] = useState('transactions');
 
-    // Category Drilldown Modal State
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
@@ -182,7 +181,6 @@ export default function Dashboard({
         router.get(route('dashboard'), { range: value }, { preserveState: true });
     };
 
-    // Calculate default dates for category modal based on current dashboard range
     const getDateBoundaries = () => {
         const today = new Date();
         const formatDate = (d) => d.toISOString().split('T')[0];
@@ -197,7 +195,6 @@ export default function Dashboard({
             const yearStart = new Date(today.getFullYear(), 0, 1);
             return { startDate: formatDate(yearStart), endDate: formatDate(today) };
         } else {
-            // default: this_month
             const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
             return { startDate: formatDate(monthStart), endDate: formatDate(today) };
         }
@@ -210,7 +207,6 @@ export default function Dashboard({
         setIsCategoryModalOpen(true);
     };
 
-    // Quick Transaction Form
     const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
         account_id: accounts[0]?.id ? String(accounts[0].id) : '',
         destination_account_id: '',
@@ -279,20 +275,22 @@ export default function Dashboard({
                             </div>
 
                             <div className="flex items-center gap-3">
-                                {/* Only show Range filter when viewing Accounts */}
-                                {activeView !== 'transactions' && (
-                                    <Select defaultValue={currentFilter} onValueChange={handleFilterChange}>
-                                        <SelectTrigger className="w-[160px] h-10 border-zinc-800 text-zinc-300">
-                                            <SlidersHorizontal className="mr-2 h-4 w-4" />
-                                            <SelectValue placeholder="Range" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="this_month">This Month</SelectItem>
-                                            <SelectItem value="last_30_days">Last 30 Days</SelectItem>
-                                            <SelectItem value="this_year">This Year</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                )}
+                                {/* Global Range Filter */}
+                                {/* Global Range Filter (Hidden when Transactions tab is active) */}
+{activeView !== 'transactions' && (
+    <Select value={currentFilter} onValueChange={handleFilterChange}>
+        <SelectTrigger className="w-[160px] h-10 border-zinc-800 text-zinc-300">
+            <SlidersHorizontal className="mr-2 h-4 w-4" />
+            <SelectValue placeholder="Range" />
+        </SelectTrigger>
+        <SelectContent>
+            <SelectItem value="this_day">This Day</SelectItem>
+            <SelectItem value="this_month">This Month</SelectItem>
+            <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+            <SelectItem value="this_year">This Year</SelectItem>
+        </SelectContent>
+    </Select>
+)}
 
                                 <Button onClick={openTransactionModal} className="gap-2">
                                     <Plus className="h-4 w-4" /> New Transaction
@@ -365,7 +363,7 @@ export default function Dashboard({
                                         </Select>
                                         <CardDescription className="hidden sm:inline text-zinc-400">
                                             {activeView === 'transactions' 
-                                                ? "Transactions logged for today's date." 
+                                                ? "Recent transaction history." 
                                                 : 'Active financial accounts.'}
                                         </CardDescription>
                                     </div>
@@ -414,8 +412,8 @@ export default function Dashboard({
                                                     ))
                                                 ) : (
                                                     <TableRow className="border-b border-zinc-800">
-                                                        <TableCell colSpan={4} className="text-center text-zinc-400 py-6">
-                                                            No transactions logged for today.
+                                                        <TableCell colSpan={3} className="text-center text-zinc-400 py-6">
+                                                            No transactions logged for this period.
                                                         </TableCell>
                                                     </TableRow>
                                                 )}
