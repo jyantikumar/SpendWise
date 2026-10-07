@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { 
     Search, 
@@ -6,7 +6,9 @@ import {
     Wallet, 
     ArrowUpRight, 
     ArrowDownRight, 
-    ArrowLeftRight 
+    ArrowLeftRight,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 
 import { 
@@ -17,6 +19,7 @@ import {
     DialogDescription 
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -31,6 +34,7 @@ export default function AccountTransactionsModal({
 }) {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [summaryAmount, setSummaryAmount] = useState(0);
 
     // Filter States
     const [search, setSearch] = useState('');
@@ -38,6 +42,18 @@ export default function AccountTransactionsModal({
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [startDate, setStartDate] = useState(initialStartDate);
     const [endDate, setEndDate] = useState(initialEndDate);
+
+    // Pagination State
+    const [currentPage, setCurrentPage] = useState(1);
+    const [paginationData, setPaginationData] = useState({
+        current_page: 1,
+        last_page: 1,
+        from: 0,
+        to: 0,
+        total: 0,
+    });
+
+    const abortControllerRef = useRef(null);
 
     const formatCurrency = (val, currency = 'PHP') => 
         new Intl.NumberFormat('en-PH', { style: 'currency', currency }).format(val || 0);
@@ -50,255 +66,281 @@ export default function AccountTransactionsModal({
             setSearch('');
             setSelectedType('all');
             setSelectedCategory('all');
+            setCurrentPage(1);
         }
-    }, [isOpen]);
+    }, [isOpen, initialStartDate, initialEndDate]);
 
-    // Fetch account transactions on filter change
+    // Reset page back to 1 whenever filters change
+    const handleFilterChange = (setter, value) => {
+        setter(value);
+        setCurrentPage(1);
+    };
+
+    // Fetch account transactions on filter / page change
+    const fetchTransactions = async (searchTerm, page = 1) => {
+        if (!account?.id) return;
+
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+
+        setLoading(true);
+        try {
+            const parsedCategoryId = (selectedCategory && selectedCategory !== 'all')
+                ? parseInt(selectedCategory, 10)
+                : '';
+
+            const response = await axios.get(route('accounts.transactions', account.id), {
+                params: {
+                    search: searchTerm,
+                    type: selectedType,
+                    category_id: parsedCategoryId,
+                    start_date: startDate,
+                    end_date: endDate,
+                    page,
+                },
+                signal: abortControllerRef.current.signal,
+            });
+
+            setTransactions(response.data.transactions || []);
+            setSummaryAmount(response.data.summaryAmount || 0);
+            if (response.data.pagination) {
+                setPaginationData(response.data.pagination);
+            }
+        } catch (err) {
+            if (!axios.isCancel(err)) {
+                console.error('Failed to load account transactions:', err);
+            }
+        } finally {
+            setLoading(false);
+        }
+    };
+
     useEffect(() => {
         if (!isOpen || !account?.id) return;
 
-        const fetchTransactions = async () => {
-            setLoading(true);
-            try {
-                const response = await axios.get(route('accounts.transactions', account.id), {
-                    params: {
-                        search,
-                        type: selectedType,
-                        category_id: selectedCategory,
-                        start_date: startDate,
-                        end_date: endDate,
-                    },
-                });
-                setTransactions(response.data.transactions || []);
-            } catch (err) {
-                console.error('Failed to load account transactions:', err);
-            } finally {
-                setLoading(false);
-            }
-        };
+        const timer = setTimeout(() => {
+            fetchTransactions(search, currentPage);
+        }, search ? 200 : 0);
 
-        const timer = setTimeout(fetchTransactions, 300);
         return () => clearTimeout(timer);
-    }, [isOpen, account?.id, search, selectedType, selectedCategory, startDate, endDate]);
-
-    const getTypeBadge = (type) => {
-        switch (type) {
-            case 'income':
-                return (
-                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1 font-medium">
-                        <ArrowUpRight className="h-3 w-3" /> Income
-                    </Badge>
-                );
-            case 'expense':
-                return (
-                    <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 gap-1 font-medium">
-                        <ArrowDownRight className="h-3 w-3" /> Expense
-                    </Badge>
-                );
-            case 'transfer':
-                return (
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1 font-medium">
-                        <ArrowLeftRight className="h-3 w-3" /> Transfer
-                    </Badge>
-                );
-            default:
-                return <Badge variant="outline">{type}</Badge>;
-        }
-    };
+    }, [isOpen, account?.id, search, selectedType, selectedCategory, startDate, endDate, currentPage]);
 
     // Dynamic Summary Badge Logic
     const renderSummaryBadge = () => {
         const curr = account?.currency || 'PHP';
 
         if (selectedType === 'expense') {
-            const totalExpense = transactions
-                .filter((tx) => tx.type === 'expense')
-                .reduce((sum, tx) => sum + (parseFloat(tx.amount) || 0), 0);
-
             return (
-                <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 text-sm font-semibold px-3 py-1">
-                    Total Expense: {formatCurrency(totalExpense, curr)}
+                <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-sm font-semibold px-3 py-1">
+                    Total Expense: {formatCurrency(summaryAmount, curr)}
                 </Badge>
             );
         }
 
         if (selectedType === 'income') {
-            const totalIncome = transactions
-                .filter((tx) => tx.type === 'income')
-                .reduce((sum, tx) => sum + (parseFloat(tx.amount) || 0), 0);
-
             return (
-                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 text-sm font-semibold px-3 py-1">
-                    Total Income: {formatCurrency(totalIncome, curr)}
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-sm font-semibold px-3 py-1">
+                    Total Income: {formatCurrency(summaryAmount, curr)}
                 </Badge>
             );
         }
-
-        // Default ('all' or 'transfer'): calculate net cash flow
-        const netCashFlow = transactions.reduce((sum, tx) => {
-            const amt = parseFloat(tx.amount) || 0;
-            if (tx.type === 'income') return sum + amt;
-            if (tx.type === 'expense') return sum - amt;
-            if (tx.type === 'transfer') {
-                return tx.destination_account_id === account?.id ? sum + amt : sum - amt;
-            }
-            return sum;
-        }, 0);
 
         return (
             <Badge 
                 variant="outline" 
                 className={`text-sm font-semibold px-3 py-1 ${
-                    netCashFlow >= 0 
-                        ? 'bg-zinc-50 text-zinc-700 border-zinc-200' 
-                        : 'bg-rose-50 text-rose-700 border-rose-200'
+                    summaryAmount >= 0 
+                        ? 'bg-zinc-800 text-zinc-200 border-zinc-700' 
+                        : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                 }`}
             >
-                Net Cash Flow: {formatCurrency(netCashFlow, curr)}
+                Net Cash Flow: {formatCurrency(summaryAmount, curr)}
             </Badge>
         );
     };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[820px] max-h-[85vh] flex flex-col p-6">
-                <DialogHeader className="pb-2 border-b">
-                    <div className="flex items-center justify-between pr-6">
-                        <div className="flex items-center gap-3">
-                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-muted text-foreground">
-                                <Wallet className="h-4 w-4" />
+            <DialogContent className="sm:max-w-[820px] min-h-[540px] flex flex-col justify-between p-6 border-zinc-800 bg-background">
+                <div className="space-y-4">
+                    {/* Header */}
+                    <DialogHeader className="pb-2 border-b border-zinc-800">
+                        <div className="flex items-center justify-between pr-6">
+                            <div className="flex items-center gap-3">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700">
+                                    <Wallet className="h-4 w-4" />
+                                </div>
+                                <div>
+                                    <DialogTitle className="text-xl font-bold flex items-center gap-2 text-zinc-200">
+                                        {account?.name || 'Account'} Transactions
+                                    </DialogTitle>
+                                    <DialogDescription className="text-xs text-zinc-400 mt-0.5">
+                                        Viewing activity for this account.
+                                    </DialogDescription>
+                                </div>
                             </div>
-                            <div>
-                                <DialogTitle className="text-xl font-bold flex items-center gap-2">
-                                    {account?.name || 'Account'} Transactions
-                                </DialogTitle>
-                                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                                    Viewing activity for this account.
-                                </DialogDescription>
-                            </div>
+
+                            {renderSummaryBadge()}
+                        </div>
+                    </DialogHeader>
+
+                    {/* Filter Controls Bar */}
+                    <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5 py-3 border-b border-zinc-800 bg-zinc-900/40 -mx-6 px-6">
+                        {/* Search Input */}
+                        <div className="relative w-full">
+                            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
+                            <Input
+                                placeholder="Search description..."
+                                value={search}
+                                onChange={(e) => handleFilterChange(setSearch, e.target.value)}
+                                className="pl-8 h-8 text-xs w-full border-zinc-800 text-zinc-300"
+                            />
                         </div>
 
-                        {renderSummaryBadge()}
-                    </div>
-                </DialogHeader>
-
-                {/* Filter Controls Bar with Uniform Column Widths */}
-                <div className="grid grid-cols-1 sm:grid-cols-5 gap-2.5 py-3 border-b bg-muted/30 -mx-6 px-6">
-                    {/* Search Input */}
-                    <div className="relative w-full">
-                        <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-                        <Input
-                            placeholder="Search description..."
-                            value={search}
-                            onChange={(e) => setSearch(e.target.value)}
-                            className="pl-8 h-8 text-xs w-full"
-                        />
-                    </div>
-
-                    {/* Transaction Type Filter */}
-                    <div className="w-full">
-                        <Select value={selectedType} onValueChange={setSelectedType}>
-                            <SelectTrigger className="h-8 text-xs w-full">
-                                <SelectValue placeholder="All Types" />
-                            </SelectTrigger>
-                            <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                                <SelectItem value="all">All Types</SelectItem>
-                                <SelectItem value="expense">Expense</SelectItem>
-                                <SelectItem value="income">Income</SelectItem>
-                                <SelectItem value="transfer">Transfer</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Category Filter */}
-                    <div className="w-full">
-                        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                            <SelectTrigger className="h-8 text-xs w-full">
-                                <SelectValue placeholder="All Categories" />
-                            </SelectTrigger>
-                            <SelectContent className="w-[var(--radix-select-trigger-width)]">
-                                <SelectItem value="all">All Categories</SelectItem>
-                                {categories.map((cat) => (
-                                    <SelectItem key={cat.id} value={String(cat.id)}>
-                                        {cat.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-
-                    {/* Start Date */}
-                    <div className="w-full">
-                        <Input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => setStartDate(e.target.value)}
-                            className="h-8 text-xs w-full"
-                        />
-                    </div>
-
-                    {/* End Date */}
-                    <div className="w-full">
-                        <Input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => setEndDate(e.target.value)}
-                            className="h-8 text-xs w-full"
-                        />
-                    </div>
-                </div>
-
-                {/* Transactions Table Container */}
-                <div className="flex-1 overflow-y-auto min-h-[260px] pt-2">
-                    {loading ? (
-                        <div className="flex flex-col items-center justify-center h-48 gap-2 text-muted-foreground">
-                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                            <span className="text-xs">Loading transactions...</span>
+                        {/* Transaction Type Filter */}
+                        <div className="w-full">
+                            <Select value={selectedType} onValueChange={(val) => handleFilterChange(setSelectedType, val)}>
+                                <SelectTrigger className="h-8 text-xs w-full border-zinc-800 text-zinc-300">
+                                    <SelectValue placeholder="All Types" />
+                                </SelectTrigger>
+                                <SelectContent className="border-zinc-800 bg-background text-zinc-300">
+                                    <SelectItem value="all">All Types</SelectItem>
+                                    <SelectItem value="expense">Expense</SelectItem>
+                                    <SelectItem value="income">Income</SelectItem>
+                                    <SelectItem value="transfer">Transfer</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
-                    ) : transactions.length > 0 ? (
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Category</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {transactions.map((tx) => (
-                                    <TableRow key={tx.id}>
-                                        <TableCell className="font-medium text-xs whitespace-nowrap">
-                                            {tx.transaction_date ? String(tx.transaction_date).split('T')[0] : '—'}
-                                        </TableCell>
-                                        <TableCell className="max-w-[200px] truncate text-xs">
-                                            {tx.description || <span className="text-muted-foreground italic">No description</span>}
-                                        </TableCell>
-                                        <TableCell className="text-xs">
-                                            {tx.category?.name || '—'}
-                                        </TableCell>
-                                        <TableCell className={`text-right font-semibold text-xs whitespace-nowrap ${
-                                            tx.type === 'income' 
-                                                ? 'text-emerald-600' 
-                                                : tx.type === 'expense' 
-                                                ? 'text-rose-600' 
-                                                : 'text-blue-600'
-                                        }`}>
-                                            {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
-                                            {formatCurrency(tx.amount, account?.currency || 'PHP')}
-                                        </TableCell>
+
+                        {/* Category Filter */}
+                        <div className="w-full">
+                            <Select value={selectedCategory} onValueChange={(val) => handleFilterChange(setSelectedCategory, val)}>
+                                <SelectTrigger className="h-8 text-xs w-full border-zinc-800 text-zinc-300">
+                                    <SelectValue placeholder="All Categories" />
+                                </SelectTrigger>
+                                <SelectContent className="border-zinc-800 bg-background text-zinc-300">
+                                    <SelectItem value="all">All Categories</SelectItem>
+                                    {categories.map((cat) => (
+                                        <SelectItem key={cat.id} value={String(cat.id)}>
+                                            {cat.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {/* Start Date */}
+                        <div className="w-full">
+                            <Input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => handleFilterChange(setStartDate, e.target.value)}
+                                className="h-8 text-xs w-full border-zinc-800 text-zinc-300"
+                            />
+                        </div>
+
+                        {/* End Date */}
+                        <div className="w-full">
+                            <Input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => handleFilterChange(setEndDate, e.target.value)}
+                                className="h-8 text-xs w-full border-zinc-800 text-zinc-300"
+                            />
+                        </div>
+                    </div>
+
+                    {/* Transactions Table Container */}
+                    <div className="min-h-[280px]">
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center h-52 gap-2 text-zinc-400">
+                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                <span className="text-xs">Loading page {currentPage}...</span>
+                            </div>
+                        ) : transactions.length > 0 ? (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="border-b border-zinc-800">
+                                        <TableHead className="text-zinc-400">Date</TableHead>
+                                        <TableHead className="text-zinc-400">Description</TableHead>
+                                        <TableHead className="text-zinc-400">Category</TableHead>
+                                        <TableHead className="text-right text-zinc-400">Amount</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground">
-                            <Wallet className="h-8 w-8 stroke-1 mb-2 opacity-50" />
-                            <p className="text-sm font-medium">No transactions found</p>
-                            <p className="text-xs opacity-75 mt-0.5">Try adjusting your filters or date range.</p>
-                        </div>
-                    )}
+                                </TableHeader>
+                                <TableBody>
+                                    {transactions.map((tx) => (
+                                        <TableRow key={tx.id} className="border-b border-zinc-800 hover:bg-muted/50 transition-colors">
+                                            <TableCell className="font-medium text-xs whitespace-nowrap text-zinc-300">
+                                                {tx.transaction_date ? String(tx.transaction_date).split('T')[0] : '—'}
+                                            </TableCell>
+                                            <TableCell className="max-w-[200px] truncate text-xs text-zinc-300">
+                                                {tx.description || <span className="text-zinc-500 italic">No description</span>}
+                                            </TableCell>
+                                            <TableCell className="text-xs text-zinc-400">
+                                                {tx.category?.name || '—'}
+                                            </TableCell>
+                                            <TableCell className={`text-right font-semibold text-xs whitespace-nowrap ${
+                                                tx.type === 'income' 
+                                                    ? 'text-emerald-400' 
+                                                    : tx.type === 'expense' 
+                                                    ? 'text-rose-400' 
+                                                    : 'text-blue-400'
+                                            }`}>
+                                                {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
+                                                {formatCurrency(tx.amount, account?.currency || 'PHP')}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-52 text-center text-zinc-400">
+                                <Wallet className="h-8 w-8 stroke-1 mb-2 opacity-50" />
+                                <p className="text-sm font-medium text-zinc-300">No transactions found</p>
+                                <p className="text-xs opacity-75 mt-0.5">Try adjusting your filters or date range.</p>
+                            </div>
+                        )}
+                    </div>
                 </div>
+
+                {/* Pagination Footer */}
+                {paginationData.total > 0 && (
+                    <div className="flex items-center justify-between border-t border-zinc-800 pt-3 text-xs text-zinc-400">
+                        <div>
+                            Showing <span className="font-medium text-zinc-200">{paginationData.from || 0}</span> to{' '}
+                            <span className="font-medium text-zinc-200">{paginationData.to || 0}</span> of{' '}
+                            <span className="font-medium text-zinc-200">{paginationData.total}</span> records
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={currentPage <= 1 || loading}
+                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                className="h-7 px-2 border-zinc-800 text-zinc-300 hover:text-zinc-100"
+                            >
+                                <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
+                            </Button>
+
+                            <span className="text-xs font-medium text-zinc-300 px-2">
+                                {currentPage} / {paginationData.last_page || 1}
+                            </span>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={currentPage >= paginationData.last_page || loading}
+                                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, paginationData.last_page))}
+                                className="h-7 px-2 border-zinc-800 text-zinc-300 hover:text-zinc-100"
+                            >
+                                Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </DialogContent>
         </Dialog>
     );

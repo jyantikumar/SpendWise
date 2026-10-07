@@ -11,9 +11,6 @@ use Inertia\Inertia;
 
 class AccountController extends Controller
 {
-    /**
-     * Display a listing of user financial accounts along with available account types and categories.
-     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -40,7 +37,7 @@ class AccountController extends Controller
     }
 
     /**
-     * API Endpoint for Account Transactions Modal filtering
+     * API Endpoint for Account Transactions Modal filtering (Paginated)
      */
     public function accountTransactions(Request $request, Account $account)
     {
@@ -59,36 +56,64 @@ class AccountController extends Controller
                 $q->where('account_id', $account->id)
                   ->orWhere('destination_account_id', $account->id);
             })
-            ->with(['category', 'account', 'destinationAccount'])
-            ->when($request->filled('search'), function ($q) use ($search) {
+            ->when(!empty($search), function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
                     $sub->where('description', 'like', "%{$search}%")
                         ->orWhere('reference_number', 'like', "%{$search}%");
                 });
             })
-            ->when($request->filled('type') && $type !== 'all', function ($q) use ($type) {
+            ->when(!empty($type) && $type !== 'all', function ($q) use ($type) {
                 $q->where('type', $type);
             })
-            ->when($request->filled('category_id') && $categoryId !== 'all', function ($q) use ($categoryId) {
-                $q->where('category_id', $categoryId);
+            ->when(!empty($categoryId) && $categoryId !== 'all', function ($q) use ($categoryId) {
+                $q->where('category_id', (int) $categoryId);
             })
-            ->when($request->filled('start_date'), function ($q) use ($startDate) {
+            ->when(!empty($startDate), function ($q) use ($startDate) {
                 $q->whereDate('transaction_date', '>=', $startDate);
             })
-            ->when($request->filled('end_date'), function ($q) use ($endDate) {
+            ->when(!empty($endDate), function ($q) use ($endDate) {
                 $q->whereDate('transaction_date', '<=', $endDate);
             });
 
-        $transactions = $query->orderBy('transaction_date', 'desc')->get();
+        // Compute summary amount over filtered set
+        $allFiltered = (clone $query)->get(['id', 'type', 'amount', 'destination_account_id']);
+        if ($type === 'expense') {
+            $summaryAmount = $allFiltered->where('type', 'expense')->sum('amount');
+        } elseif ($type === 'income') {
+            $summaryAmount = $allFiltered->where('type', 'income')->sum('amount');
+        } else {
+            $summaryAmount = $allFiltered->reduce(function ($sum, $tx) use ($account) {
+                $amt = (float) $tx->amount;
+                if ($tx->type === 'income') return $sum + $amt;
+                if ($tx->type === 'expense') return $sum - $amt;
+                if ($tx->type === 'transfer') {
+                    return $tx->destination_account_id === $account->id ? $sum + $amt : $sum - $amt;
+                }
+                return $sum;
+            }, 0);
+        }
+
+        // Paginate 8 items per page
+        $paginatedTransactions = $query
+            ->select('id', 'user_id', 'account_id', 'destination_account_id', 'category_id', 'type', 'amount', 'description', 'transaction_date')
+            ->with(['category:id,name', 'account:id,name', 'destinationAccount:id,name'])
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate(8);
 
         return response()->json([
-            'transactions' => $transactions,
+            'transactions'  => $paginatedTransactions->items(),
+            'summaryAmount' => $summaryAmount,
+            'pagination'    => [
+                'current_page' => $paginatedTransactions->currentPage(),
+                'last_page'    => $paginatedTransactions->lastPage(),
+                'from'         => $paginatedTransactions->firstItem(),
+                'to'           => $paginatedTransactions->lastItem(),
+                'total'        => $paginatedTransactions->total(),
+            ],
         ]);
     }
 
-    /**
-     * Store a newly created account.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -104,9 +129,6 @@ class AccountController extends Controller
         return back()->with('success', 'Account created successfully.');
     }
 
-    /**
-     * Update the specified account.
-     */
     public function update(Request $request, Account $account)
     {
         if ($account->user_id !== $request->user()->id) {
@@ -126,9 +148,6 @@ class AccountController extends Controller
         return back()->with('success', 'Account updated successfully.');
     }
 
-    /**
-     * Remove the specified account.
-     */
     public function destroy(Request $request, Account $account)
     {
         if ($account->user_id !== $request->user()->id) {
