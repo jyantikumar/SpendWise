@@ -18,6 +18,7 @@ class DashboardController extends Controller
 
         // Resolve date boundaries based on global filter
         [$startDate, $endDate] = match ($filter) {
+            'this_day'     => [now()->startOfDay(), now()->endOfDay()],
             'last_30_days' => [now()->subDays(30)->startOfDay(), now()->endOfDay()],
             'this_year'    => [now()->startOfYear(), now()->endOfYear()],
             default        => [now()->startOfMonth(), now()->endOfMonth()],
@@ -73,7 +74,7 @@ class DashboardController extends Controller
             $current->addDay();
         }
 
-        // 3. Category Breakdown Data (Left Joined to include Uncategorized transactions)
+        // 3. Category Breakdown Data
         $categoryBreakdown = Transaction::where('transactions.user_id', $userId)
             ->whereIn('transactions.type', ['income', 'expense'])
             ->whereBetween('transactions.transaction_date', [$startStr, $endStr])
@@ -89,6 +90,14 @@ class DashboardController extends Controller
             ->get()
             ->groupBy('type');
 
+        // 4. Latest 10 Transactions
+        $latestTransactions = Transaction::where('user_id', $userId)
+            ->with(['account', 'destinationAccount', 'category'])
+            ->orderBy('transaction_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->take(10)
+            ->get();
+
         return Inertia::render('Dashboard', [
             'kpis' => [
                 'totalBalance' => (float) $totalBalance,
@@ -101,6 +110,7 @@ class DashboardController extends Controller
                 'expense' => $categoryBreakdown->get('expense', collect())->values(),
                 'income'  => $categoryBreakdown->get('income', collect())->values(),
             ],
+            'latestTransactions' => $latestTransactions,
             'accounts' => Account::where('user_id', $userId)->orderBy('name')->get(['id', 'name', 'type', 'balance']),
             'categories' => Category::where('user_id', $userId)->orderBy('name')->get(['id', 'name', 'type', 'color', 'icon']),
             'currentFilter' => $filter,

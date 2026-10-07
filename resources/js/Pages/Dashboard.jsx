@@ -159,8 +159,17 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
     );
 }
 
-export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = [], categories = [], currentFilter }) {
+export default function Dashboard({ 
+    auth, 
+    kpis, 
+    categoryBreakdown, 
+    todayTransactions = [], 
+    accounts = [], 
+    categories = [], 
+    currentFilter 
+}) {
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+    const [activeView, setActiveView] = useState('transactions'); // 'transactions' | 'accounts'
 
     // Category Drilldown Modal State
     const [selectedCategory, setSelectedCategory] = useState(null);
@@ -178,7 +187,9 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
         const today = new Date();
         const formatDate = (d) => d.toISOString().split('T')[0];
 
-        if (currentFilter === 'last_30_days') {
+        if (currentFilter === 'this_day') {
+            return { startDate: formatDate(today), endDate: formatDate(today) };
+        } else if (currentFilter === 'last_30_days') {
             const past = new Date();
             past.setDate(today.getDate() - 30);
             return { startDate: formatDate(past), endDate: formatDate(today) };
@@ -268,17 +279,20 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
                             </div>
 
                             <div className="flex items-center gap-3">
-                                <Select defaultValue={currentFilter} onValueChange={handleFilterChange}>
-                                    <SelectTrigger className="w-[160px] h-10">
-                                        <SlidersHorizontal className="mr-2 h-4 w-4" />
-                                        <SelectValue placeholder="Range" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="this_month">This Month</SelectItem>
-                                        <SelectItem value="last_30_days">Last 30 Days</SelectItem>
-                                        <SelectItem value="this_year">This Year</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                {/* Only show Range filter when viewing Accounts */}
+                                {activeView !== 'transactions' && (
+                                    <Select defaultValue={currentFilter} onValueChange={handleFilterChange}>
+                                        <SelectTrigger className="w-[160px] h-10">
+                                            <SlidersHorizontal className="mr-2 h-4 w-4" />
+                                            <SelectValue placeholder="Range" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="this_month">This Month</SelectItem>
+                                            <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                                            <SelectItem value="this_year">This Year</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                )}
 
                                 <Button onClick={openTransactionModal} className="gap-2">
                                     <Plus className="h-4 w-4" /> New Transaction
@@ -335,46 +349,113 @@ export default function Dashboard({ auth, kpis, categoryBreakdown, accounts = []
                             </Card>
                         </div>
 
-                        {/* Accounts and Category Breakdown Chart */}
+                        {/* Combined Table & Category Breakdown Chart */}
                         <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
                             <Card className="xl:col-span-2">
-                                <CardHeader className="flex flex-row items-center">
-                                    <div className="grid gap-1">
-                                        <CardTitle>Accounts</CardTitle>
-                                        <CardDescription>Active financial accounts.</CardDescription>
+                                <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
+                                    <div className="flex items-center gap-3">
+                                        <Select value={activeView} onValueChange={setActiveView}>
+                                            <SelectTrigger className="w-[200px] h-9 font-semibold">
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="transactions">Transactions</SelectItem>
+                                                <SelectItem value="accounts">Accounts</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                        <CardDescription className="hidden sm:inline">
+                                            {activeView === 'transactions' 
+                                                ? "Transactions logged for today's date." 
+                                                : 'Active financial accounts.'}
+                                        </CardDescription>
                                     </div>
-                                    <Button asChild size="sm" className="ml-auto gap-1">
-                                        <Link href="/accounts">
+
+                                    <Button asChild size="sm" variant="outline" className="gap-1">
+                                        <Link href={activeView === 'transactions' ? '/transactions' : '/accounts'}>
                                             View All
                                             <ArrowUpRight className="h-4 w-4" />
                                         </Link>
                                     </Button>
                                 </CardHeader>
+
                                 <CardContent>
-                                    <Table>
-                                        <TableHeader>
-                                            <TableRow>
-                                                <TableHead>Account Name</TableHead>
-                                                <TableHead className="text-right">Balance</TableHead>
-                                            </TableRow>
-                                        </TableHeader>
-                                        <TableBody>
-                                            {accounts && accounts.length > 0 ? (
-                                                accounts.map((acc) => (
-                                                    <TableRow key={acc.id}>
-                                                        <TableCell className="font-medium">{acc.name}</TableCell>
-                                                        <TableCell className="text-right font-semibold">{formatCurrency(acc.balance)}</TableCell>
-                                                    </TableRow>
-                                                ))
-                                            ) : (
+                                    {activeView === 'transactions' ? (
+                                        <Table>
+                                            <TableHeader>
                                                 <TableRow>
-                                                    <TableCell colSpan={2} className="text-center text-muted-foreground py-6">
-                                                        No accounts created yet.
-                                                    </TableCell>
+                                                    <TableHead>Date</TableHead>
+                                                    <TableHead>Description</TableHead>
+                                                    <TableHead>Account / Category</TableHead>
+                                                    <TableHead className="text-right">Amount</TableHead>
                                                 </TableRow>
-                                            )}
-                                        </TableBody>
-                                    </Table>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {todayTransactions && todayTransactions.length > 0 ? (
+                                                    todayTransactions.map((tx) => (
+                                                        <TableRow key={tx.id}>
+                                                            <TableCell className="font-medium whitespace-nowrap text-xs">
+                                                                {tx.transaction_date}
+                                                            </TableCell>
+                                                            <TableCell className="max-w-[180px] truncate">
+                                                                <span className="font-medium text-sm block truncate">
+                                                                    {tx.description || 'No description'}
+                                                                </span>
+                                                            </TableCell>
+                                                            <TableCell className="text-xs text-muted-foreground">
+                                                                <div>{tx.account?.name || 'Unknown Account'}</div>
+                                                                {tx.category && (
+                                                                    <div className="text-[11px] text-muted-foreground/80">
+                                                                        {tx.category.name}
+                                                                    </div>
+                                                                )}
+                                                            </TableCell>
+                                                            <TableCell className={`text-right font-semibold text-sm ${
+                                                                tx.type === 'income' 
+                                                                    ? 'text-emerald-600' 
+                                                                    : tx.type === 'expense' 
+                                                                        ? 'text-rose-600' 
+                                                                        : 'text-blue-600'
+                                                            }`}>
+                                                                {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
+                                                                {formatCurrency(tx.amount)}
+                                                            </TableCell>
+                                                        </TableRow>
+                                                    ))
+                                                ) : (
+                                                    <TableRow>
+                                                        <TableCell colSpan={4} className="text-center text-muted-foreground py-6">
+                                                            No transactions logged for today.
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </TableBody>
+                                        </Table>
+                                    ) : (
+                                        <Table>
+                                            <TableHeader>
+                                                <TableRow>
+                                                    <TableHead>Account Name</TableHead>
+                                                    <TableHead className="text-right">Balance</TableHead>
+                                                </TableRow>
+                                            </TableHeader>
+                                            <TableBody>
+                                                {accounts && accounts.length > 0 ? (
+                                                    accounts.map((acc) => (
+                                                        <TableRow key={acc.id}>
+                                                            <TableCell className="font-medium">{acc.name}</TableCell>
+                                                            <TableCell className="text-right font-semibold">{formatCurrency(acc.balance)}</TableCell>
+                                                        </TableRow>
+                                                    ))
+                                                ) : (
+                                                    <TableRow>
+                                                        <TableCell colSpan={2} className="text-center text-muted-foreground py-6">
+                                                            No accounts created yet.
+                                                        </TableCell>
+                                                    </TableRow>
+                                                )}
+                                            </TableBody>
+                                        </Table>
+                                    )}
                                 </CardContent>
                             </Card>
 

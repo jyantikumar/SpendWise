@@ -3,16 +3,38 @@ import Dropdown from '@/Components/Dropdown';
 import NavLink from '@/Components/NavLink';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Toaster } from '@/Components/ui/sonner';
+import { toast } from 'sonner';
 
 export default function AuthenticatedLayout({ header, children }) {
-    const user = usePage().props.auth.user;
+    const { auth, flash, errors } = usePage().props;
+    const user = auth.user;
 
-    const [showingNavigationDropdown, setShowingNavigationDropdown] =
-        useState(false);
+    const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
+
+    // 1. Trigger toast on backend success, error, warning, or info flash messages
+    useEffect(() => {
+        if (flash?.success) toast.success(flash.success);
+        if (flash?.error) toast.error(flash.error);
+        if (flash?.warning) toast.warning(flash.warning);
+        if (flash?.info) toast.info(flash.info);
+    }, [flash]);
+
+    // 2. Trigger toast on form validation errors
+    useEffect(() => {
+        const errorKeys = Object.keys(errors || {});
+        if (errorKeys.length > 0) {
+            const firstErrorMessage = errors[errorKeys[0]];
+            toast.error(firstErrorMessage || 'Please complete all required fields.');
+        }
+    }, [errors]);
 
     return (
         <div className="min-h-screen bg-gray-100">
+            {/* Sonner Toast Notification Container */}
+            <Toaster position="top-right" richColors />
+
             <nav className="border-b border-gray-100 bg-white">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
                     <div className="flex h-16 justify-between">
