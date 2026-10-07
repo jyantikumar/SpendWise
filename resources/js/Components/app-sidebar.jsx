@@ -49,9 +49,9 @@ export function AppSidebar({ user }) {
     };
 
     return (
-        <Sidebar collapsible="icon">
+        <Sidebar collapsible="icon" className="border-r border-zinc-800">
             {/* Header / Brand Logo */}
-            <SidebarHeader>
+            <SidebarHeader className="border-b border-zinc-800">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
@@ -60,8 +60,8 @@ export function AppSidebar({ user }) {
                                     <DollarSign className="h-5 w-5" />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
-                                    <span className="truncate font-semibold">SpendWise</span>
-                                    <span className="truncate text-xs text-muted-foreground">Finance Tracker</span>
+                                    <span className="truncate font-semibold text-zinc-200">SpendWise</span>
+                                    <span className="truncate text-xs text-zinc-400">Finance Tracker</span>
                                 </div>
                             </Link>
                         </SidebarMenuButton>
@@ -72,12 +72,17 @@ export function AppSidebar({ user }) {
             {/* Navigation Items */}
             <SidebarContent>
                 <SidebarGroup>
-                    <SidebarGroupLabel>Menu</SidebarGroupLabel>
+                    <SidebarGroupLabel className="text-zinc-400">Menu</SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
                             {navItems.map((item) => (
                                 <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton asChild isActive={url === item.url} tooltip={item.title}>
+                                    <SidebarMenuButton 
+                                        asChild 
+                                        isActive={url === item.url} 
+                                        tooltip={item.title}
+                                        className="text-zinc-300 hover:text-zinc-100 data-[active=true]:bg-zinc-800/60 data-[active=true]:text-zinc-100"
+                                    >
                                         <Link href={item.url}>
                                             <item.icon />
                                             <span>{item.title}</span>
@@ -91,40 +96,39 @@ export function AppSidebar({ user }) {
             </SidebarContent>
 
             {/* User Profile Footer */}
-            {/* User Profile Footer in resources/js/components/app-sidebar.jsx */}
-<SidebarFooter>
-    <SidebarMenu>
-        <SidebarMenuItem>
-            <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                    <button 
-                        type="button" 
-                        className="flex w-full items-center gap-2 rounded-lg p-2 text-left text-sm hover:bg-sidebar-accent hover:text-sidebar-accent-foreground outline-none transition-colors"
-                    >
-                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-muted font-medium text-xs">
-                            {user?.name?.substring(0, 2).toUpperCase()}
-                        </div>
-                        <div className="grid flex-1 text-left text-sm leading-tight">
-                            <span className="truncate font-semibold">{user?.name}</span>
-                            <span className="truncate text-xs text-muted-foreground">{user?.email}</span>
-                        </div>
-                        <ChevronUp className="ml-auto h-4 w-4 text-muted-foreground" />
-                    </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent side="top" className="w-[--radix-popper-anchor-width]">
-                    <DropdownMenuItem asChild>
-                        <Link href={route('profile.edit')} className="cursor-pointer">
-                            <User className="mr-2 h-4 w-4" /> Profile
-                        </Link>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={handleLogout} className="text-destructive cursor-pointer">
-                        <LogOut className="mr-2 h-4 w-4" /> Log out
-                    </DropdownMenuItem>
-                </DropdownMenuContent>
-            </DropdownMenu>
-        </SidebarMenuItem>
-    </SidebarMenu>
-</SidebarFooter>
+            <SidebarFooter className="border-t border-zinc-800">
+                <SidebarMenu>
+                    <SidebarMenuItem>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button 
+                                    type="button" 
+                                    className="flex w-full items-center gap-2 rounded-lg p-2 text-left text-sm hover:bg-zinc-800/50 hover:text-zinc-100 outline-none transition-colors text-zinc-300"
+                                >
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 font-medium text-xs text-zinc-200 border border-zinc-700">
+                                        {user?.name?.substring(0, 2).toUpperCase()}
+                                    </div>
+                                    <div className="grid flex-1 text-left text-sm leading-tight">
+                                        <span className="truncate font-semibold text-zinc-200">{user?.name}</span>
+                                        <span className="truncate text-xs text-zinc-400">{user?.email}</span>
+                                    </div>
+                                    <ChevronUp className="ml-auto h-4 w-4 text-zinc-400" />
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent side="top" className="w-[--radix-popper-anchor-width] border-zinc-800 bg-background text-zinc-300">
+                                <DropdownMenuItem asChild className="hover:bg-zinc-800 focus:bg-zinc-800 cursor-pointer">
+                                    <Link href={route('profile.edit')} className="flex items-center">
+                                        <User className="mr-2 h-4 w-4 text-zinc-400" /> Profile
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleLogout} className="text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30 cursor-pointer">
+                                    <LogOut className="mr-2 h-4 w-4 text-rose-400" /> Log out
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </SidebarMenuItem>
+                </SidebarMenu>
+            </SidebarFooter>
         </Sidebar>
     );
 }
