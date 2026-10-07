@@ -8,7 +8,6 @@ import {
     Wallet, 
     Tag, 
     FileText, 
-    Clock, 
     Pencil, 
     Trash2,
     Copy,
@@ -25,7 +24,6 @@ import {
 } from '@/components/ui/sheet';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 
 export function TransactionDetailSheet({ 
     open, 
@@ -69,37 +67,37 @@ export function TransactionDetailSheet({
         switch (type) {
             case 'income':
                 return (
-                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 gap-1.5 font-medium px-2.5 py-1 text-xs">
+                    <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 gap-1.5 font-medium px-2.5 py-1 text-xs">
                         <ArrowUpRight className="h-3.5 w-3.5" /> Income
                     </Badge>
                 );
             case 'expense':
                 return (
-                    <Badge variant="outline" className="bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 gap-1.5 font-medium px-2.5 py-1 text-xs">
+                    <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/20 gap-1.5 font-medium px-2.5 py-1 text-xs">
                         <ArrowDownRight className="h-3.5 w-3.5" /> Expense
                     </Badge>
                 );
             case 'transfer':
                 return (
-                    <Badge variant="outline" className="bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 gap-1.5 font-medium px-2.5 py-1 text-xs">
+                    <Badge variant="outline" className="bg-blue-500/10 text-blue-400 border-blue-500/20 gap-1.5 font-medium px-2.5 py-1 text-xs">
                         <ArrowLeftRight className="h-3.5 w-3.5" /> Transfer
                     </Badge>
                 );
             default:
-                return <Badge variant="outline" className="text-xs">{type}</Badge>;
+                return <Badge variant="outline" className="text-xs border-zinc-800">{type}</Badge>;
         }
     };
 
     const getAmountColor = (type) => {
         switch (type) {
             case 'income':
-                return 'text-emerald-600 dark:text-emerald-400';
+                return 'text-emerald-400';
             case 'expense':
-                return 'text-foreground';
+                return 'text-zinc-200';
             case 'transfer':
-                return 'text-blue-600 dark:text-blue-400';
+                return 'text-blue-400';
             default:
-                return 'text-foreground';
+                return 'text-zinc-200';
         }
     };
 
@@ -108,7 +106,7 @@ export function TransactionDetailSheet({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent className="sm:max-w-md flex flex-col justify-between p-0 gap-0">
+            <SheetContent className="sm:max-w-md flex flex-col justify-between p-0 gap-0 border-l border-zinc-800 bg-background">
                 
                 {/* Scrollable Main Area */}
                 <div className="flex-1 overflow-y-auto p-6 space-y-6">
@@ -120,7 +118,7 @@ export function TransactionDetailSheet({
                             {transaction.id && (
                                 <button
                                     onClick={handleCopyId}
-                                    className="flex items-center gap-1 text-xs font-mono text-muted-foreground hover:text-foreground transition-colors bg-muted/50 hover:bg-muted px-2 py-1 rounded-md border border-border/50"
+                                    className="flex items-center gap-1 text-xs font-mono text-zinc-400 hover:text-zinc-200 transition-colors bg-muted/50 hover:bg-muted px-2 py-1 rounded-md border border-zinc-800"
                                     title="Copy Transaction ID"
                                 >
                                     <span>#{transaction.id}</span>
@@ -134,8 +132,8 @@ export function TransactionDetailSheet({
                         </div>
 
                         {/* High-end Hero Display */}
-                        <div className="bg-muted/30 border border-border/60 rounded-xl p-5 text-center sm:text-left space-y-1 backdrop-blur-sm">
-                            <SheetTitle className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                        <div className="bg-muted/30 border border-zinc-800 rounded-xl p-5 text-center sm:text-left space-y-1 backdrop-blur-sm">
+                            <SheetTitle className="text-xs font-semibold uppercase tracking-wider text-zinc-400">
                                 Transaction Amount
                             </SheetTitle>
                             <div className={`text-3xl sm:text-4xl font-extrabold tracking-tight ${getAmountColor(transaction.type)}`}>
@@ -143,7 +141,7 @@ export function TransactionDetailSheet({
                                 {transaction.type === 'expense' && '-'}
                                 {formatCurrency(transaction.amount)}
                             </div>
-                            <SheetDescription className="text-xs text-muted-foreground pt-1">
+                            <SheetDescription className="text-xs text-zinc-400 pt-1">
                                 {formattedDate ? `Recorded on ${formattedDate}` : 'Date unavailable'}
                             </SheetDescription>
                         </div>
@@ -152,25 +150,25 @@ export function TransactionDetailSheet({
                     {/* Transfer Flow Visualizer */}
                     {transaction.type === 'transfer' && (
                         <div className="space-y-2">
-                            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                            <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
                                 Transfer Flow
                             </span>
-                            <div className="grid grid-cols-11 items-center gap-2 p-3.5 bg-muted/20 rounded-xl border border-border/60">
+                            <div className="grid grid-cols-11 items-center gap-2 p-3.5 bg-muted/20 rounded-xl border border-zinc-800">
                                 <div className="col-span-5 space-y-1">
-                                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">From</span>
-                                    <p className="text-sm font-semibold text-foreground truncate">
-                                        {transaction.account?.name || <span className="text-muted-foreground italic font-normal">Unknown</span>}
+                                    <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider block">From</span>
+                                    <p className="text-sm font-semibold text-zinc-200 truncate">
+                                        {transaction.account?.name || <span className="text-zinc-500 italic font-normal">Unknown</span>}
                                     </p>
                                 </div>
                                 <div className="col-span-1 flex justify-center">
-                                    <div className="p-1.5 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20">
+                                    <div className="p-1.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20">
                                         <ArrowRight className="h-3.5 w-3.5" />
                                     </div>
                                 </div>
                                 <div className="col-span-5 text-right space-y-1">
-                                    <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider block">To</span>
-                                    <p className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 truncate">
-                                        {transaction.destination_account?.name || <span className="text-muted-foreground italic font-normal">Destination</span>}
+                                    <span className="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider block">To</span>
+                                    <p className="text-sm font-semibold text-emerald-400 truncate">
+                                        {transaction.destination_account?.name || <span className="text-zinc-500 italic font-normal">Destination</span>}
                                     </p>
                                 </div>
                             </div>
@@ -179,34 +177,34 @@ export function TransactionDetailSheet({
 
                     {/* Information Grid Cards */}
                     <div className="space-y-3">
-                        <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <span className="text-xs font-medium text-zinc-400 uppercase tracking-wider">
                             Details
                         </span>
                         
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                             {/* Date */}
-                            <div className="p-3 bg-muted/20 border border-border/50 rounded-lg flex items-start gap-3">
-                                <div className="p-2 rounded-md bg-background border border-border/60 text-muted-foreground shrink-0">
+                            <div className="p-3 bg-muted/20 border border-zinc-800 rounded-lg flex items-start gap-3">
+                                <div className="p-2 rounded-md bg-background border border-zinc-800 text-zinc-400 shrink-0">
                                     <Calendar className="h-4 w-4" />
                                 </div>
                                 <div className="space-y-0.5 overflow-hidden">
-                                    <p className="text-[11px] font-medium text-muted-foreground">Date</p>
-                                    <p className="text-xs font-semibold text-foreground truncate">
-                                        {formattedDate || <span className="text-muted-foreground font-normal italic">Unspecified</span>}
+                                    <p className="text-[11px] font-medium text-zinc-400">Date</p>
+                                    <p className="text-xs font-semibold text-zinc-300 truncate">
+                                        {formattedDate || <span className="text-zinc-500 font-normal italic">Unspecified</span>}
                                     </p>
                                 </div>
                             </div>
 
                             {/* Account (for non-transfers) */}
                             {transaction.type !== 'transfer' && (
-                                <div className="p-3 bg-muted/20 border border-border/50 rounded-lg flex items-start gap-3">
-                                    <div className="p-2 rounded-md bg-background border border-border/60 text-muted-foreground shrink-0">
+                                <div className="p-3 bg-muted/20 border border-zinc-800 rounded-lg flex items-start gap-3">
+                                    <div className="p-2 rounded-md bg-background border border-zinc-800 text-zinc-400 shrink-0">
                                         <Wallet className="h-4 w-4" />
                                     </div>
                                     <div className="space-y-0.5 overflow-hidden">
-                                        <p className="text-[11px] font-medium text-muted-foreground">Account</p>
-                                        <p className="text-xs font-semibold text-foreground truncate">
-                                            {transaction.account?.name || <span className="text-muted-foreground font-normal italic">Unspecified</span>}
+                                        <p className="text-[11px] font-medium text-zinc-400">Account</p>
+                                        <p className="text-xs font-semibold text-zinc-300 truncate">
+                                            {transaction.account?.name || <span className="text-zinc-500 font-normal italic">Unspecified</span>}
                                         </p>
                                     </div>
                                 </div>
@@ -214,14 +212,14 @@ export function TransactionDetailSheet({
 
                             {/* Category (for non-transfers) */}
                             {transaction.type !== 'transfer' && (
-                                <div className="p-3 bg-muted/20 border border-border/50 rounded-lg flex items-start gap-3 col-span-1 sm:col-span-2">
-                                    <div className="p-2 rounded-md bg-background border border-border/60 text-muted-foreground shrink-0">
+                                <div className="p-3 bg-muted/20 border border-zinc-800 rounded-lg flex items-start gap-3 col-span-1 sm:col-span-2">
+                                    <div className="p-2 rounded-md bg-background border border-zinc-800 text-zinc-400 shrink-0">
                                         <Tag className="h-4 w-4" />
                                     </div>
                                     <div className="space-y-0.5 overflow-hidden">
-                                        <p className="text-[11px] font-medium text-muted-foreground">Category</p>
-                                        <p className="text-xs font-semibold text-foreground truncate">
-                                            {transaction.category?.name || <span className="text-muted-foreground font-normal italic">Uncategorized</span>}
+                                        <p className="text-[11px] font-medium text-zinc-400">Category</p>
+                                        <p className="text-xs font-semibold text-zinc-300 truncate">
+                                            {transaction.category?.name || <span className="text-zinc-500 font-normal italic">Uncategorized</span>}
                                         </p>
                                     </div>
                                 </div>
@@ -229,27 +227,24 @@ export function TransactionDetailSheet({
                         </div>
 
                         {/* Description Section */}
-                        <div className="p-3.5 bg-muted/20 border border-border/50 rounded-lg space-y-1.5">
-                            <div className="flex items-center gap-2 text-muted-foreground">
+                        <div className="p-3.5 bg-muted/20 border border-zinc-800 rounded-lg space-y-1.5">
+                            <div className="flex items-center gap-2 text-zinc-400">
                                 <FileText className="h-3.5 w-3.5" />
                                 <span className="text-[11px] font-medium">Description</span>
                             </div>
-                            <p className="text-xs text-foreground leading-relaxed">
+                            <p className="text-xs text-zinc-300 leading-relaxed">
                                 {transaction.description ? (
                                     transaction.description
                                 ) : (
-                                    <span className="text-muted-foreground italic">No description provided for this transaction.</span>
+                                    <span className="text-zinc-500 italic">No description provided for this transaction.</span>
                                 )}
                             </p>
                         </div>
-
-                        {/* Timestamps */}
-                        
                     </div>
                 </div>
 
                 {/* Fixed Accessible Footer */}
-                <SheetFooter className="p-4 border-t bg-background/95 backdrop-blur gap-2 sm:gap-2 flex-row justify-end items-center">
+                <SheetFooter className="p-4 border-t border-zinc-800 bg-background/95 backdrop-blur gap-2 sm:gap-2 flex-row justify-end items-center">
                     {onDelete && (
                         <Button 
                             variant="outline" 
@@ -258,7 +253,7 @@ export function TransactionDetailSheet({
                                 onOpenChange(false);
                                 onDelete(transaction);
                             }}
-                            className="gap-1.5 border-rose-500/30 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-950/30 dark:hover:text-rose-300 transition-colors"
+                            className="gap-1.5 border-rose-500/30 text-rose-400 hover:bg-rose-950/30 hover:text-rose-300 transition-colors"
                         >
                             <Trash2 className="h-4 w-4" /> Delete
                         </Button>

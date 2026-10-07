@@ -7,6 +7,7 @@ use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
+use Carbon\Carbon;
 
 class TransactionController extends Controller
 {
@@ -17,8 +18,27 @@ class TransactionController extends Controller
         $search    = $request->input('search');
         $type      = $request->input('type');
         $accountId = $request->input('account_id');
-        $startDate = $request->input('start_date');
-        $endDate   = $request->input('end_date');
+        $range     = $request->input('range', 'this_month');
+
+        $customStartDate = $request->input('start_date');
+        $customEndDate   = $request->input('end_date');
+
+        // Resolve date boundaries based on selected range
+        if ($range === 'custom' && $customStartDate && $customEndDate) {
+            $startDate = Carbon::parse($customStartDate)->startOfDay();
+            $endDate   = Carbon::parse($customEndDate)->endOfDay();
+        } elseif ($range === 'all') {
+            $startDate = null;
+            $endDate   = null;
+        } else {
+            [$startDate, $endDate] = match ($range) {
+                'this_day'     => [now()->startOfDay(), now()->endOfDay()],
+                'this_week'    => [now()->startOfWeek(), now()->endOfWeek()],
+                'last_30_days' => [now()->subDays(30)->startOfDay(), now()->endOfDay()],
+                'this_year'    => [now()->startOfYear(), now()->endOfYear()],
+                default        => [now()->startOfMonth(), now()->endOfMonth()], // 'this_month'
+            };
+        }
 
         // 1. Build filtered query
         $query = Transaction::where('user_id', $user->id)
@@ -37,18 +57,18 @@ class TransactionController extends Controller
                         ->orWhere('destination_account_id', $accountId);
                 });
             })
-            ->when($startDate, function ($q, $startDate) {
-                $q->whereDate('transaction_date', '>=', $startDate);
+            ->when($startDate, function ($q) use ($startDate) {
+                $q->whereDate('transaction_date', '>=', $startDate->format('Y-m-d'));
             })
-            ->when($endDate, function ($q, $endDate) {
-                $q->whereDate('transaction_date', '<=', $endDate);
+            ->when($endDate, function ($q) use ($endDate) {
+                $q->whereDate('transaction_date', '<=', $endDate->format('Y-m-d'));
             });
 
         // 2. Dynamic KPI Calculations
         $totalIncome  = (clone $query)->where('type', 'income')->sum('amount');
         $totalExpense = (clone $query)->where('type', 'expense')->sum('amount');
 
-        // Total balance: reflects selected account's balance or overall portfolio balance
+        // Total balance reflects portfolio or selected account balance
         if ($accountId && $accountId !== 'all') {
             $totalBalance = Account::where('user_id', $user->id)
                 ->where('id', $accountId)
@@ -86,8 +106,9 @@ class TransactionController extends Controller
                 'search'     => $search ?? '',
                 'type'       => $type ?? 'all',
                 'account_id' => $accountId ?? 'all',
-                'start_date' => $startDate ?? '',
-                'end_date'   => $endDate ?? '',
+                'range'      => $range,
+                'start_date' => $customStartDate ?? ($startDate ? $startDate->format('Y-m-d') : ''),
+                'end_date'   => $customEndDate ?? ($endDate ? $endDate->format('Y-m-d') : ''),
             ],
         ]);
     }
