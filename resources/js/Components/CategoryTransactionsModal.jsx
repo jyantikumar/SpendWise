@@ -1,8 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { 
     Search, 
-    Filter, 
     X, 
     Loader2, 
     Tag, 
@@ -19,7 +18,6 @@ import {
     DialogDescription 
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -42,10 +40,12 @@ export default function CategoryTransactionsModal({
     const [startDate, setStartDate] = useState(initialStartDate);
     const [endDate, setEndDate] = useState(initialEndDate);
 
+    const abortControllerRef = useRef(null);
+
     const formatCurrency = (val) => 
         new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
 
-    // Sync initial date bounds when modal opens
+    // Reset filters when modal opens
     useEffect(() => {
         if (isOpen) {
             setStartDate(initialStartDate);
@@ -55,108 +55,96 @@ export default function CategoryTransactionsModal({
         }
     }, [isOpen, initialStartDate, initialEndDate]);
 
-    // Fetch category transactions on filter change
-    useEffect(() => {
-        if (!isOpen || !category?.id) return;
+    // Fetch transactions with request cancellation
+    const fetchTransactions = async (searchTerm) => {
+        if (!category?.id) return;
 
-        const fetchTransactions = async () => {
-            setLoading(true);
-            try {
-                const response = await axios.get(route('categories.transactions', category.id), {
-                    params: {
-                        search,
-                        account_id: selectedAccount,
-                        start_date: startDate,
-                        end_date: endDate,
-                    },
-                });
-                setTransactions(response.data.transactions || []);
-                setTotalAmount(response.data.totalAmount || 0);
-            } catch (err) {
+        // Cancel previous pending request if user clicks quickly
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+
+        setLoading(true);
+        try {
+            const parsedAccountId = (selectedAccount && selectedAccount !== 'all') 
+                ? parseInt(selectedAccount, 10) 
+                : '';
+
+            const response = await axios.get(route('categories.transactions', category.id), {
+                params: {
+                    search: searchTerm,
+                    account_id: parsedAccountId,
+                    start_date: startDate,
+                    end_date: endDate,
+                },
+                signal: abortControllerRef.current.signal,
+            });
+
+            setTransactions(response.data.transactions || []);
+            setTotalAmount(response.data.totalAmount || 0);
+        } catch (err) {
+            if (!axios.isCancel(err)) {
                 console.error('Failed to load category transactions:', err);
-            } finally {
-                setLoading(false);
             }
-        };
-
-        const timer = setTimeout(fetchTransactions, 300);
-        return () => clearTimeout(timer);
-    }, [isOpen, category?.id, search, selectedAccount, startDate, endDate]);
-
-    const handleReset = () => {
-        setSearch('');
-        setSelectedAccount('all');
-        setStartDate(initialStartDate);
-        setEndDate(initialEndDate);
-    };
-
-    const getTypeBadge = (type) => {
-        switch (type) {
-            case 'income':
-                return (
-                    <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200 gap-1 font-medium">
-                        <ArrowUpRight className="h-3 w-3" /> Income
-                    </Badge>
-                );
-            case 'expense':
-                return (
-                    <Badge variant="outline" className="bg-rose-50 text-rose-700 border-rose-200 gap-1 font-medium">
-                        <ArrowDownRight className="h-3 w-3" /> Expense
-                    </Badge>
-                );
-            case 'transfer':
-                return (
-                    <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 gap-1 font-medium">
-                        <ArrowLeftRight className="h-3 w-3" /> Transfer
-                    </Badge>
-                );
-            default:
-                return <Badge variant="outline">{type}</Badge>;
+        } finally {
+            setLoading(false);
         }
     };
 
+    // Debounce ONLY text search; trigger dropdown/date changes immediately
+    useEffect(() => {
+        if (!isOpen || !category?.id) return;
+
+        const timer = setTimeout(() => {
+            fetchTransactions(search);
+        }, search ? 200 : 0); // 0ms delay for dropdown/date clicks, short 200ms for text search
+
+        return () => clearTimeout(timer);
+    }, [isOpen, category?.id, search, selectedAccount, startDate, endDate]);
+
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[780px] max-h-[85vh] flex flex-col p-6">
-                <DialogHeader className="pb-2 border-b">
+            <DialogContent className="sm:max-w-[780px] max-h-[85vh] flex flex-col p-6 border-zinc-800 bg-background">
+                <DialogHeader className="pb-2 border-b border-zinc-800">
                     <div className="flex items-center justify-between pr-6">
                         <div className="flex items-center gap-3">
                             <span 
                                 className="h-4 w-4 rounded-full shrink-0" 
                                 style={{ backgroundColor: category?.color || '#3b82f6' }}
                             />
-                            <DialogTitle className="text-xl font-bold flex items-center gap-2">
+                            <DialogTitle className="text-xl font-bold flex items-center gap-2 text-zinc-200">
                                 {category?.name || 'Category'} Transactions
                             </DialogTitle>
                         </div>
-                        <Badge variant="secondary" className="text-sm font-semibold px-3 py-1">
+                        <Badge variant="secondary" className="text-sm font-semibold px-3 py-1 bg-zinc-800 text-zinc-200 border border-zinc-700">
                             Total: {formatCurrency(totalAmount)}
                         </Badge>
                     </div>
-                    <DialogDescription className="text-xs text-muted-foreground mt-1">
+                    <DialogDescription className="text-xs text-zinc-400 mt-1">
                         Viewing all transactions recorded under this category.
                     </DialogDescription>
                 </DialogHeader>
 
                 {/* Filter Controls Bar */}
-                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 py-3 border-b bg-muted/30 -mx-6 px-6">
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 py-3 border-b border-zinc-800 bg-zinc-900/40 -mx-6 px-6">
                     {/* Search Input */}
                     <div className="relative">
-                        <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+                        <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
                         <Input
                             placeholder="Search description..."
                             value={search}
                             onChange={(e) => setSearch(e.target.value)}
-                            className="pl-8 h-8 text-xs"
+                            className="pl-8 h-8 text-xs border-zinc-800 text-zinc-300"
                         />
                     </div>
 
                     {/* Account Filter */}
                     <Select value={selectedAccount} onValueChange={setSelectedAccount}>
-                        <SelectTrigger className="h-8 text-xs">
+                        <SelectTrigger className="h-8 text-xs border-zinc-800 text-zinc-300">
                             <SelectValue placeholder="All Accounts" />
                         </SelectTrigger>
-                        <SelectContent>
+                        <SelectContent className="border-zinc-800 bg-background text-zinc-300">
                             <SelectItem value="all">All Accounts</SelectItem>
                             {accounts.map((acc) => (
                                 <SelectItem key={acc.id} value={String(acc.id)}>
@@ -171,7 +159,7 @@ export default function CategoryTransactionsModal({
                         type="date"
                         value={startDate}
                         onChange={(e) => setStartDate(e.target.value)}
-                        className="h-8 text-xs"
+                        className="h-8 text-xs border-zinc-800 text-zinc-300"
                     />
 
                     {/* End Date */}
@@ -179,42 +167,42 @@ export default function CategoryTransactionsModal({
                         type="date"
                         value={endDate}
                         onChange={(e) => setEndDate(e.target.value)}
-                        className="h-8 text-xs"
+                        className="h-8 text-xs border-zinc-800 text-zinc-300"
                     />
                 </div>
 
                 {/* Transactions Table Container */}
                 <div className="flex-1 overflow-y-auto min-h-[260px] pt-2">
                     {loading ? (
-                        <div className="flex flex-col items-center justify-center h-48 gap-2 text-muted-foreground">
+                        <div className="flex flex-col items-center justify-center h-48 gap-2 text-zinc-400">
                             <Loader2 className="h-6 w-6 animate-spin text-primary" />
                             <span className="text-xs">Loading transactions...</span>
                         </div>
                     ) : transactions.length > 0 ? (
                         <Table>
                             <TableHeader>
-                                <TableRow>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Account</TableHead>
-                                    <TableHead className="text-right">Amount</TableHead>
+                                <TableRow className="border-b border-zinc-800">
+                                    <TableHead className="text-zinc-400">Date</TableHead>
+                                    <TableHead className="text-zinc-400">Description</TableHead>
+                                    <TableHead className="text-zinc-400">Account</TableHead>
+                                    <TableHead className="text-right text-zinc-400">Amount</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
                                 {transactions.map((tx) => (
-                                    <TableRow key={tx.id}>
-                                        <TableCell className="font-medium text-xs whitespace-nowrap">
+                                    <TableRow key={tx.id} className="border-b border-zinc-800 hover:bg-muted/50 transition-colors">
+                                        <TableCell className="font-medium text-xs whitespace-nowrap text-zinc-300">
                                             {tx.transaction_date ? String(tx.transaction_date).split('T')[0] : '—'}
                                         </TableCell>
-                                        <TableCell className="max-w-[200px] truncate text-xs">
-                                            {tx.description || <span className="text-muted-foreground italic">No description</span>}
+                                        <TableCell className="max-w-[200px] truncate text-xs text-zinc-300">
+                                            {tx.description || <span className="text-zinc-500 italic">No description</span>}
                                         </TableCell>
-                                        <TableCell className="text-xs">
+                                        <TableCell className="text-xs text-zinc-400">
                                             {tx.type === 'transfer' ? (
                                                 <span className="inline-flex items-center gap-1 font-medium">
                                                     <span>{tx.account?.name || '—'}</span>
-                                                    <span className="text-muted-foreground">→</span>
-                                                    <span className="text-emerald-600">
+                                                    <span className="text-zinc-500">→</span>
+                                                    <span className="text-emerald-400">
                                                         {tx.destination_account?.name || '—'}
                                                     </span>
                                                 </span>
@@ -224,10 +212,10 @@ export default function CategoryTransactionsModal({
                                         </TableCell>
                                         <TableCell className={`text-right font-semibold text-xs whitespace-nowrap ${
                                             tx.type === 'income' 
-                                                ? 'text-emerald-600' 
+                                                ? 'text-emerald-400' 
                                                 : tx.type === 'expense' 
-                                                ? 'text-rose-600' 
-                                                : 'text-blue-600'
+                                                ? 'text-rose-400' 
+                                                : 'text-blue-400'
                                         }`}>
                                             {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
                                             {formatCurrency(tx.amount)}
@@ -237,9 +225,9 @@ export default function CategoryTransactionsModal({
                             </TableBody>
                         </Table>
                     ) : (
-                        <div className="flex flex-col items-center justify-center h-48 text-center text-muted-foreground">
+                        <div className="flex flex-col items-center justify-center h-48 text-center text-zinc-400">
                             <Tag className="h-8 w-8 stroke-1 mb-2 opacity-50" />
-                            <p className="text-sm font-medium">No transactions found</p>
+                            <p className="text-sm font-medium text-zinc-300">No transactions found</p>
                             <p className="text-xs opacity-75 mt-0.5">Try adjusting your date range or account filter.</p>
                         </div>
                     )}

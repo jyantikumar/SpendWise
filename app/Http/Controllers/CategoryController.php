@@ -88,53 +88,58 @@ class CategoryController extends Controller
     /**
      * Fetch filtered transactions for a specific category (returns JSON for modal).
      */
-    public function categoryTransactions(Request $request, $categoryId)
-    {
-        $userId = $request->user()->id;
+  public function categoryTransactions(Request $request, $categoryId)
+{
+    $userId = $request->user()->id;
 
-        // Support Uncategorized (ID 0) vs standard Category models
-        if ((int) $categoryId === 0) {
-            $category = (object) [
-                'id'    => 0,
-                'name'  => 'Uncategorized',
-                'color' => '#94a3b8',
-            ];
-            $query = Transaction::where('user_id', $userId)->whereNull('category_id');
-        } else {
-            $category = Category::where('user_id', $userId)->findOrFail($categoryId);
-            $query = Transaction::where('user_id', $userId)->where('category_id', $category->id);
-        }
-
-        $search    = $request->input('search');
-        $accountId = $request->input('account_id');
-        $startDate = $request->input('start_date');
-        $endDate   = $request->input('end_date');
-
-        $transactions = $query
-            ->with(['account', 'destinationAccount', 'category'])
-            ->when($search, function ($q, $search) {
-                $q->where('description', 'like', "%{$search}%");
-            })
-            ->when($accountId && $accountId !== 'all', function ($q, $accountId) {
-                $q->where(function ($sub) use ($accountId) {
-                    $sub->where('account_id', $accountId)
-                        ->orWhere('destination_account_id', $accountId);
-                });
-            })
-            ->when($startDate, function ($q, $startDate) {
-                $q->whereDate('transaction_date', '>=', $startDate);
-            })
-            ->when($endDate, function ($q, $endDate) {
-                $q->whereDate('transaction_date', '<=', $endDate);
-            })
-            ->orderBy('transaction_date', 'desc')
-            ->orderBy('id', 'desc')
-            ->get();
-
-        return response()->json([
-            'category'     => $category,
-            'transactions' => $transactions,
-            'totalAmount'  => $transactions->sum('amount'),
-        ]);
+    if ((int) $categoryId === 0) {
+        $category = (object) [
+            'id'    => 0,
+            'name'  => 'Uncategorized',
+            'color' => '#94a3b8',
+        ];
+        $query = Transaction::where('user_id', $userId)->whereNull('category_id');
+    } else {
+        $category = Category::where('user_id', $userId)->select('id', 'name', 'color')->findOrFail($categoryId);
+        $query = Transaction::where('user_id', $userId)->where('category_id', $category->id);
     }
+
+    $search    = $request->input('search');
+    $accountId = $request->input('account_id');
+    $startDate = $request->input('start_date');
+    $endDate   = $request->input('end_date');
+
+    $transactions = $query
+        ->select('id', 'user_id', 'account_id', 'destination_account_id', 'category_id', 'type', 'amount', 'description', 'transaction_date')
+        ->with([
+            'account:id,name', 
+            'destinationAccount:id,name', 
+            'category:id,name'
+        ])
+        ->when($search, function ($q, $search) {
+            $q->where('description', 'like', "%{$search}%");
+        })
+        ->when(!empty($accountId) && $accountId !== 'all', function ($q) use ($accountId) {
+            $id = (int) $accountId;
+            $q->where(function ($sub) use ($id) {
+                $sub->where('account_id', $id)
+                    ->orWhere('destination_account_id', $id);
+            });
+        })
+        ->when($startDate, function ($q, $startDate) {
+            $q->whereDate('transaction_date', '>=', $startDate);
+        })
+        ->when($endDate, function ($q, $endDate) {
+            $q->whereDate('transaction_date', '<=', $endDate);
+        })
+        ->orderBy('transaction_date', 'desc')
+        ->orderBy('id', 'desc')
+        ->get();
+
+    return response()->json([
+        'category'     => $category,
+        'transactions' => $transactions,
+        'totalAmount'  => $transactions->sum('amount'),
+    ]);
+}
 }
