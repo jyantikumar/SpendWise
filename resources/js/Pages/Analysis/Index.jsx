@@ -46,7 +46,6 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
     const [endDate, setEndDate] = useState(filters.end_date || '');
     const [calendarMonth, setCalendarMonth] = useState(filters.calendar_month || new Date().toISOString().slice(0, 7));
 
-    // Interactive Dialog State
     const [selectedDayObj, setSelectedDayObj] = useState(null);
 
     const formatCurrency = (val) => 
@@ -116,18 +115,18 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                 <AppSidebar user={auth.user} />
 
                 <SidebarInset>
-                    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                    <header className="flex h-16 shrink-0 items-center gap-2 border-b border-zinc-800 px-4">
                         <SidebarTrigger className="-ml-1" />
-                        <Separator orientation="vertical" className="mr-2 h-4" />
-                        <h1 className="text-lg font-semibold tracking-tight">Financial Analysis & Insights</h1>
+                        <Separator orientation="vertical" className="mr-2 h-4 bg-zinc-800" />
+                        <h1 className="text-lg font-semibold tracking-tight text-zinc-200">Financial Analysis & Insights</h1>
                     </header>
 
                     <main className="flex flex-1 flex-col gap-6 p-4 md:gap-8 md:p-8">
                         <div>
-                            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-zinc-100">
                                 <BarChart3 className="h-6 w-6 text-primary" /> Visual Analytics
                             </h2>
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-zinc-400">
                                 Track cash velocity, daily spending activity, and category distribution.
                             </p>
                         </div>
@@ -141,10 +140,10 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                     applyFilters({ type: val });
                                 }}
                             >
-                                <SelectTrigger className="w-[180px] h-9">
+                                <SelectTrigger className="w-[180px] h-9 border-zinc-800 text-zinc-300">
                                     <SelectValue placeholder="Type" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="border-zinc-800">
                                     <SelectItem value="expense">Expenses</SelectItem>
                                     <SelectItem value="income">Income</SelectItem>
                                     <SelectItem value="all">All Flow</SelectItem>
@@ -158,11 +157,11 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                     applyFilters({ account_id: val });
                                 }}
                             >
-                                <SelectTrigger className="w-[210px] h-9">
-                                    <Wallet className="mr-2 h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                <SelectTrigger className="w-[210px] h-9 border-zinc-800 text-zinc-300">
+                                    <Wallet className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
                                     <SelectValue placeholder="All Accounts" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="border-zinc-800">
                                     <SelectItem value="all">All Accounts</SelectItem>
                                     {accounts.map((acc) => (
                                         <SelectItem key={acc.id} value={String(acc.id)}>
@@ -179,11 +178,11 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                     applyFilters({ range: val });
                                 }}
                             >
-                                <SelectTrigger className="w-[200px] h-9">
-                                    <SlidersHorizontal className="mr-2 h-3.5 w-3.5 text-muted-foreground shrink-0" />
+                                <SelectTrigger className="w-[200px] h-9 border-zinc-800 text-zinc-300">
+                                    <SlidersHorizontal className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
                                     <SelectValue placeholder="Range" />
                                 </SelectTrigger>
-                                <SelectContent>
+                                <SelectContent className="border-zinc-800">
                                     <SelectItem value="1_week">1 Week</SelectItem>
                                     <SelectItem value="this_month">This Month</SelectItem>
                                     <SelectItem value="6_months">6 Months</SelectItem>
@@ -198,14 +197,14 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                         type="date"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
-                                        className="h-9 w-[140px] text-xs"
+                                        className="h-9 w-[140px] text-xs border-zinc-800 text-zinc-300"
                                     />
-                                    <span className="text-xs text-muted-foreground">to</span>
+                                    <span className="text-xs text-zinc-400">to</span>
                                     <Input
                                         type="date"
                                         value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}
-                                        className="h-9 w-[140px] text-xs"
+                                        className="h-9 w-[140px] text-xs border-zinc-800 text-zinc-300"
                                     />
                                     <Button 
                                         size="sm" 
@@ -220,12 +219,12 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
 
                         {/* KPI Summary Tiles */}
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                            <Card className="flex flex-col justify-between">
+                            <Card className="border-zinc-800 flex flex-col justify-between">
                                 <CardHeader className="pb-1 pt-3 px-4 flex flex-row items-center justify-between space-y-0">
-                                    <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                    <CardTitle className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
                                         Income vs. Expense
                                     </CardTitle>
-                                    <PieIcon className="h-4 w-4 text-muted-foreground" />
+                                    <PieIcon className="h-4 w-4 text-zinc-400" />
                                 </CardHeader>
                                 <CardContent className="px-4 pb-3 pt-1">
                                     {totalFlow > 0 ? (
@@ -248,7 +247,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                                         </Pie>
                                                         <Tooltip 
                                                             formatter={(val) => [formatCurrency(val), 'Amount']}
-                                                            contentStyle={{ borderRadius: '8px', fontSize: '11px' }}
+                                                            contentStyle={{ borderRadius: '8px', fontSize: '11px', borderColor: '#27272a', backgroundColor: '#18181b', color: '#f4f4f5' }}
                                                         />
                                                     </PieChart>
                                                 </ResponsiveContainer>
@@ -256,78 +255,77 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
 
                                             <div className="flex flex-col justify-center gap-1.5 flex-1 text-xs">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="flex items-center gap-1.5 text-muted-foreground font-medium">
+                                                    <span className="flex items-center gap-1.5 text-zinc-400 font-medium">
                                                         <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" /> Income
                                                     </span>
-                                                    <span className="font-bold text-emerald-600">
+                                                    <span className="font-bold text-emerald-500">
                                                         {formatCurrency(incomeVal)}
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <span className="flex items-center gap-1.5 text-muted-foreground font-medium">
+                                                    <span className="flex items-center gap-1.5 text-zinc-400 font-medium">
                                                         <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" /> Expense
                                                     </span>
-                                                    <span className="font-bold text-rose-600">
+                                                    <span className="font-bold text-rose-500">
                                                         {formatCurrency(expenseVal)}
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center h-[80px] text-muted-foreground text-xs">
+                                        <div className="flex flex-col items-center justify-center h-[80px] text-zinc-400 text-xs">
                                             No flow recorded for this range.
                                         </div>
                                     )}
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card className="border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Daily Average ({type})</CardTitle>
+                                    <CardTitle className="text-sm font-medium text-zinc-400">Daily Average ({type})</CardTitle>
                                     <Zap className="h-4 w-4 text-amber-500" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold">{formatCurrency(kpis?.dailyAverage)}</div>
-                                    <p className="text-xs text-muted-foreground mt-1">Mean flow per day across {kpis?.totalDays} days</p>
+                                    <div className="text-2xl font-bold text-zinc-200">{formatCurrency(kpis?.dailyAverage)}</div>
+                                    <p className="text-xs text-zinc-400 mt-1">Mean flow per day across {kpis?.totalDays} days</p>
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card className="border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Peak Activity Day</CardTitle>
-                                    <CalendarIcon className="h-4 w-4 text-white-500" />
+                                    <CardTitle className="text-sm font-medium text-zinc-400">Peak Activity Day</CardTitle>
+                                    <CalendarIcon className="h-4 w-4 text-zinc-400" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold text-white-600">{formatCurrency(kpis?.peakAmount)}</div>
-                                    <p className="text-xs text-muted-foreground mt-1">
+                                    <div className="text-2xl font-bold text-zinc-200">{formatCurrency(kpis?.peakAmount)}</div>
+                                    <p className="text-xs text-zinc-400 mt-1">
                                         {kpis?.peakDate ? `Highest on ${kpis.peakDate}` : 'No activity recorded'}
                                     </p>
                                 </CardContent>
                             </Card>
 
-                            <Card>
+                            <Card className="border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium">Net Cash Flow</CardTitle>
-                                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                                    <CardTitle className="text-sm font-medium text-zinc-400">Net Cash Flow</CardTitle>
+                                    <DollarSign className="h-4 w-4 text-zinc-400" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className={`text-2xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+                                    <div className={`text-2xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                                         {formatCurrency(kpis?.netCashFlow)}
                                     </div>
-                                    <p className="text-xs text-muted-foreground mt-1">Total Income - Total Expenses</p>
+                                    <p className="text-xs text-zinc-400 mt-1">Total Income - Total Expenses</p>
                                 </CardContent>
                             </Card>
                         </div>
 
                         {/* Main Charts & Calendar Layout */}
                         <div className="grid gap-6 lg:grid-cols-3">
-                            {/* Area Chart */}
-                            <Card className="lg:col-span-2 flex flex-col justify-between">
+                            <Card className="border-zinc-800 lg:col-span-2 flex flex-col justify-between">
                                 <CardHeader>
-                                    <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                    <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
                                         <TrendingUp className="h-4 w-4 text-primary" /> Cash Flow Trajectory
                                     </CardTitle>
-                                    <CardDescription>Daily movement and aggregate trend for the selected horizon.</CardDescription>
+                                    <CardDescription className="text-zinc-400">Daily movement and aggregate trend for the selected horizon.</CardDescription>
                                 </CardHeader>
                                 <CardContent className="pt-2">
                                     <div className="h-[280px] w-full">
@@ -347,7 +345,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                                         />
                                                     </linearGradient>
                                                 </defs>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
                                                 <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} />
                                                 <YAxis 
                                                     tick={{ fontSize: 11 }} 
@@ -384,11 +382,10 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 </CardContent>
                             </Card>
 
-                            {/* Calendar Grid */}
-                            <Card className="flex flex-col justify-between">
+                            <Card className="border-zinc-800 flex flex-col justify-between">
                                 <CardHeader className="pb-3">
                                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                        <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                        <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
                                              Daily Activity Calendar
                                         </CardTitle>
 
@@ -396,7 +393,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                             <Button 
                                                 variant="outline" 
                                                 size="icon-sm" 
-                                                className="h-7 w-7" 
+                                                className="h-7 w-7 border-zinc-800 text-zinc-300" 
                                                 onClick={handlePrevMonth}
                                                 title="Previous Month"
                                             >
@@ -407,13 +404,13 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                                 type="month"
                                                 value={calendar.month || calendarMonth}
                                                 onChange={handleMonthSelect}
-                                                className="h-7 text-xs w-[125px] px-2"
+                                                className="h-7 text-xs w-[125px] px-2 border-zinc-800 text-zinc-300"
                                             />
 
                                             <Button 
                                                 variant="outline" 
                                                 size="icon-sm" 
-                                                className="h-7 w-7" 
+                                                className="h-7 w-7 border-zinc-800 text-zinc-300" 
                                                 onClick={handleNextMonth}
                                                 title="Next Month"
                                             >
@@ -421,14 +418,14 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                             </Button>
                                         </div>
                                     </div>
-                                    <CardDescription className="text-xs">
+                                    <CardDescription className="text-xs text-zinc-400">
                                         Click any day to view recorded transactions.
                                     </CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     <div className="grid grid-cols-7 gap-1 text-center">
                                         {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-                                            <div key={day} className="text-[11px] font-medium text-muted-foreground py-1">
+                                            <div key={day} className="text-[11px] font-medium text-zinc-400 py-1">
                                                 {day}
                                             </div>
                                         ))}
@@ -439,24 +436,24 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                                         type="button"
                                                         onClick={() => setSelectedDayObj(dayObj)}
                                                         title={`${dayObj.date} | Income: ${formatCurrency(dayObj.income)} | Expense: ${formatCurrency(dayObj.expense)}`}
-                                                        className={`w-full h-full rounded-md flex flex-col items-center justify-between p-1 transition-all border cursor-pointer ${
+                                                        className={`w-full h-full rounded-md flex flex-col items-center justify-between p-1 transition-all border border-zinc-800/60 cursor-pointer ${
                                                             dayObj.isToday 
                                                                 ? 'ring-2 ring-primary ring-offset-1 border-primary bg-primary/5' 
-                                                                : 'bg-card border-border/50 hover:bg-muted/80'
+                                                                : 'bg-card hover:bg-muted/80'
                                                         }`}
                                                     >
-                                                        <span className="text-[10px] font-semibold text-muted-foreground self-start leading-none">
+                                                        <span className="text-[10px] font-semibold text-zinc-400 self-start leading-none">
                                                             {dayObj.dayNumber}
                                                         </span>
 
                                                         <div className="flex flex-col w-full text-[9px] leading-tight font-medium overflow-hidden">
                                                             {dayObj.income > 0 && (
-                                                                <span className="text-emerald-600 truncate font-semibold">
+                                                                <span className="text-emerald-500 truncate font-semibold">
                                                                     +{formatCompactCurrency(dayObj.income)}
                                                                 </span>
                                                             )}
                                                             {dayObj.expense > 0 && (
-                                                                <span className="text-rose-600 truncate font-semibold">
+                                                                <span className="text-rose-500 truncate font-semibold">
                                                                     -{formatCompactCurrency(dayObj.expense)}
                                                                 </span>
                                                             )}
@@ -471,20 +468,19 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 </CardContent>
                             </Card>
 
-                            {/* Category Distribution Bar Chart */}
-                            <Card className="lg:col-span-3">
+                            <Card className="border-zinc-800 lg:col-span-3">
                                 <CardHeader>
-                                    <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                    <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
                                         <PieIcon className="h-4 w-4 text-primary" /> Expense Category Distribution
                                     </CardTitle>
-                                    <CardDescription>Top expense categories ranked by spending volume for the filtered duration.</CardDescription>
+                                    <CardDescription className="text-zinc-400">Top expense categories ranked by spending volume for the filtered duration.</CardDescription>
                                 </CardHeader>
                                 <CardContent>
                                     {categoryData.length > 0 ? (
                                         <div className="h-[260px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <BarChart data={categoryData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
                                                     <XAxis 
                                                         dataKey="name" 
                                                         tick={{ fontSize: 11 }} 
@@ -498,7 +494,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                                     />
                                                     <Tooltip 
                                                         formatter={(val) => [formatCurrency(val), 'Total Expense']}
-                                                        contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
+                                                        contentStyle={{ borderRadius: '8px', fontSize: '12px', borderColor: '#27272a', backgroundColor: '#18181b', color: '#f4f4f5' }}
                                                     />
                                                     <Bar dataKey="total" radius={[6, 6, 0, 0]}>
                                                         {categoryData.map((entry, index) => (
@@ -509,7 +505,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                             </ResponsiveContainer>
                                         </div>
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center h-48 text-muted-foreground">
+                                        <div className="flex flex-col items-center justify-center h-48 text-zinc-400">
                                             <BarChart3 className="h-8 w-8 stroke-1 opacity-50 mb-2" />
                                             <p className="text-sm font-medium">No expense category data available for this range.</p>
                                         </div>
@@ -520,7 +516,6 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                     </main>
                 </SidebarInset>
 
-                {/* Dialog to view transactions for the clicked date */}
                 <DateTransactionsDialog
                     open={!!selectedDayObj}
                     onOpenChange={(open) => !open && setSelectedDayObj(null)}

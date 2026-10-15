@@ -2,14 +2,11 @@ import { useRef, useState } from 'react';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { 
     User, 
-    Lock, 
-    ShieldAlert, 
     Check, 
     AlertCircle, 
     Trash2, 
     Loader2, 
     KeyRound, 
-    MailCheck, 
     AlertTriangle,
     Eye,
     EyeOff
@@ -20,8 +17,6 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/s
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -34,7 +29,6 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 
-// --- Sub-Component: Update Profile Information Form ---
 function UpdateProfileInformationForm({ mustVerifyEmail, status }) {
     const user = usePage().props.auth.user;
 
@@ -51,15 +45,15 @@ function UpdateProfileInformationForm({ mustVerifyEmail, status }) {
     return (
         <div className="space-y-6">
             <div>
-                <h3 className="text-lg font-medium">Profile Details</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-lg font-medium text-zinc-100">Profile Details</h3>
+                <p className="text-sm text-zinc-400">
                     Update your account details and public information.
                 </p>
             </div>
-            <Separator />
+            <Separator className="bg-zinc-800" />
             <form onSubmit={submit} className="space-y-6">
                 <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
+                    <Label htmlFor="name" className="text-zinc-300">Full Name</Label>
                     <Input
                         id="name"
                         value={data.name}
@@ -67,12 +61,13 @@ function UpdateProfileInformationForm({ mustVerifyEmail, status }) {
                         required
                         autoComplete="name"
                         placeholder="John Doe"
+                        className="border-zinc-800 text-zinc-200"
                     />
                     {errors.name && <p className="text-xs font-medium text-destructive">{errors.name}</p>}
                 </div>
 
                 <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
+                    <Label htmlFor="email" className="text-zinc-300">Email Address</Label>
                     <Input
                         id="email"
                         type="email"
@@ -81,12 +76,13 @@ function UpdateProfileInformationForm({ mustVerifyEmail, status }) {
                         required
                         autoComplete="username"
                         placeholder="name@example.com"
+                        className="border-zinc-800 text-zinc-200"
                     />
                     {errors.email && <p className="text-xs font-medium text-destructive">{errors.email}</p>}
                 </div>
 
                 {mustVerifyEmail && user.email_verified_at === null && (
-                    <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-700 dark:text-amber-400 flex flex-col gap-2">
+                    <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-4 text-xs text-amber-400 flex flex-col gap-2">
                         <div className="flex items-center gap-2 font-medium">
                             <AlertCircle className="h-4 w-4 shrink-0 text-amber-500" />
                             Your email address is unverified.
@@ -95,12 +91,12 @@ function UpdateProfileInformationForm({ mustVerifyEmail, status }) {
                             href={route('verification.send')}
                             method="post"
                             as="button"
-                            className="underline text-xs hover:text-amber-800 dark:hover:text-amber-200 text-left font-semibold w-fit"
+                            className="underline text-xs hover:text-amber-200 text-left font-semibold w-fit"
                         >
                             Click here to re-send the verification email.
                         </Link>
                         {status === 'verification-link-sent' && (
-                            <p className="text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                            <p className="text-xs font-medium text-emerald-400">
                                 A new verification link has been sent to your email address.
                             </p>
                         )}
@@ -114,7 +110,7 @@ function UpdateProfileInformationForm({ mustVerifyEmail, status }) {
                     </Button>
 
                     {recentlySuccessful && (
-                        <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
+                        <span className="text-xs text-emerald-400 flex items-center gap-1 font-medium">
                             <Check className="h-3.5 w-3.5" /> Saved successfully.
                         </span>
                     )}
@@ -124,7 +120,6 @@ function UpdateProfileInformationForm({ mustVerifyEmail, status }) {
     );
 }
 
-// --- Sub-Component: Update Password Form (With Password Visibility Toggles) ---
 function UpdatePasswordForm() {
     const passwordInput = useRef();
     const currentPasswordInput = useRef();
@@ -161,16 +156,15 @@ function UpdatePasswordForm() {
     return (
         <div className="space-y-6">
             <div>
-                <h3 className="text-lg font-medium">Password & Security</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="text-lg font-medium text-zinc-100">Password & Security</h3>
+                <p className="text-sm text-zinc-400">
                     Ensure your account is using a long, random password to stay secure.
                 </p>
             </div>
-            <Separator />
+            <Separator className="bg-zinc-800" />
             <form onSubmit={updatePassword} className="space-y-6">
-                {/* Current Password Field */}
                 <div className="space-y-2">
-                    <Label htmlFor="current_password">Current Password</Label>
+                    <Label htmlFor="current_password" className="text-zinc-300">Current Password</Label>
                     <div className="relative">
                         <Input
                             id="current_password"
@@ -179,15 +173,14 @@ function UpdatePasswordForm() {
                             onChange={(e) => setData('current_password', e.target.value)}
                             type={showCurrentPassword ? 'text' : 'password'}
                             autoComplete="current-password"
-                            className="pr-10"
+                            className="pr-10 border-zinc-800 text-zinc-200"
                         />
                         <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                            className="absolute right-0 top-0 h-full px-3 py-2 text-zinc-400 hover:bg-transparent hover:text-zinc-200"
                             onClick={() => setShowCurrentPassword(!showCurrentPassword)}
-                            aria-label={showCurrentPassword ? 'Hide current password' : 'Show current password'}
                         >
                             {showCurrentPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
@@ -197,9 +190,8 @@ function UpdatePasswordForm() {
                     )}
                 </div>
 
-                {/* New Password Field */}
                 <div className="space-y-2">
-                    <Label htmlFor="password">New Password</Label>
+                    <Label htmlFor="password" className="text-zinc-300">New Password</Label>
                     <div className="relative">
                         <Input
                             id="password"
@@ -208,15 +200,14 @@ function UpdatePasswordForm() {
                             onChange={(e) => setData('password', e.target.value)}
                             type={showPassword ? 'text' : 'password'}
                             autoComplete="new-password"
-                            className="pr-10"
+                            className="pr-10 border-zinc-800 text-zinc-200"
                         />
                         <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                            className="absolute right-0 top-0 h-full px-3 py-2 text-zinc-400 hover:bg-transparent hover:text-zinc-200"
                             onClick={() => setShowPassword(!showPassword)}
-                            aria-label={showPassword ? 'Hide new password' : 'Show new password'}
                         >
                             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
@@ -224,9 +215,8 @@ function UpdatePasswordForm() {
                     {errors.password && <p className="text-xs font-medium text-destructive">{errors.password}</p>}
                 </div>
 
-                {/* Confirm Password Field */}
                 <div className="space-y-2">
-                    <Label htmlFor="password_confirmation">Confirm Password</Label>
+                    <Label htmlFor="password_confirmation" className="text-zinc-300">Confirm Password</Label>
                     <div className="relative">
                         <Input
                             id="password_confirmation"
@@ -234,15 +224,14 @@ function UpdatePasswordForm() {
                             onChange={(e) => setData('password_confirmation', e.target.value)}
                             type={showPasswordConfirmation ? 'text' : 'password'}
                             autoComplete="new-password"
-                            className="pr-10"
+                            className="pr-10 border-zinc-800 text-zinc-200"
                         />
                         <Button
                             type="button"
                             variant="ghost"
                             size="sm"
-                            className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                            className="absolute right-0 top-0 h-full px-3 py-2 text-zinc-400 hover:bg-transparent hover:text-zinc-200"
                             onClick={() => setShowPasswordConfirmation(!showPasswordConfirmation)}
-                            aria-label={showPasswordConfirmation ? 'Hide confirm password' : 'Show confirm password'}
                         >
                             {showPasswordConfirmation ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                         </Button>
@@ -259,7 +248,7 @@ function UpdatePasswordForm() {
                     </Button>
 
                     {recentlySuccessful && (
-                        <span className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
+                        <span className="text-xs text-emerald-400 flex items-center gap-1 font-medium">
                             <Check className="h-3.5 w-3.5" /> Password updated.
                         </span>
                     )}
@@ -269,7 +258,6 @@ function UpdatePasswordForm() {
     );
 }
 
-// --- Sub-Component: Delete User Form (With Password Visibility Toggle) ---
 function DeleteUserForm() {
     const [confirmingUserDeletion, setConfirmingUserDeletion] = useState(false);
     const [showDeletePassword, setShowDeletePassword] = useState(false);
@@ -314,13 +302,13 @@ function DeleteUserForm() {
         <div className="space-y-6">
             <div>
                 <h3 className="text-lg font-medium text-destructive">Danger Zone</h3>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-zinc-400">
                     Permanently delete your account and all associated data.
                 </p>
             </div>
-            <Separator />
+            <Separator className="bg-zinc-800" />
             <div className="space-y-4">
-                <p className="text-xs text-muted-foreground leading-relaxed">
+                <p className="text-xs text-zinc-400 leading-relaxed">
                     Once your account is deleted, all of its resources and transaction history will be permanently wiped. Please download any data or records you wish to retain before proceeding.
                 </p>
 
@@ -356,16 +344,15 @@ function DeleteUserForm() {
                                         value={data.password}
                                         onChange={(e) => setData('password', e.target.value)}
                                         placeholder="Enter current password"
-                                        className="pr-10"
+                                        className="pr-10 border-zinc-800 text-zinc-200"
                                         autoFocus
                                     />
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         size="sm"
-                                        className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:bg-transparent hover:text-foreground"
+                                        className="absolute right-0 top-0 h-full px-3 py-2 text-zinc-400 hover:bg-transparent hover:text-zinc-200"
                                         onClick={() => setShowDeletePassword(!showDeletePassword)}
-                                        aria-label={showDeletePassword ? 'Hide password' : 'Show password'}
                                     >
                                         {showDeletePassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </Button>
@@ -397,13 +384,8 @@ function DeleteUserForm() {
     );
 }
 
-// --- Main Page Component ---
 export default function Edit({ auth, mustVerifyEmail, status }) {
     const user = auth?.user || {};
-
-    const userInitials = user.name
-        ? user.name.split(' ').map((n) => n[0]).join('').slice(0, 2).toUpperCase()
-        : 'US';
 
     return (
         <TooltipProvider>
@@ -413,54 +395,47 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                 <AppSidebar user={user} />
 
                 <SidebarInset>
-                    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
+                    <header className="flex h-16 shrink-0 items-center gap-2 border-b border-zinc-800 px-4">
                         <SidebarTrigger className="-ml-1" />
-                        <Separator orientation="vertical" className="mr-2 h-4" />
-                        <h1 className="text-lg font-semibold tracking-tight">Account Settings</h1>
+                        <Separator orientation="vertical" className="mr-2 h-4 bg-zinc-800" />
+                        <h1 className="text-lg font-semibold tracking-tight text-zinc-200">Account Settings</h1>
                     </header>
 
-                    {/* Centered Main Container */}
                     <main className="flex-1 p-6 md:p-10 max-w-3xl mx-auto w-full space-y-6">
-                        {/* Settings Header Block */}
                         <div className="space-y-0.5">
-                            <h2 className="text-2xl font-bold tracking-tight">Settings</h2>
-                            <p className="text-muted-foreground text-sm">
+                            <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Settings</h2>
+                            <p className="text-zinc-400 text-sm">
                                 Manage your account settings and preferences.
                             </p>
                         </div>
 
-                        <Separator />
+                        <Separator className="bg-zinc-800" />
 
-                        {/* Profile Info Summary */}
-                        
-                        {/* Tabs Layout Block */}
                         <Tabs defaultValue="general" className="flex flex-col space-y-8 w-full pt-2">
-                            {/* Horizontal Tabs Navigation */}
-                            <TabsList className="w-full justify-start border-b rounded-none bg-transparent p-0 gap-6 h-auto">
+                            <TabsList className="w-full justify-start border-b border-zinc-800 rounded-none bg-transparent p-0 gap-6 h-auto">
                                 <TabsTrigger 
                                     value="general" 
-                                    className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent shadow-none"
+                                    className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-primary data-[state=active]:text-zinc-100 data-[state=active]:bg-transparent shadow-none"
                                 >
                                     <User className="h-4 w-4" />
                                     General
                                 </TabsTrigger>
                                 <TabsTrigger 
                                     value="security" 
-                                    className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-muted-foreground data-[state=active]:border-primary data-[state=active]:text-foreground data-[state=active]:bg-transparent shadow-none"
+                                    className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-primary data-[state=active]:text-zinc-100 data-[state=active]:bg-transparent shadow-none"
                                 >
                                     <KeyRound className="h-4 w-4" />
                                     Security
                                 </TabsTrigger>
                                 <TabsTrigger 
                                     value="danger" 
-                                    className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-muted-foreground data-[state=active]:border-destructive data-[state=active]:text-destructive data-[state=active]:bg-transparent shadow-none"
+                                    className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-destructive data-[state=active]:text-destructive data-[state=active]:bg-transparent shadow-none"
                                 >
                                     <AlertTriangle className="h-4 w-4" />
                                     Danger Zone
                                 </TabsTrigger>
                             </TabsList>
 
-                            {/* Forms Below Tabs Navigation */}
                             <TabsContent value="general" className="mt-0">
                                 <UpdateProfileInformationForm
                                     mustVerifyEmail={mustVerifyEmail}
