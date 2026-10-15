@@ -161,8 +161,7 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                         <TableRow className="border-b border-zinc-800">
                                             <TableHead className="text-zinc-400">Category Name</TableHead>
                                             <TableHead className="text-zinc-400">Type</TableHead>
-                                            <TableHead className="text-zinc-400">Transactions Count</TableHead>
-                                            <TableHead className="text-right text-zinc-400">Actions</TableHead>
+                                            <TableHead className="text-right text-zinc-400"></TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -183,9 +182,6 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                                         </div>
                                                     </TableCell>
                                                     <TableCell>{renderTypeBadge(cat.type)}</TableCell>
-                                                    <TableCell className="text-zinc-400">
-                                                        {cat.transactions_count || 0} transactions
-                                                    </TableCell>
                                                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>

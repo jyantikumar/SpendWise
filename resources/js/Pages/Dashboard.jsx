@@ -24,7 +24,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import CategoryTransactionsModal from '@/components/CategoryTransactionsModal';
 import TransactionFormModal from '@/components/TransactionFormModal';
 
-// Custom SVG Donut / Pie Chart Component
+// Flexible SVG Donut / Pie Chart Component
 function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
     const [hoveredIndex, setHoveredIndex] = useState(null);
 
@@ -32,7 +32,7 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
 
     if (total === 0 || data.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">
+            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
                 <PieChartIcon className="h-10 w-10 stroke-1 text-muted-foreground/50 mb-2" />
                 <p className="text-sm text-zinc-400">No expense records for this period.</p>
             </div>
@@ -83,8 +83,9 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
     const activeItem = hoveredIndex !== null ? slices[hoveredIndex] : null;
 
     return (
-        <div className="flex flex-col sm:flex-row items-center gap-6">
-            <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 h-full min-h-0 flex-1">
+            {/* Donut Chart Display */}
+            <div className="relative w-40 h-40 shrink-0 flex items-center justify-center my-1">
                 <svg viewBox="0 0 200 200" className="w-full h-full">
                     {slices.map((slice, index) => (
                         <path
@@ -105,7 +106,7 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none p-2">
                     <span className="text-[10px] uppercase font-semibold text-zinc-400 tracking-wider truncate max-w-[90px]">
-                        {activeItem ? activeItem.name : 'Total Expense'}
+                        {activeItem ? activeItem.name : 'Total'}
                     </span>
                     <span className="text-sm font-bold tracking-tight text-zinc-300">
                         {activeItem ? formatCurrency(activeItem.value) : formatCurrency(total)}
@@ -118,12 +119,13 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
                 </div>
             </div>
 
-            <div className="flex-1 w-full space-y-2 max-h-[190px] overflow-y-auto pr-1">
+            {/* Dynamic Full-Height Category List */}
+            <div className="flex-1 w-full space-y-1.5 overflow-y-auto pr-1 min-h-[180px]">
                 {slices.map((slice, index) => (
                     <div
                         key={slice.id || index}
-                        className={`flex items-center justify-between p-1.5 rounded-md transition-colors cursor-pointer text-xs ${
-                            hoveredIndex === index ? 'bg-muted font-medium' : 'hover:bg-muted/50'
+                        className={`flex items-center justify-between p-2 rounded-md transition-colors cursor-pointer text-xs ${
+                            hoveredIndex === index ? 'bg-zinc-800 font-medium text-zinc-100' : 'hover:bg-zinc-800/50 text-zinc-300'
                         }`}
                         onMouseEnter={() => setHoveredIndex(index)}
                         onMouseLeave={() => setHoveredIndex(null)}
@@ -134,13 +136,13 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
                                 className="h-2.5 w-2.5 rounded-full shrink-0"
                                 style={{ backgroundColor: slice.color }}
                             />
-                            <span className="truncate text-zinc-300">{slice.name}</span>
+                            <span className="truncate">{slice.name}</span>
                         </div>
-                        <div className="flex items-center gap-2 shrink-0">
-                            <span className="text-zinc-400 text-[11px]">
+                        <div className="flex items-center gap-3 shrink-0">
+                            <span className="text-zinc-400 text-[11px] font-mono">
                                 {slice.percentage.toFixed(0)}%
                             </span>
-                            <span className="font-semibold text-zinc-300">{formatCurrency(slice.value)}</span>
+                            <span className="font-semibold">{formatCurrency(slice.value)}</span>
                         </div>
                     </div>
                 ))}
@@ -170,6 +172,11 @@ export default function Dashboard({
 
     const formatCurrency = (val) => 
         new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
+
+    const formatDateOnly = (dateString) => {
+        if (!dateString) return '';
+        return dateString.split('T')[0];
+    };
 
     const handleFilterChange = (value) => {
         if (value === 'custom') {
@@ -338,9 +345,9 @@ export default function Dashboard({
                             </Card>
                         </div>
 
-                        {/* Main Table View */}
-                        <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
-                            <Card className="xl:col-span-2 border-zinc-800">
+                        {/* Main Table & Chart Layout */}
+                        <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 items-stretch">
+                            <Card className="xl:col-span-2 border-zinc-800 flex flex-col">
                                 <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
                                     <div className="flex items-center gap-3">
                                         <Select value={activeView} onValueChange={setActiveView}>
@@ -367,7 +374,7 @@ export default function Dashboard({
                                     </Button>
                                 </CardHeader>
 
-                                <CardContent>
+                                <CardContent className="flex-1">
                                     {activeView === 'transactions' ? (
                                         <Table>
                                             <TableHeader>
@@ -382,7 +389,7 @@ export default function Dashboard({
                                                     latestTransactions.map((tx) => (
                                                         <TableRow key={tx.id} className="border-b border-zinc-800">
                                                             <TableCell className="font-medium whitespace-nowrap text-xs text-zinc-300">
-                                                                {tx.transaction_date}
+                                                                {formatDateOnly(tx.transaction_date)}
                                                             </TableCell>
                                                             <TableCell className="max-w-[180px] truncate">
                                                                 <span className="font-medium text-sm block truncate text-zinc-300">
@@ -439,15 +446,16 @@ export default function Dashboard({
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-zinc-800">
+                            {/* Expense Chart Card - Matches height of table */}
+                            <Card className="border-zinc-800 flex flex-col justify-between h-full">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2 text-zinc-200">
                                         <PieChartIcon className="h-5 w-5 text-zinc-400" />
                                         Expense Categories
                                     </CardTitle>
-                                    <CardDescription className="text-zinc-400">Click a slice or legend item to view transactions.</CardDescription>
+                                    <CardDescription className="text-zinc-400">Click a category to view transactions.</CardDescription>
                                 </CardHeader>
-                                <CardContent>
+                                <CardContent className="flex-1 flex flex-col min-h-0">
                                     <ExpensePieChart 
                                         data={categoryBreakdown?.expense || []} 
                                         formatCurrency={formatCurrency} 

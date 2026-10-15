@@ -162,10 +162,9 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                     <TableHeader>
                                         <TableRow className="border-b border-zinc-800">
                                             <TableHead className="text-zinc-400">Account Name</TableHead>
-                                            <TableHead className="text-zinc-400">Type</TableHead>
                                             <TableHead className="text-zinc-400">Status</TableHead>
                                             <TableHead className="text-right text-zinc-400">Current Balance</TableHead>
-                                            <TableHead className="text-right text-zinc-400">Actions</TableHead>
+                                            <TableHead className="text-right text-zinc-400"></TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
@@ -183,11 +182,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                                             </div>
                                                         </div>
                                                     </TableCell>
-                                                    <TableCell>
-                                                        <Badge variant="outline" className="border-zinc-800 text-zinc-300">
-                                                            {acc.type}
-                                                        </Badge>
-                                                    </TableCell>
+                                                    
                                                     <TableCell>
                                                         {acc.is_active ? (
                                                             <Badge className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/20 gap-1">

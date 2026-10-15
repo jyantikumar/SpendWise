@@ -87,7 +87,6 @@ export default function AccountTypeIndex({ auth, accountTypes }) {
                                     <TableHeader>
                                         <TableRow className="border-b border-zinc-800">
                                             <TableHead className="text-zinc-400">Type Name</TableHead>
-                                            <TableHead className="text-zinc-400">Linked Accounts</TableHead>
                                             <TableHead className="text-right text-zinc-400">Actions</TableHead>
                                         </TableRow>
                                     </TableHeader>
@@ -103,9 +102,6 @@ export default function AccountTypeIndex({ auth, accountTypes }) {
                                                             />
                                                             <span>{type.name}</span>
                                                         </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-zinc-400">
-                                                        {type.accounts_count || 0} accounts
                                                     </TableCell>
                                                     <TableCell className="text-right">
                                                         <DropdownMenu>

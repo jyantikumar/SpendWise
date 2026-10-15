@@ -174,7 +174,7 @@ export default function AccountTransactionsModal({
                                 </div>
                                 <div>
                                     <DialogTitle className="text-xl font-bold flex items-center gap-2 text-zinc-200">
-                                        {account?.name || 'Account'} Transactions
+                                        {account?.name || 'Account'}
                                     </DialogTitle>
                                     <DialogDescription className="text-xs text-zinc-400 mt-0.5">
                                         Viewing activity for this account.
