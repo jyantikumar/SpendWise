@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { 
     Plus, 
     MoreHorizontal, 
@@ -16,19 +16,9 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/s
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-    Dialog, 
-    DialogContent, 
-    DialogDescription, 
-    DialogFooter, 
-    DialogHeader, 
-    DialogTitle 
-} from '@/components/ui/dialog';
 import { 
     DropdownMenu, 
     DropdownMenuContent, 
@@ -47,12 +37,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import CategoryTransactionsModal from '@/components/CategoryTransactionsModal';
-
-const PRESET_COLORS = [
-    '#ef4444', '#f97316', '#f59e0b', '#10b981', 
-    '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', 
-    '#ec4899', '#64748b'
-];
+import CategoryFormModal from '@/components/CategoryFormModal';
 
 export default function CategoryIndex({ auth, categories = [], accounts = [] }) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -64,55 +49,19 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
     const [selectedCategoryForModal, setSelectedCategoryForModal] = useState(null);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
-    // Inertia form state for Store & Update
-    const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
-        name: '',
-        type: 'expense',
-        color: '#3b82f6',
-        icon: '',
-    });
-
     const openCreateModal = () => {
-        clearErrors();
-        reset();
         setEditingCategory(null);
         setIsCreateOpen(true);
     };
 
     const openEditModal = (category) => {
-        clearErrors();
         setEditingCategory(category);
-        setData({
-            name: category.name,
-            type: category.type,
-            color: category.color || '#3b82f6',
-            icon: category.icon || '',
-        });
         setIsCreateOpen(true);
     };
 
     const openTransactionsModal = (category) => {
         setSelectedCategoryForModal(category);
         setIsCategoryModalOpen(true);
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (editingCategory) {
-            put(route('categories.update', editingCategory.id), {
-                onSuccess: () => {
-                    setIsCreateOpen(false);
-                    reset();
-                },
-            });
-        } else {
-            post(route('categories.store'), {
-                onSuccess: () => {
-                    setIsCreateOpen(false);
-                    reset();
-                },
-            });
-        }
     };
 
     const handleDelete = () => {
@@ -286,81 +235,12 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                         accounts={accounts}
                     />
 
-                    {/* Create / Edit Category Modal */}
-                    <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-                        <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader>
-                                <DialogTitle>{editingCategory ? 'Edit Category' : 'Create Category'}</DialogTitle>
-                                <DialogDescription>
-                                    {editingCategory 
-                                        ? 'Update category details and classification.' 
-                                        : 'Add a new category to group your financial transactions.'}
-                                </DialogDescription>
-                            </DialogHeader>
-
-                            <form onSubmit={handleSubmit} className="space-y-4 py-2">
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Category Name</label>
-                                    <Input
-                                        placeholder="e.g., Groceries, Salary, Utilities"
-                                        value={data.name}
-                                        onChange={(e) => setData('name', e.target.value)}
-                                    />
-                                    {errors.name && <p className="text-xs text-rose-500">{errors.name}</p>}
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Type</label>
-                                    <Select 
-                                        value={data.type} 
-                                        onValueChange={(val) => setData('type', val)}
-                                    >
-                                        <SelectTrigger className="border-zinc-800 text-zinc-300">
-                                            <SelectValue placeholder="Select type" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="expense">Expense</SelectItem>
-                                            <SelectItem value="income">Income</SelectItem>
-                                            <SelectItem value="transfer">Transfer</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.type && <p className="text-xs text-rose-500">{errors.type}</p>}
-                                </div>
-
-                                {/* Preset Color Picker */}
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Badge Color</label>
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        {PRESET_COLORS.map((color) => (
-                                            <button
-                                                key={color}
-                                                type="button"
-                                                onClick={() => setData('color', color)}
-                                                className={`h-6 w-6 rounded-full transition-transform ${
-                                                    data.color === color ? 'scale-125 ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
-                                                }`}
-                                                style={{ backgroundColor: color }}
-                                            />
-                                        ))}
-                                    </div>
-                                    {errors.color && <p className="text-xs text-rose-500">{errors.color}</p>}
-                                </div>
-
-                                <DialogFooter>
-                                    <Button 
-                                        type="button" 
-                                        variant="outline" 
-                                        onClick={() => setIsCreateOpen(false)}
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button type="submit" disabled={processing}>
-                                        {editingCategory ? 'Save Changes' : 'Create Category'}
-                                    </Button>
-                                </DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
+                    {/* Reusable Category Form Modal */}
+                    <CategoryFormModal
+                        isOpen={isCreateOpen}
+                        onClose={() => setIsCreateOpen(false)}
+                        editingCategory={editingCategory}
+                    />
 
                     {/* Delete Confirmation Alert Dialog */}
                     <AlertDialog open={!!deletingCategory} onOpenChange={() => setDeletingCategory(null)}>

@@ -1,23 +1,14 @@
 import { useState } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
-import { Plus, MoreHorizontal, Pencil, Trash2, Layers } from 'lucide-react';
+import { Head, router } from '@inertiajs/react';
+import { Plus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
 
 import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-    Dialog, 
-    DialogContent, 
-    DialogDescription, 
-    DialogFooter, 
-    DialogHeader, 
-    DialogTitle 
-} from '@/components/ui/dialog';
 import { 
     DropdownMenu, 
     DropdownMenuContent, 
@@ -35,58 +26,21 @@ import {
     AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
 
-const PRESET_COLORS = [
-    '#ef4444', '#f97316', '#f59e0b', '#10b981', 
-    '#06b6d4', '#3b82f6', '#6366f1', '#8b5cf6', 
-    '#ec4899', '#64748b'
-];
+import AccountTypeFormModal from '@/components/AccountTypeFormModal';
 
 export default function AccountTypeIndex({ auth, accountTypes }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingType, setEditingType] = useState(null);
     const [deletingType, setDeletingType] = useState(null);
 
-    const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
-        name: '',
-        color: '#3b82f6',
-        icon: '',
-    });
-
     const openCreateModal = () => {
-        clearErrors();
-        reset();
         setEditingType(null);
         setIsModalOpen(true);
     };
 
     const openEditModal = (type) => {
-        clearErrors();
         setEditingType(type);
-        setData({
-            name: type.name,
-            color: type.color || '#3b82f6',
-            icon: type.icon || '',
-        });
         setIsModalOpen(true);
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (editingType) {
-            put(route('account-types.update', editingType.id), {
-                onSuccess: () => {
-                    setIsModalOpen(false);
-                    reset();
-                },
-            });
-        } else {
-            post(route('account-types.store'), {
-                onSuccess: () => {
-                    setIsModalOpen(false);
-                    reset();
-                },
-            });
-        }
     };
 
     const handleDelete = () => {
@@ -191,60 +145,12 @@ export default function AccountTypeIndex({ auth, accountTypes }) {
                         </Card>
                     </main>
 
-                    {/* Create/Edit Modal */}
-                    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                        <DialogContent className="sm:max-w-[425px]">
-                            <DialogHeader>
-                                <DialogTitle>{editingType ? 'Edit Account Type' : 'Add Account Type'}</DialogTitle>
-                                <DialogDescription>
-                                    Specify a custom account type and display color.
-                                </DialogDescription>
-                            </DialogHeader>
-
-                            <form onSubmit={handleSubmit} className="space-y-4 py-2">
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Type Name</label>
-                                    <Input
-                                        placeholder="e.g., E-Wallet, Crypto Wallet, Savings"
-                                        value={data.name}
-                                        onChange={(e) => setData('name', e.target.value)}
-                                    />
-                                    {errors.name && <p className="text-xs text-rose-500">{errors.name}</p>}
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Badge Color</label>
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        {PRESET_COLORS.map((color) => (
-                                            <button
-                                                key={color}
-                                                type="button"
-                                                onClick={() => setData('color', color)}
-                                                className={`h-6 w-6 rounded-full transition-transform ${
-                                                    data.color === color ? 'scale-125 ring-2 ring-primary ring-offset-2 ring-offset-background' : ''
-                                                }`}
-                                                style={{ backgroundColor: color }}
-                                            />
-                                        ))}
-                                    </div>
-                                    {errors.color && <p className="text-xs text-rose-500">{errors.color}</p>}
-                                </div>
-
-                                <DialogFooter>
-                                    <Button 
-                                        type="button" 
-                                        variant="outline" 
-                                        onClick={() => setIsModalOpen(false)}
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button type="submit" disabled={processing}>
-                                        {editingType ? 'Save Changes' : 'Create Type'}
-                                    </Button>
-                                </DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
+                    {/* Reusable Account Type Form Modal */}
+                    <AccountTypeFormModal
+                        isOpen={isModalOpen}
+                        onClose={() => setIsModalOpen(false)}
+                        editingType={editingType}
+                    />
 
                     {/* Delete Confirmation Alert */}
                     <AlertDialog open={!!deletingType} onOpenChange={() => setDeletingType(null)}>

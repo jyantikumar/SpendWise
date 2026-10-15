@@ -1,18 +1,15 @@
 import { useState, useEffect, useRef } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { 
     Plus, 
-    ArrowUpRight, 
-    ArrowDownRight, 
-    ArrowLeftRight,
-    Search,
-    X,
-    Filter,
-    Wallet,
-    DollarSign,
-    TrendingUp,
-    TrendingDown,
-    SlidersHorizontal
+    Search, 
+    X, 
+    Filter, 
+    Wallet, 
+    DollarSign, 
+    TrendingUp, 
+    TrendingDown, 
+    SlidersHorizontal 
 } from 'lucide-react';
 
 import { AppSidebar } from '@/components/app-sidebar';
@@ -21,18 +18,9 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-    Dialog, 
-    DialogContent, 
-    DialogDescription, 
-    DialogFooter, 
-    DialogHeader, 
-    DialogTitle 
-} from '@/components/ui/dialog';
 import { 
     AlertDialog, 
     AlertDialogAction, 
@@ -45,6 +33,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import { TransactionDetailSheet } from '@/components/TransactionDetailSheet';
+import TransactionFormModal from '@/components/TransactionFormModal';
 
 export default function TransactionIndex({ auth, transactions, accounts = [], categories = [], filters = {}, kpis = {} }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -52,7 +41,6 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
     const [deletingTransaction, setDeletingTransaction] = useState(null);
     const [selectedDetailTransaction, setSelectedDetailTransaction] = useState(null);
 
-    // Filter states initialized from server props
     const [search, setSearch] = useState(filters.search || '');
     const [selectedType, setSelectedType] = useState(filters.type || 'all');
     const [selectedAccount, setSelectedAccount] = useState(filters.account_id || 'all');
@@ -65,7 +53,6 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
 
     const isFirstRender = useRef(true);
 
-    // Apply filters via Inertia router visit
     const applyFilters = (overrides = {}) => {
         const query = {
             search: overrides.search !== undefined ? overrides.search : search,
@@ -83,7 +70,6 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
         });
     };
 
-    // Debounced search handling
     useEffect(() => {
         if (isFirstRender.current) {
             isFirstRender.current = false;
@@ -122,71 +108,17 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
 
     const hasActiveFilters = search || selectedType !== 'all' || selectedAccount !== 'all' || selectedRange !== 'this_month';
 
-    const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
-        account_id: accounts[0]?.id ? String(accounts[0].id) : '',
-        destination_account_id: '',
-        category_id: '',
-        type: 'expense',
-        amount: '',
-        description: '',
-        transaction_date: new Date().toISOString().split('T')[0],
-    });
-
     const formatCurrency = (val) => 
         new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
 
     const openCreateModal = () => {
-        clearErrors();
-        reset();
-        setData({
-            account_id: accounts[0]?.id ? String(accounts[0].id) : '',
-            destination_account_id: '',
-            category_id: '',
-            type: 'expense',
-            amount: '',
-            description: '',
-            transaction_date: new Date().toISOString().split('T')[0],
-        });
         setEditingTransaction(null);
         setIsModalOpen(true);
     };
 
     const openEditModal = (transaction) => {
-        clearErrors();
         setEditingTransaction(transaction);
-        
-        const rawDate = transaction.transaction_date || transaction.date;
-        const formattedDate = rawDate ? String(rawDate).split('T')[0] : new Date().toISOString().split('T')[0];
-
-        setData({
-            account_id: transaction.account_id ? String(transaction.account_id) : '',
-            destination_account_id: transaction.destination_account_id ? String(transaction.destination_account_id) : '',
-            category_id: transaction.category_id ? String(transaction.category_id) : '',
-            type: transaction.type,
-            amount: transaction.amount ? String(transaction.amount) : '',
-            description: transaction.description || '',
-            transaction_date: formattedDate,
-        });
         setIsModalOpen(true);
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (editingTransaction) {
-            put(route('transactions.update', editingTransaction.id), {
-                onSuccess: () => {
-                    setIsModalOpen(false);
-                    reset();
-                },
-            });
-        } else {
-            post(route('transactions.store'), {
-                onSuccess: () => {
-                    setIsModalOpen(false);
-                    reset();
-                },
-            });
-        }
     };
 
     const handleDelete = () => {
@@ -195,17 +127,6 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
             onSuccess: () => setDeletingTransaction(null),
         });
     };
-
-    const handleTypeChange = (value) => {
-        setData((prevData) => ({
-            ...prevData,
-            type: value,
-            category_id: '',
-            destination_account_id: '',
-        }));
-    };
-
-    const filteredCategories = categories.filter((c) => c.type === data.type);
 
     return (
         <TooltipProvider>
@@ -293,7 +214,6 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <div className="flex flex-wrap items-center gap-3">
-                                    {/* Search Input */}
                                     <div className="relative min-w-[200px] flex-1">
                                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
                                         <Input
@@ -304,7 +224,6 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                         />
                                     </div>
 
-                                    {/* Type Filter */}
                                     <div className="w-[140px]">
                                         <Select 
                                             value={selectedType} 
@@ -325,7 +244,6 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                         </Select>
                                     </div>
 
-                                    {/* Account Filter */}
                                     <div className="w-[150px]">
                                         <Select 
                                             value={selectedAccount} 
@@ -348,7 +266,6 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                         </Select>
                                     </div>
 
-                                    {/* Range Selector */}
                                     <div className="w-[150px]">
                                         <Select value={selectedRange} onValueChange={handleRangeChange}>
                                             <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
@@ -367,7 +284,6 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                         </Select>
                                     </div>
 
-                                    {/* Custom Date Inputs */}
                                     {selectedRange === 'custom' && (
                                         <div className="flex items-center gap-2">
                                             <Input 
@@ -491,7 +407,6 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                     </main>
                 </SidebarInset>
 
-                {/* Reusable Detail Side Sheet */}
                 <TransactionDetailSheet 
                     open={!!selectedDetailTransaction}
                     onOpenChange={(open) => !open && setSelectedDetailTransaction(null)}
@@ -500,179 +415,14 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                     onDelete={setDeletingTransaction}
                 />
 
-                {/* Create / Edit Dialog */}
-                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                    <DialogContent className="sm:max-w-[480px]">
-                        <DialogHeader>
-                            <DialogTitle>{editingTransaction ? 'Edit Transaction' : 'Add Transaction'}</DialogTitle>
-                            <DialogDescription>
-                                {editingTransaction 
-                                    ? 'Update the details for this transaction.' 
-                                    : 'Enter the details to record a new transaction.'}
-                            </DialogDescription>
-                        </DialogHeader>
+                <TransactionFormModal
+                    isOpen={isModalOpen}
+                    onClose={() => setIsModalOpen(false)}
+                    editingTransaction={editingTransaction}
+                    accounts={accounts}
+                    categories={categories}
+                />
 
-                        <form onSubmit={handleSubmit} className="space-y-4 py-2">
-                            {/* Transaction Type */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium leading-none">Type</label>
-                                <Select value={data.type} onValueChange={handleTypeChange}>
-                                    <SelectTrigger className="w-full h-10">
-                                        <SelectValue placeholder="Select type" />
-                                    </SelectTrigger>
-                                    <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                        <SelectItem value="expense">Expense</SelectItem>
-                                        <SelectItem value="income">Income</SelectItem>
-                                        <SelectItem value="transfer">Transfer</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                {errors.type && <p className="text-xs text-rose-500">{errors.type}</p>}
-                            </div>
-
-                            {/* Source Account (From) */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium leading-none">
-                                    {data.type === 'transfer' ? 'From Account' : 'Account'}
-                                </label>
-                                <Select 
-                                    value={data.account_id} 
-                                    onValueChange={(val) => {
-                                        setData((prev) => ({
-                                            ...prev,
-                                            account_id: val,
-                                            destination_account_id: prev.destination_account_id === val ? '' : prev.destination_account_id
-                                        }));
-                                    }}
-                                >
-                                    <SelectTrigger className="w-full h-10">
-                                        <SelectValue placeholder="Select account" />
-                                    </SelectTrigger>
-                                    <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                        {accounts && accounts.length > 0 ? (
-                                            accounts.map((acc) => (
-                                                <SelectItem key={acc.id} value={String(acc.id)}>
-                                                    {acc.name} {acc.type ? `(${acc.type})` : ''}
-                                                </SelectItem>
-                                            ))
-                                        ) : (
-                                            <div className="p-2 text-xs text-center text-muted-foreground">
-                                                No accounts available. Create one under Accounts.
-                                            </div>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                {errors.account_id && <p className="text-xs text-rose-500">{errors.account_id}</p>}
-                            </div>
-
-                            {/* Destination Account (To) */}
-                            {data.type === 'transfer' && (
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium leading-none">To Account (Destination)</label>
-                                    <Select 
-                                        value={data.destination_account_id} 
-                                        onValueChange={(val) => setData('destination_account_id', val)}
-                                    >
-                                        <SelectTrigger className="w-full h-10">
-                                            <SelectValue placeholder="Select destination account" />
-                                        </SelectTrigger>
-                                        <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                            {accounts && accounts.length > 0 ? (
-                                                accounts
-                                                    .filter((acc) => String(acc.id) !== String(data.account_id))
-                                                    .map((acc) => (
-                                                        <SelectItem key={acc.id} value={String(acc.id)}>
-                                                            {acc.name} {acc.type ? `(${acc.type})` : ''}
-                                                        </SelectItem>
-                                                    ))
-                                            ) : (
-                                                <div className="p-2 text-xs text-center text-muted-foreground">
-                                                    No additional accounts available.
-                                                </div>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.destination_account_id && (
-                                        <p className="text-xs text-rose-500">{errors.destination_account_id}</p>
-                                    )}
-                                </div>
-                            )}
-
-                            {/* Category */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium leading-none">Category</label>
-                                <Select 
-                                    value={data.category_id} 
-                                    onValueChange={(val) => setData('category_id', val)}
-                                >
-                                    <SelectTrigger className="w-full h-10">
-                                        <SelectValue placeholder="Select category (optional)" />
-                                    </SelectTrigger>
-                                    <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                        {filteredCategories.length > 0 ? (
-                                            filteredCategories.map((cat) => (
-                                                <SelectItem key={cat.id} value={String(cat.id)}>
-                                                    {cat.name}
-                                                </SelectItem>
-                                            ))
-                                        ) : (
-                                            <div className="p-2 text-xs text-center text-muted-foreground">
-                                                No categories available for this transaction type.
-                                            </div>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                {errors.category_id && <p className="text-xs text-rose-500">{errors.category_id}</p>}
-                            </div>
-
-                            {/* Amount & Date */}
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium leading-none">Amount</label>
-                                    <Input 
-                                        type="number" 
-                                        step="0.01" 
-                                        placeholder="0.00" 
-                                        value={data.amount} 
-                                        onChange={(e) => setData('amount', e.target.value)} 
-                                    />
-                                    {errors.amount && <p className="text-xs text-rose-500">{errors.amount}</p>}
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium leading-none">Date</label>
-                                    <Input 
-                                        type="date" 
-                                        value={data.transaction_date} 
-                                        onChange={(e) => setData('transaction_date', e.target.value)} 
-                                    />
-                                    {errors.transaction_date && <p className="text-xs text-rose-500">{errors.transaction_date}</p>}
-                                </div>
-                            </div>
-
-                            {/* Description */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium leading-none">Description</label>
-                                <Input 
-                                    placeholder="e.g. Bank transfer to Maya" 
-                                    value={data.description} 
-                                    onChange={(e) => setData('description', e.target.value)} 
-                                />
-                                {errors.description && <p className="text-xs text-rose-500">{errors.description}</p>}
-                            </div>
-
-                            <DialogFooter className="pt-4">
-                                <Button type="button" variant="outline" onClick={() => setIsModalOpen(false)}>
-                                    Cancel
-                                </Button>
-                                <Button type="submit" disabled={processing}>
-                                    {editingTransaction ? 'Save Changes' : 'Create Transaction'}
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
-
-                {/* Delete Confirmation Alert */}
                 <AlertDialog open={!!deletingTransaction} onOpenChange={(open) => !open && setDeletingTransaction(null)}>
                     <AlertDialogContent>
                         <AlertDialogHeader>

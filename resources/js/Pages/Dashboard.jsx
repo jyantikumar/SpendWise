@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, Link, useForm, router } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import { 
     Wallet, 
     TrendingUp, 
@@ -20,16 +20,9 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-    Dialog, 
-    DialogContent, 
-    DialogDescription, 
-    DialogFooter,
-    DialogHeader, 
-    DialogTitle 
-} from '@/components/ui/dialog';
 
 import CategoryTransactionsModal from '@/components/CategoryTransactionsModal';
+import TransactionFormModal from '@/components/TransactionFormModal';
 
 // Custom SVG Donut / Pie Chart Component
 function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
@@ -91,7 +84,6 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
 
     return (
         <div className="flex flex-col sm:flex-row items-center gap-6">
-            {/* SVG Pie / Donut Canvas */}
             <div className="relative w-44 h-44 shrink-0 flex items-center justify-center">
                 <svg viewBox="0 0 200 200" className="w-full h-full">
                     {slices.map((slice, index) => (
@@ -111,7 +103,6 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
                     ))}
                 </svg>
 
-                {/* Center Content readout */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none p-2">
                     <span className="text-[10px] uppercase font-semibold text-zinc-400 tracking-wider truncate max-w-[90px]">
                         {activeItem ? activeItem.name : 'Total Expense'}
@@ -127,7 +118,6 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
                 </div>
             </div>
 
-            {/* Interactive Category Legend */}
             <div className="flex-1 w-full space-y-2 max-h-[190px] overflow-y-auto pr-1">
                 {slices.map((slice, index) => (
                     <div
@@ -175,7 +165,6 @@ export default function Dashboard({
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
-    // Custom Date Range State
     const [startDateInput, setStartDateInput] = useState(customDates.startDate || '');
     const [endDateInput, setEndDateInput] = useState(customDates.endDate || '');
 
@@ -236,52 +225,6 @@ export default function Dashboard({
         setIsCategoryModalOpen(true);
     };
 
-    const { data, setData, post, processing, errors, reset, clearErrors } = useForm({
-        account_id: accounts[0]?.id ? String(accounts[0].id) : '',
-        destination_account_id: '',
-        category_id: '',
-        type: 'expense',
-        amount: '',
-        description: '',
-        transaction_date: new Date().toISOString().split('T')[0],
-    });
-
-    const openTransactionModal = () => {
-        clearErrors();
-        reset();
-        setData({
-            account_id: accounts[0]?.id ? String(accounts[0].id) : '',
-            destination_account_id: '',
-            category_id: '',
-            type: 'expense',
-            amount: '',
-            description: '',
-            transaction_date: new Date().toISOString().split('T')[0],
-        });
-        setIsTransactionModalOpen(true);
-    };
-
-    const handleTransactionSubmit = (e) => {
-        e.preventDefault();
-        post(route('transactions.store'), {
-            onSuccess: () => {
-                setIsTransactionModalOpen(false);
-                reset();
-            },
-        });
-    };
-
-    const handleTypeChange = (value) => {
-        setData((prevData) => ({
-            ...prevData,
-            type: value,
-            category_id: '',
-            destination_account_id: '',
-        }));
-    };
-
-    const filteredCategories = categories.filter((c) => c.type === data.type);
-
     return (
         <TooltipProvider>
             <SidebarProvider>
@@ -304,49 +247,43 @@ export default function Dashboard({
                             </div>
 
                             <div className="flex flex-wrap items-center gap-3">
-                                {/* Global Range Filter (Hidden when Transactions tab is active) */}
-                                {activeView !== 'transactions' && (
-                                    <>
-                                        <Select value={currentFilter} onValueChange={handleFilterChange}>
-                                            <SelectTrigger className="w-[160px] h-10 border-zinc-800 text-zinc-300">
-                                                <SlidersHorizontal className="mr-2 h-4 w-4" />
-                                                <SelectValue placeholder="Range" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="this_day">This Day</SelectItem>
-                                                <SelectItem value="this_week">This Week</SelectItem>
-                                                <SelectItem value="this_month">This Month</SelectItem>
-                                                <SelectItem value="last_30_days">Last 30 Days</SelectItem>
-                                                <SelectItem value="this_year">This Year</SelectItem>
-                                                <SelectItem value="custom">Custom</SelectItem>
-                                            </SelectContent>
-                                        </Select>
+                                <Select value={currentFilter} onValueChange={handleFilterChange}>
+                                    <SelectTrigger className="w-[160px] h-10 border-zinc-800 text-zinc-300">
+                                        <SlidersHorizontal className="mr-2 h-4 w-4" />
+                                        <SelectValue placeholder="Range" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="this_day">This Day</SelectItem>
+                                        <SelectItem value="this_week">This Week</SelectItem>
+                                        <SelectItem value="this_month">This Month</SelectItem>
+                                        <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                                        <SelectItem value="this_year">This Year</SelectItem>
+                                        <SelectItem value="custom">Custom</SelectItem>
+                                    </SelectContent>
+                                </Select>
 
-                                        {/* Inline Date Inputs when Custom filter is active */}
-                                        {currentFilter === 'custom' && (
-                                            <div className="flex items-center gap-2">
-                                                <Input 
-                                                    type="date" 
-                                                    value={startDateInput} 
-                                                    onChange={(e) => setStartDateInput(e.target.value)}
-                                                    className="w-[140px] h-10 border-zinc-800 text-zinc-300 text-xs bg-transparent"
-                                                />
-                                                <span className="text-xs text-zinc-400">to</span>
-                                                <Input 
-                                                    type="date" 
-                                                    value={endDateInput} 
-                                                    onChange={(e) => setEndDateInput(e.target.value)}
-                                                    className="w-[140px] h-10 border-zinc-800 text-zinc-300 text-xs bg-transparent"
-                                                />
-                                                <Button size="sm" variant="secondary" onClick={handleApplyCustomDates} className="h-10 px-3">
-                                                    Apply
-                                                </Button>
-                                            </div>
-                                        )}
-                                    </>
+                                {currentFilter === 'custom' && (
+                                    <div className="flex items-center gap-2">
+                                        <Input 
+                                            type="date" 
+                                            value={startDateInput} 
+                                            onChange={(e) => setStartDateInput(e.target.value)}
+                                            className="w-[140px] h-10 border-zinc-800 text-zinc-300 text-xs bg-transparent"
+                                        />
+                                        <span className="text-xs text-zinc-400">to</span>
+                                        <Input 
+                                            type="date" 
+                                            value={endDateInput} 
+                                            onChange={(e) => setEndDateInput(e.target.value)}
+                                            className="w-[140px] h-10 border-zinc-800 text-zinc-300 text-xs bg-transparent"
+                                        />
+                                        <Button size="sm" variant="secondary" onClick={handleApplyCustomDates} className="h-10 px-3">
+                                            Apply
+                                        </Button>
+                                    </div>
                                 )}
 
-                                <Button onClick={openTransactionModal} className="gap-2">
+                                <Button onClick={() => setIsTransactionModalOpen(true)} className="gap-2">
                                     <Plus className="h-4 w-4" /> New Transaction
                                 </Button>
                             </div>
@@ -401,7 +338,7 @@ export default function Dashboard({
                             </Card>
                         </div>
 
-                        {/* Combined Table & Category Breakdown Chart */}
+                        {/* Main Table View */}
                         <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3">
                             <Card className="xl:col-span-2 border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
@@ -502,7 +439,6 @@ export default function Dashboard({
                                 </CardContent>
                             </Card>
 
-                            {/* Expense Category Pie / Donut Chart */}
                             <Card className="border-zinc-800">
                                 <CardHeader>
                                     <CardTitle className="flex items-center gap-2 text-zinc-200">
@@ -523,7 +459,6 @@ export default function Dashboard({
                     </main>
                 </SidebarInset>
 
-                {/* Category Transactions Modal */}
                 <CategoryTransactionsModal
                     isOpen={isCategoryModalOpen}
                     onClose={() => setIsCategoryModalOpen(false)}
@@ -533,171 +468,12 @@ export default function Dashboard({
                     initialEndDate={initialModalEnd}
                 />
 
-                {/* Quick Add Transaction Modal */}
-                <Dialog open={isTransactionModalOpen} onOpenChange={setIsTransactionModalOpen}>
-                    <DialogContent className="sm:max-w-[480px]">
-                        <DialogHeader>
-                            <DialogTitle>New Transaction</DialogTitle>
-                            <DialogDescription>
-                                Log income, expenses, or transfers directly to your accounts.
-                            </DialogDescription>
-                        </DialogHeader>
-
-                        <form onSubmit={handleTransactionSubmit} className="space-y-4 py-2">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium leading-none">Type</label>
-                                <Select value={data.type} onValueChange={handleTypeChange}>
-                                    <SelectTrigger className="w-full h-10">
-                                        <SelectValue placeholder="Select type" />
-                                    </SelectTrigger>
-                                    <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                        <SelectItem value="expense">Expense</SelectItem>
-                                        <SelectItem value="income">Income</SelectItem>
-                                        <SelectItem value="transfer">Transfer</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                {errors.type && <p className="text-xs text-rose-500">{errors.type}</p>}
-                            </div>
-
-                            {/* Source Account */}
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium leading-none">
-                                    {data.type === 'transfer' ? 'From Account' : 'Account'}
-                                </label>
-                                <Select 
-                                    value={data.account_id} 
-                                    onValueChange={(val) => {
-                                        setData((prev) => ({
-                                            ...prev,
-                                            account_id: val,
-                                            destination_account_id: prev.destination_account_id === val ? '' : prev.destination_account_id
-                                        }));
-                                    }}
-                                >
-                                    <SelectTrigger className="w-full h-10">
-                                        <SelectValue placeholder="Select account" />
-                                    </SelectTrigger>
-                                    <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                        {accounts && accounts.length > 0 ? (
-                                            accounts.map((acc) => (
-                                                <SelectItem key={acc.id} value={String(acc.id)}>
-                                                    {acc.name} {acc.type ? `(${acc.type})` : ''}
-                                                </SelectItem>
-                                            ))
-                                        ) : (
-                                            <div className="p-2 text-xs text-center text-muted-foreground">
-                                                No accounts available. Create one under Accounts.
-                                            </div>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                {errors.account_id && <p className="text-xs text-rose-500">{errors.account_id}</p>}
-                            </div>
-
-                            {/* Destination Account */}
-                            {data.type === 'transfer' && (
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium leading-none">To Account (Destination)</label>
-                                    <Select 
-                                        value={data.destination_account_id} 
-                                        onValueChange={(val) => setData('destination_account_id', val)}
-                                    >
-                                        <SelectTrigger className="w-full h-10">
-                                            <SelectValue placeholder="Select destination account" />
-                                        </SelectTrigger>
-                                        <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                            {accounts && accounts.length > 0 ? (
-                                                accounts
-                                                    .filter((acc) => String(acc.id) !== String(data.account_id))
-                                                    .map((acc) => (
-                                                        <SelectItem key={acc.id} value={String(acc.id)}>
-                                                            {acc.name} {acc.type ? `(${acc.type})` : ''}
-                                                        </SelectItem>
-                                                    ))
-                                            ) : (
-                                                <div className="p-2 text-xs text-center text-muted-foreground">
-                                                    No additional accounts available.
-                                                </div>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.destination_account_id && (
-                                        <p className="text-xs text-rose-500">{errors.destination_account_id}</p>
-                                    )}
-                                </div>
-                            )}
-
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium leading-none">Category</label>
-                                <Select 
-                                    value={data.category_id} 
-                                    onValueChange={(val) => setData('category_id', val)}
-                                >
-                                    <SelectTrigger className="w-full h-10">
-                                        <SelectValue placeholder="Select category (optional)" />
-                                    </SelectTrigger>
-                                    <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                        {filteredCategories.length > 0 ? (
-                                            filteredCategories.map((cat) => (
-                                                <SelectItem key={cat.id} value={String(cat.id)}>
-                                                    {cat.name}
-                                                </SelectItem>
-                                            ))
-                                        ) : (
-                                            <div className="p-2 text-xs text-center text-muted-foreground">
-                                                No categories available for this transaction type.
-                                            </div>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                {errors.category_id && <p className="text-xs text-rose-500">{errors.category_id}</p>}
-                            </div>
-
-                            <div className="grid grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium leading-none">Amount</label>
-                                    <Input 
-                                        type="number" 
-                                        step="0.01" 
-                                        placeholder="0.00" 
-                                        value={data.amount} 
-                                        onChange={(e) => setData('amount', e.target.value)} 
-                                    />
-                                    {errors.amount && <p className="text-xs text-rose-500">{errors.amount}</p>}
-                                </div>
-
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium leading-none">Date</label>
-                                    <Input 
-                                        type="date" 
-                                        value={data.transaction_date} 
-                                        onChange={(e) => setData('transaction_date', e.target.value)} 
-                                    />
-                                    {errors.transaction_date && <p className="text-xs text-rose-500">{errors.transaction_date}</p>}
-                                </div>
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium leading-none">Description</label>
-                                <Input 
-                                    placeholder="e.g. Bank transfer" 
-                                    value={data.description} 
-                                    onChange={(e) => setData('description', e.target.value)} 
-                                />
-                                {errors.description && <p className="text-xs text-rose-500">{errors.description}</p>}
-                            </div>
-
-                            <DialogFooter className="pt-4">
-                                <Button type="button" variant="outline" onClick={() => setIsTransactionModalOpen(false)}>
-                                    Cancel
-                                </Button>
-                                <Button type="submit" disabled={processing}>
-                                    Create Transaction
-                                </Button>
-                            </DialogFooter>
-                        </form>
-                    </DialogContent>
-                </Dialog>
+                <TransactionFormModal 
+                    isOpen={isTransactionModalOpen}
+                    onClose={() => setIsTransactionModalOpen(false)}
+                    accounts={accounts}
+                    categories={categories}
+                />
             </SidebarProvider>
         </TooltipProvider>
     );

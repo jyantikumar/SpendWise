@@ -54,13 +54,17 @@ export function AppSidebar({ user }) {
             <SidebarHeader className="border-b border-zinc-800">
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
+                        <SidebarMenuButton 
+                            size="lg" 
+                            asChild 
+                            className="!bg-transparent hover:!bg-transparent active:!bg-transparent"
+                        >
                             <Link href="/dashboard">
-                                <div className="flex aspect-square h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
+                                <div className="flex aspect-square h-8 w-8 items-center justify-center rounded-lg bg-zinc-100 text-zinc-900 font-bold">
                                     <DollarSign className="h-5 w-5" />
                                 </div>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
-                                    <span className="truncate font-semibold text-zinc-200">SpendWise</span>
+                                    <span className="truncate font-semibold text-zinc-100">SpendWise</span>
                                     <span className="truncate text-xs text-zinc-400">Finance Tracker</span>
                                 </div>
                             </Link>
@@ -72,24 +76,32 @@ export function AppSidebar({ user }) {
             {/* Navigation Items */}
             <SidebarContent>
                 <SidebarGroup>
-                    <SidebarGroupLabel className="text-zinc-400">Menu</SidebarGroupLabel>
+                    <SidebarGroupLabel className="text-zinc-500 font-medium text-xs uppercase tracking-wider">
+                        Menu
+                    </SidebarGroupLabel>
                     <SidebarGroupContent>
                         <SidebarMenu>
-                            {navItems.map((item) => (
-                                <SidebarMenuItem key={item.title}>
-                                    <SidebarMenuButton 
-                                        asChild 
-                                        isActive={url === item.url} 
-                                        tooltip={item.title}
-                                        className="text-zinc-300 hover:text-zinc-100 data-[active=true]:bg-zinc-800/60 data-[active=true]:text-zinc-100"
-                                    >
-                                        <Link href={item.url}>
-                                            <item.icon />
-                                            <span>{item.title}</span>
-                                        </Link>
-                                    </SidebarMenuButton>
-                                </SidebarMenuItem>
-                            ))}
+                            {navItems.map((item) => {
+                                const isActive = url.startsWith(item.url);
+
+                                return (
+                                    <SidebarMenuItem key={item.title}>
+                                        <SidebarMenuButton 
+                                            asChild 
+                                            isActive={isActive} 
+                                            tooltip={item.title}
+                                            className={`!bg-transparent text-zinc-300 hover:text-zinc-100 hover:!bg-zinc-800/40 ${
+                                                isActive ? '!bg-zinc-800 !text-zinc-100 font-semibold' : ''
+                                            }`}
+                                        >
+                                            <Link href={item.url} className="flex items-center gap-3">
+                                                <item.icon className="h-4 w-4 text-zinc-100" />
+                                                <span>{item.title}</span>
+                                            </Link>
+                                        </SidebarMenuButton>
+                                    </SidebarMenuItem>
+                                );
+                            })}
                         </SidebarMenu>
                     </SidebarGroupContent>
                 </SidebarGroup>
@@ -105,11 +117,11 @@ export function AppSidebar({ user }) {
                                     type="button" 
                                     className="flex w-full items-center gap-2 rounded-lg p-2 text-left text-sm hover:bg-zinc-800/50 hover:text-zinc-100 outline-none transition-colors text-zinc-300"
                                 >
-                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 font-medium text-xs text-zinc-200 border border-zinc-700">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-800 font-medium text-xs text-zinc-100 border border-zinc-700">
                                         {user?.name?.substring(0, 2).toUpperCase()}
                                     </div>
                                     <div className="grid flex-1 text-left text-sm leading-tight">
-                                        <span className="truncate font-semibold text-zinc-200">{user?.name}</span>
+                                        <span className="truncate font-semibold text-zinc-100">{user?.name}</span>
                                         <span className="truncate text-xs text-zinc-400">{user?.email}</span>
                                     </div>
                                     <ChevronUp className="ml-auto h-4 w-4 text-zinc-400" />

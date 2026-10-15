@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, useForm, router } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { 
     Plus, 
     MoreHorizontal, 
@@ -18,20 +18,9 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/s
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
-import { 
-    Dialog, 
-    DialogContent, 
-    DialogDescription, 
-    DialogFooter, 
-    DialogHeader, 
-    DialogTitle 
-} from '@/components/ui/dialog';
 import { 
     DropdownMenu, 
     DropdownMenuContent, 
@@ -50,6 +39,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 import AccountTransactionsModal from '@/components/AccountTransactionsModal';
+import AccountFormModal from '@/components/AccountFormModal';
 
 export default function AccountIndex({ auth, accounts = [], accountTypes = [], categories = [] }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -60,68 +50,22 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
     const [selectedAccount, setSelectedAccount] = useState(null);
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
 
-    const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
-        name: '',
-        type: accountTypes[0]?.name || '',
-        balance: '0.00',
-        currency: 'PHP',
-        is_active: true,
-    });
-
     const formatCurrency = (val, currency = 'PHP') => 
         new Intl.NumberFormat('en-PH', { style: 'currency', currency }).format(val || 0);
 
     const openCreateModal = () => {
-        clearErrors();
-        reset();
-        setData({
-            name: '',
-            type: accountTypes[0]?.name || '',
-            balance: '0.00',
-            currency: 'PHP',
-            is_active: true,
-        });
         setEditingAccount(null);
         setIsModalOpen(true);
     };
 
     const openEditModal = (account) => {
-        clearErrors();
         setEditingAccount(account);
-
-        setData({
-            name: account.name,
-            type: account.type,
-            balance: account.balance,
-            currency: account.currency || 'PHP',
-            is_active: Boolean(account.is_active),
-        });
-
         setIsModalOpen(true);
     };
 
     const openTransactionsModal = (account) => {
         setSelectedAccount(account);
         setIsTxModalOpen(true);
-    };
-
-    const handleSubmit = (e) => {
-        e.preventDefault();
-        if (editingAccount) {
-            put(route('accounts.update', editingAccount.id), {
-                onSuccess: () => {
-                    setIsModalOpen(false);
-                    reset();
-                },
-            });
-        } else {
-            post(route('accounts.store'), {
-                onSuccess: () => {
-                    setIsModalOpen(false);
-                    reset();
-                },
-            });
-        }
     };
 
     const handleDelete = () => {
@@ -308,123 +252,13 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                         categories={categories}
                     />
 
-                    {/* Create / Edit Account Modal */}
-                    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                        <DialogContent className="sm:max-w-[480px]">
-                            <DialogHeader>
-                                <DialogTitle>{editingAccount ? 'Edit Account' : 'Add New Account'}</DialogTitle>
-                                <DialogDescription>
-                                    Set up your financial account details and balance.
-                                </DialogDescription>
-                            </DialogHeader>
-
-                            <form onSubmit={handleSubmit} className="space-y-4 py-2">
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Account Name</label>
-                                    <Input
-                                        placeholder="e.g., BDO Savings, GCash, Maya"
-                                        value={data.name}
-                                        onChange={(e) => setData('name', e.target.value)}
-                                    />
-                                    {errors.name && <p className="text-xs text-rose-500">{errors.name}</p>}
-                                </div>
-
-                                <div className="grid gap-2">
-                                    <label className="text-sm font-medium">Account Type</label>
-                                    <Select 
-                                        value={data.type} 
-                                        onValueChange={(value) => setData('type', value)}
-                                    >
-                                        <SelectTrigger className="w-full h-10 border-zinc-800 text-zinc-300">
-                                            <SelectValue placeholder="Select account type" />
-                                        </SelectTrigger>
-                                        <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                            {accountTypes && accountTypes.length > 0 ? (
-                                                accountTypes.map((typeObj) => (
-                                                    <SelectItem key={typeObj.id} value={typeObj.name}>
-                                                        <div className="flex items-center gap-2">
-                                                            {typeObj.color && (
-                                                                <span 
-                                                                    className="h-2.5 w-2.5 rounded-full shrink-0" 
-                                                                    style={{ backgroundColor: typeObj.color }}
-                                                                />
-                                                            )}
-                                                            <span>{typeObj.name}</span>
-                                                        </div>
-                                                    </SelectItem>
-                                                ))
-                                            ) : (
-                                                <div className="p-2 text-xs text-center text-muted-foreground">
-                                                    No account types found. Create one under Account Types.
-                                                </div>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.type && <p className="text-xs text-rose-500">{errors.type}</p>}
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="grid gap-2">
-                                        <label className="text-sm font-medium">Balance</label>
-                                        <Input
-                                            type="number"
-                                            step="0.01"
-                                            value={data.balance}
-                                            onChange={(e) => setData('balance', e.target.value)}
-                                        />
-                                        {errors.balance && <p className="text-xs text-rose-500">{errors.balance}</p>}
-                                    </div>
-
-                                    <div className="grid gap-2">
-                                        <label className="text-sm font-medium">Currency</label>
-                                        <Input
-                                            maxLength={3}
-                                            className="uppercase"
-                                            placeholder="PHP"
-                                            value={data.currency}
-                                            onChange={(e) => setData('currency', e.target.value.toUpperCase())}
-                                        />
-                                        {errors.currency && <p className="text-xs text-rose-500">{errors.currency}</p>}
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center justify-between border border-zinc-800 rounded-lg p-3 bg-muted/20">
-                                    <div className="space-y-0.5">
-                                        <div className="flex items-center gap-2">
-                                            <label className="text-sm font-medium">Active Status</label>
-                                            {data.is_active ? (
-                                                <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 gap-1 text-[11px] px-2 py-0">
-                                                    <BadgeCheck className="h-3 w-3" /> Active
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="secondary" className="gap-1 text-zinc-400 border-zinc-800 text-[11px] px-2 py-0">
-                                                    <BadgeX className="h-3 w-3" /> Inactive
-                                                </Badge>
-                                            )}
-                                        </div>
-                                        <p className="text-xs text-zinc-400">Include in overall portfolio balance</p>
-                                    </div>
-                                    <Switch
-                                        checked={data.is_active}
-                                        onCheckedChange={(checked) => setData('is_active', checked)}
-                                    />
-                                </div>
-
-                                <DialogFooter>
-                                    <Button 
-                                        type="button" 
-                                        variant="outline" 
-                                        onClick={() => setIsModalOpen(false)}
-                                    >
-                                        Cancel
-                                    </Button>
-                                    <Button type="submit" disabled={processing}>
-                                        {editingAccount ? 'Save Changes' : 'Create Account'}
-                                    </Button>
-                                </DialogFooter>
-                            </form>
-                        </DialogContent>
-                    </Dialog>
+                    {/* Reusable Account Form Modal */}
+                    <AccountFormModal
+                        isOpen={isModalOpen}
+                        onClose={() => setIsModalOpen(false)}
+                        editingAccount={editingAccount}
+                        accountTypes={accountTypes}
+                    />
 
                     {/* Delete Confirmation Alert */}
                     <AlertDialog open={!!deletingAccount} onOpenChange={() => setDeletingAccount(null)}>
