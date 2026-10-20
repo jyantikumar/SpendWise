@@ -156,7 +156,7 @@ export default function AccountTransactionsModal({
                         : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                 }`}
             >
-                Net Cash Flow: {formatCurrency(summaryAmount, curr)}
+                Balance: {formatCurrency(summaryAmount, curr)}
             </Badge>
         );
     };
@@ -177,7 +177,7 @@ export default function AccountTransactionsModal({
                                         {account?.name || 'Account'}
                                     </DialogTitle>
                                     <DialogDescription className="text-xs text-zinc-400 mt-0.5">
-                                        Viewing activity for this account.
+                                        Account transactions.
                                     </DialogDescription>
                                 </div>
                             </div>

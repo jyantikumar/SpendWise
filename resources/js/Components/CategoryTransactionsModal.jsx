@@ -142,7 +142,7 @@ export default function CategoryTransactionsModal({
                             </Badge>
                         </div>
                         <DialogDescription className="text-xs text-zinc-400 mt-1">
-                            Viewing transactions recorded under this category.
+                            Category transactions.
                         </DialogDescription>
                     </DialogHeader>
 
