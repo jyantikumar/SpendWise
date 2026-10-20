@@ -181,25 +181,14 @@ export function TransactionDetailSheet({
                             Details
                         </span>
                         
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                            {/* Date */}
-                            <div className="p-3 bg-muted/20 border border-zinc-800 rounded-lg flex items-start gap-3">
-                                
-                                <div className="space-y-0.5 overflow-hidden">
-                                    <p className="text-[11px] font-medium text-zinc-400">Date</p>
-                                    <p className="text-xs font-semibold text-zinc-300 truncate">
-                                        {formattedDate || <span className="text-zinc-500 font-normal italic">Unspecified</span>}
-                                    </p>
-                                </div>
-                            </div>
-
+                        <div className="grid grid-cols-2 gap-2.5">
                             {/* Account (for non-transfers) */}
                             {transaction.type !== 'transfer' && (
-                                <div className="p-3 bg-muted/20 border border-zinc-800 rounded-lg flex items-start gap-3">
+                                <div className="p-3 bg-muted/20 border border-zinc-800 rounded-lg flex items-start gap-2.5 min-w-0">
                                     <div className="p-2 rounded-md bg-background border border-zinc-800 text-zinc-400 shrink-0">
                                         <Wallet className="h-4 w-4" />
                                     </div>
-                                    <div className="space-y-0.5 overflow-hidden">
+                                    <div className="space-y-0.5 min-w-0 flex-1">
                                         <p className="text-[11px] font-medium text-zinc-400">Account</p>
                                         <p className="text-xs font-semibold text-zinc-300 truncate">
                                             {transaction.account?.name || <span className="text-zinc-500 font-normal italic">Unspecified</span>}
@@ -210,11 +199,11 @@ export function TransactionDetailSheet({
 
                             {/* Category (for non-transfers) */}
                             {transaction.type !== 'transfer' && (
-                                <div className="p-3 bg-muted/20 border border-zinc-800 rounded-lg flex items-start gap-3 col-span-1 sm:col-span-2">
+                                <div className="p-3 bg-muted/20 border border-zinc-800 rounded-lg flex items-start gap-2.5 min-w-0">
                                     <div className="p-2 rounded-md bg-background border border-zinc-800 text-zinc-400 shrink-0">
                                         <Tag className="h-4 w-4" />
                                     </div>
-                                    <div className="space-y-0.5 overflow-hidden">
+                                    <div className="space-y-0.5 min-w-0 flex-1">
                                         <p className="text-[11px] font-medium text-zinc-400">Category</p>
                                         <p className="text-xs font-semibold text-zinc-300 truncate">
                                             {transaction.category?.name || <span className="text-zinc-500 font-normal italic">Uncategorized</span>}
