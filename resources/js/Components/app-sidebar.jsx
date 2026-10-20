@@ -49,7 +49,10 @@ export function AppSidebar({ user }) {
     };
 
     return (
-        <Sidebar collapsible="icon" className="border-r border-zinc-800">
+        <Sidebar 
+            collapsible="icon" 
+            className="border-r border-zinc-800 bg-background text-zinc-100 [&>div]:border-none shadow-none"
+        >
             {/* Header / Brand Logo */}
             <SidebarHeader className="border-b border-zinc-800">
                 <SidebarMenu>
