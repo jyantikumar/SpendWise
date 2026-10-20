@@ -9,7 +9,9 @@ import {
     DollarSign, 
     TrendingUp, 
     TrendingDown, 
-    SlidersHorizontal 
+    SlidersHorizontal,
+    ChevronLeft,
+    ChevronRight
 } from 'lucide-react';
 
 import { AppSidebar } from '@/components/app-sidebar';
@@ -49,7 +51,15 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
     const [endDate, setEndDate] = useState(filters.end_date || '');
 
     const transactionList = Array.isArray(transactions) ? transactions : (transactions?.data || []);
-    const paginationLinks = transactions?.links || [];
+    
+    // Pagination Metadata
+    const prevLink = transactions?.prev_page_url || transactions?.links?.find(l => l.label.includes('Previous'))?.url;
+    const nextLink = transactions?.next_page_url || transactions?.links?.find(l => l.label.includes('Next'))?.url;
+    const currentPage = transactions?.current_page || 1;
+    const lastPage = transactions?.last_page || 1;
+    const fromRecord = transactions?.from || 0;
+    const toRecord = transactions?.to || 0;
+    const totalRecords = transactions?.total || 0;
 
     const isFirstRender = useRef(true);
 
@@ -235,7 +245,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                             <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
                                                 <SelectValue placeholder="All Types" />
                                             </SelectTrigger>
-                                            <SelectContent>
+                                            <SelectContent className="border-zinc-800 bg-background text-zinc-300">
                                                 <SelectItem value="all">All Types</SelectItem>
                                                 <SelectItem value="expense">Expense</SelectItem>
                                                 <SelectItem value="income">Income</SelectItem>
@@ -255,7 +265,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                             <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
                                                 <SelectValue placeholder="All Accounts" />
                                             </SelectTrigger>
-                                            <SelectContent>
+                                            <SelectContent className="border-zinc-800 bg-background text-zinc-300">
                                                 <SelectItem value="all">All Accounts</SelectItem>
                                                 {accounts.map((acc) => (
                                                     <SelectItem key={acc.id} value={String(acc.id)}>
@@ -272,7 +282,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                                 <SlidersHorizontal className="mr-2 h-4 w-4" />
                                                 <SelectValue placeholder="Range" />
                                             </SelectTrigger>
-                                            <SelectContent>
+                                            <SelectContent className="border-zinc-800 bg-background text-zinc-300">
                                                 <SelectItem value="this_day">This Day</SelectItem>
                                                 <SelectItem value="this_week">This Week</SelectItem>
                                                 <SelectItem value="this_month">This Month</SelectItem>
@@ -377,7 +387,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                             ))
                                         ) : (
                                             <TableRow className="border-b border-zinc-800">
-                                                <TableCell colSpan={5} className="h-24 text-center text-zinc-400">
+                                                <TableCell colSpan={4} className="h-24 text-center text-zinc-400">
                                                     No transactions match your criteria.
                                                 </TableCell>
                                             </TableRow>
@@ -386,20 +396,39 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                 </Table>
                             </CardContent>
 
-                            {paginationLinks.length > 3 && (
-                                <CardFooter className="flex items-center justify-between border-t border-zinc-800 px-6 py-4">
-                                    <div className="flex gap-1">
-                                        {paginationLinks.map((link, idx) => (
-                                            <Button
-                                                key={idx}
-                                                variant={link.active ? 'default' : 'outline'}
-                                                size="sm"
-                                                disabled={!link.url}
-                                                onClick={() => link.url && router.visit(link.url, { preserveState: true, preserveScroll: true })}
-                                                className="border-zinc-800 text-zinc-300"
-                                                dangerouslySetInnerHTML={{ __html: link.label }}
-                                            />
-                                        ))}
+                            {/* Refactored Clean Pagination Footer */}
+                            {totalRecords > 0 && (
+                                <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-zinc-800 px-6 py-4 text-xs text-zinc-400">
+                                    <div>
+                                        Showing <span className="font-medium text-zinc-200">{fromRecord}</span> to{' '}
+                                        <span className="font-medium text-zinc-200">{toRecord}</span> of{' '}
+                                        <span className="font-medium text-zinc-200">{totalRecords}</span> records
+                                    </div>
+
+                                    <div className="flex items-center gap-2">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={!prevLink}
+                                            onClick={() => prevLink && router.visit(prevLink, { preserveState: true, preserveScroll: true })}
+                                            className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
+                                        >
+                                            <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
+                                        </Button>
+
+                                        <span className="text-xs font-medium text-zinc-300 px-1">
+                                            {currentPage} / {lastPage}
+                                        </span>
+
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            disabled={!nextLink}
+                                            onClick={() => nextLink && router.visit(nextLink, { preserveState: true, preserveScroll: true })}
+                                            className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
+                                        >
+                                            Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                                        </Button>
                                     </div>
                                 </CardFooter>
                             )}
