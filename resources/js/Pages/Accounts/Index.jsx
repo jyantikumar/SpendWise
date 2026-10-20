@@ -6,8 +6,6 @@ import {
     Pencil, 
     Trash2, 
     Wallet, 
-    BadgeCheck, 
-    BadgeX,
     CreditCard,
     CheckCircle2,
     ListFilter
@@ -18,7 +16,6 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/s
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { 
@@ -162,7 +159,6 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                     <TableHeader>
                                         <TableRow className="border-b border-zinc-800">
                                             <TableHead className="text-zinc-400">Account Name</TableHead>
-                                            <TableHead className="text-zinc-400">Status</TableHead>
                                             <TableHead className="text-right text-zinc-400">Current Balance</TableHead>
                                             <TableHead className="text-right text-zinc-400"></TableHead>
                                         </TableRow>
@@ -170,29 +166,35 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                     <TableBody>
                                         {accounts.length > 0 ? (
                                             accounts.map((acc) => (
-                                                <TableRow key={acc.id} className="cursor-pointer hover:bg-muted/50 border-b border-zinc-800 transition-colors" onClick={() => openTransactionsModal(acc)}>
+                                                <TableRow 
+                                                    key={acc.id} 
+                                                    className={`cursor-pointer hover:bg-muted/50 border-b border-zinc-800 transition-colors ${
+                                                        !acc.is_active ? 'opacity-60' : ''
+                                                    }`} 
+                                                    onClick={() => openTransactionsModal(acc)}
+                                                >
                                                     <TableCell className="font-medium">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700">
+                                                            <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700">
                                                                 <Wallet className="h-4 w-4" />
+                                                                {/* Status Dot Indicator */}
+                                                                <span 
+                                                                    className={`absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-zinc-950 ${
+                                                                        acc.is_active ? 'bg-emerald-500' : 'bg-zinc-600'
+                                                                    }`} 
+                                                                    title={acc.is_active ? 'Active' : 'Inactive'}
+                                                                />
                                                             </div>
                                                             <div>
-                                                                <div className="font-semibold text-zinc-200">{acc.name}</div>
+                                                                <div className="font-semibold text-zinc-200 flex items-center gap-2">
+                                                                    {acc.name}
+                                                                    {!acc.is_active && (
+                                                                        <span className="text-xs font-normal text-zinc-500">(Inactive)</span>
+                                                                    )}
+                                                                </div>
                                                                 <div className="text-xs text-zinc-400">{acc.currency || 'PHP'}</div>
                                                             </div>
                                                         </div>
-                                                    </TableCell>
-                                                    
-                                                    <TableCell>
-                                                        {acc.is_active ? (
-                                                            <Badge className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/20 gap-1">
-                                                                <BadgeCheck className="h-3 w-3" /> Active
-                                                            </Badge>
-                                                        ) : (
-                                                            <Badge variant="secondary" className="gap-1 text-zinc-400 border-zinc-800">
-                                                                <BadgeX className="h-3 w-3" /> Inactive
-                                                            </Badge>
-                                                        )}
                                                     </TableCell>
                                                     <TableCell className="text-right font-bold text-base text-zinc-200">
                                                         {formatCurrency(acc.balance, acc.currency || 'PHP')}
@@ -228,7 +230,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                             ))
                                         ) : (
                                             <TableRow className="border-b border-zinc-800">
-                                                <TableCell colSpan={5} className="text-center py-8 text-zinc-400">
+                                                <TableCell colSpan={3} className="text-center py-8 text-zinc-400">
                                                     No accounts created yet. Click "Add Account" to get started.
                                                 </TableCell>
                                             </TableRow>
