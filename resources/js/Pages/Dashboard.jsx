@@ -528,7 +528,7 @@ export default function Dashboard({
                             </Card>
 
                             {/* Expense Chart Card - Capped to 10-Row Table Height */}
-                            <Card className="border-zinc-800 flex flex-col justify-between max-h-[520px]">
+                            <Card className="border-zinc-800 flex flex-col justify-between h-[520px]">
                                 <CardHeader className="shrink-0">
                                     <CardTitle className="flex items-center gap-2 text-zinc-200">
                                         <PieChartIcon className="h-5 w-5 text-zinc-400" />
