@@ -137,7 +137,6 @@ export default function CategoryTransactionsModal({
                                     {category?.name || 'Category'} Transactions
                                 </DialogTitle>
                                 <DialogDescription className="text-xs text-zinc-400 mt-0.5 truncate">
-                                    Category transactions.
                                 </DialogDescription>
                             </div>
                         </div>
@@ -215,7 +214,6 @@ export default function CategoryTransactionsModal({
                                 <TableRow className="border-b border-zinc-800">
                                     <TableHead className="text-zinc-400">Date</TableHead>
                                     <TableHead className="text-zinc-400">Description</TableHead>
-                                    <TableHead className="text-zinc-400">Account</TableHead>
                                     <TableHead className="text-right text-zinc-400">Amount</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -228,19 +226,7 @@ export default function CategoryTransactionsModal({
                                         <TableCell className="max-w-[150px] sm:max-w-[200px] truncate text-xs text-zinc-300">
                                             {tx.description || <span className="text-zinc-500 italic">No description</span>}
                                         </TableCell>
-                                        <TableCell className="text-xs text-zinc-400">
-                                            {tx.type === 'transfer' ? (
-                                                <span className="inline-flex items-center gap-1 font-medium">
-                                                    <span>{tx.account?.name || '—'}</span>
-                                                    <span className="text-zinc-500">→</span>
-                                                    <span className="text-emerald-400">
-                                                        {tx.destination_account?.name || '—'}
-                                                    </span>
-                                                </span>
-                                            ) : (
-                                                tx.account?.name || '—'
-                                            )}
-                                        </TableCell>
+                                        
                                         <TableCell className={`text-right font-semibold text-xs whitespace-nowrap ${
                                             tx.type === 'income' 
                                                 ? 'text-emerald-400' 

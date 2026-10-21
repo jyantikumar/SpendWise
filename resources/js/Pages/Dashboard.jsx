@@ -289,11 +289,7 @@ export default function Dashboard({
 
                     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <div>
-                                <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Overview</h2>
-                                <p className="text-sm text-zinc-400">Monitor your account balance and income against expenses.</p>
-                            </div>
-
+                           
                             {/* Responsive Controls Bar */}
                             <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                                 {currentFilter === 'custom' ? (

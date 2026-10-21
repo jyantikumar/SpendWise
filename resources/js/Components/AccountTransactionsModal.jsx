@@ -125,38 +125,45 @@ export default function AccountTransactionsModal({
     }, [isOpen, account?.id, search, selectedType, selectedCategory, startDate, endDate, currentPage]);
 
     // Dynamic Summary Badge Logic
-    const renderSummaryBadge = () => {
-        const curr = account?.currency || 'PHP';
+// AccountTransactionsModal.jsx
+const renderSummaryBadge = () => {
+    const curr = account?.currency || 'PHP';
 
-        if (selectedType === 'expense') {
-            return (
-                <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-xs font-semibold px-2.5 py-1 whitespace-nowrap">
-                    Total Expense: {formatCurrency(summaryAmount, curr)}
-                </Badge>
-            );
-        }
-
-        if (selectedType === 'income') {
-            return (
-                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs font-semibold px-2.5 py-1 whitespace-nowrap">
-                    Total Income: {formatCurrency(summaryAmount, curr)}
-                </Badge>
-            );
-        }
-
+    if (selectedType === 'expense') {
         return (
-            <Badge 
-                variant="outline" 
-                className={`text-xs font-semibold px-2.5 py-1 whitespace-nowrap ${
-                    summaryAmount >= 0 
-                        ? 'bg-zinc-800 text-zinc-200 border-zinc-700' 
-                        : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                }`}
-            >
-                Balance: {formatCurrency(summaryAmount, curr)}
+            <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-xs font-semibold px-2.5 py-1 whitespace-nowrap">
+                Total Expense: {formatCurrency(summaryAmount, curr)}
             </Badge>
         );
-    };
+    }
+
+    if (selectedType === 'income') {
+        return (
+            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs font-semibold px-2.5 py-1 whitespace-nowrap">
+                Total Income: {formatCurrency(summaryAmount, curr)}
+            </Badge>
+        );
+    }
+
+    // Always use actual account balance when viewing overall account balance (All Types),
+    // unless a specific category filter is applied.
+    const displayBalance = (selectedCategory !== 'all') 
+        ? summaryAmount 
+        : (account?.balance ?? summaryAmount);
+
+    return (
+        <Badge 
+            variant="outline" 
+            className={`text-xs font-semibold px-2.5 py-1 whitespace-nowrap ${
+                displayBalance >= 0 
+                    ? 'bg-zinc-800 text-zinc-200 border-zinc-700' 
+                    : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+            }`}
+        >
+            Balance: {formatCurrency(displayBalance, curr)}
+        </Badge>
+    );
+};
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -261,7 +268,6 @@ export default function AccountTransactionsModal({
                                 <TableRow className="border-b border-zinc-800">
                                     <TableHead className="text-zinc-400">Date</TableHead>
                                     <TableHead className="text-zinc-400">Description</TableHead>
-                                    <TableHead className="text-zinc-400">Category</TableHead>
                                     <TableHead className="text-right text-zinc-400">Amount</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -274,9 +280,7 @@ export default function AccountTransactionsModal({
                                         <TableCell className="max-w-[150px] sm:max-w-[200px] truncate text-xs text-zinc-300">
                                             {tx.description || <span className="text-zinc-500 italic">No description</span>}
                                         </TableCell>
-                                        <TableCell className="text-xs text-zinc-400">
-                                            {tx.category?.name || '—'}
-                                        </TableCell>
+                                      
                                         <TableCell className={`text-right font-semibold text-xs whitespace-nowrap ${
                                             tx.type === 'income' 
                                                 ? 'text-emerald-400' 

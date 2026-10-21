@@ -159,7 +159,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                     <TableHeader>
                                         <TableRow className="border-b border-zinc-800">
                                             <TableHead className="text-zinc-400">Account Name</TableHead>
-                                            <TableHead className="text-right text-zinc-400">Current Balance</TableHead>
+                                            <TableHead className="text-right text-zinc-400">Balance</TableHead>
                                             <TableHead className="text-right text-zinc-400"></TableHead>
                                         </TableRow>
                                     </TableHeader>
