@@ -32,7 +32,7 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
 
     if (total === 0 || data.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground">
+            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground min-h-[360px]">
                 <PieChartIcon className="h-10 w-10 stroke-1 text-muted-foreground/50 mb-2" />
                 <p className="text-sm text-zinc-400">No expense records for this period.</p>
             </div>
@@ -119,8 +119,8 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
                 </div>
             </div>
 
-            {/* Dynamic Full-Height Category List */}
-            <div className="flex-1 w-full space-y-1.5 overflow-y-auto pr-1 min-h-[180px]">
+            {/* Scrollable Category List Capped to 10-Row Height */}
+            <div className="w-full space-y-1.5 overflow-y-auto max-h-[300px] pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {slices.map((slice, index) => (
                     <div
                         key={slice.id || index}
@@ -253,46 +253,78 @@ export default function Dashboard({
                                 <p className="text-sm text-zinc-400">Monitor your account balance and income against expenses.</p>
                             </div>
 
-                            <div className="flex flex-wrap items-center gap-3">
-                                <Select value={currentFilter} onValueChange={handleFilterChange}>
-                                    <SelectTrigger className="w-[160px] h-10 border-zinc-800 text-zinc-300">
-                                        <SlidersHorizontal className="mr-2 h-4 w-4" />
-                                        <SelectValue placeholder="Range" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="this_day">This Day</SelectItem>
-                                        <SelectItem value="this_week">This Week</SelectItem>
-                                        <SelectItem value="this_month">This Month</SelectItem>
-                                        <SelectItem value="last_30_days">Last 30 Days</SelectItem>
-                                        <SelectItem value="this_year">This Year</SelectItem>
-                                        <SelectItem value="custom">Custom</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                            {/* Responsive Controls Bar */}
+                            <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                                {currentFilter === 'custom' ? (
+                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <Select value={currentFilter} onValueChange={handleFilterChange}>
+                                                <SelectTrigger className="w-full sm:w-[150px] h-10 border-zinc-800 text-zinc-300">
+                                                    <SlidersHorizontal className="mr-2 h-4 w-4 shrink-0" />
+                                                    <SelectValue placeholder="Range" />
+                                                </SelectTrigger>
+                                                <SelectContent className="border-zinc-800 bg-background text-zinc-300">
+                                                    <SelectItem value="this_day">This Day</SelectItem>
+                                                    <SelectItem value="this_week">This Week</SelectItem>
+                                                    <SelectItem value="this_month">This Month</SelectItem>
+                                                    <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                                                    <SelectItem value="this_year">This Year</SelectItem>
+                                                    <SelectItem value="custom">Custom</SelectItem>
+                                                </SelectContent>
+                                            </Select>
 
-                                {currentFilter === 'custom' && (
-                                    <div className="flex items-center gap-2">
-                                        <Input 
-                                            type="date" 
-                                            value={startDateInput} 
-                                            onChange={(e) => setStartDateInput(e.target.value)}
-                                            className="w-[140px] h-10 border-zinc-800 text-zinc-300 text-xs bg-transparent"
-                                        />
-                                        <span className="text-xs text-zinc-400">to</span>
-                                        <Input 
-                                            type="date" 
-                                            value={endDateInput} 
-                                            onChange={(e) => setEndDateInput(e.target.value)}
-                                            className="w-[140px] h-10 border-zinc-800 text-zinc-300 text-xs bg-transparent"
-                                        />
-                                        <Button size="sm" variant="secondary" onClick={handleApplyCustomDates} className="h-10 px-3">
-                                            Apply
+                                            <Button onClick={() => setIsTransactionModalOpen(true)} className="gap-2 h-10 sm:hidden">
+                                                <Plus className="h-4 w-4" /> New
+                                            </Button>
+                                        </div>
+
+                                        <div className="flex items-center gap-2">
+                                            <Input 
+                                                type="date" 
+                                                value={startDateInput} 
+                                                onChange={(e) => setStartDateInput(e.target.value)}
+                                                className="w-full sm:w-[130px] h-10 border-zinc-800 text-zinc-300 text-xs bg-transparent"
+                                            />
+                                            <span className="text-xs text-zinc-400 shrink-0">to</span>
+                                            <Input 
+                                                type="date" 
+                                                value={endDateInput} 
+                                                onChange={(e) => setEndDateInput(e.target.value)}
+                                                className="w-full sm:w-[130px] h-10 border-zinc-800 text-zinc-300 text-xs bg-transparent"
+                                            />
+                                            <Button size="sm" variant="secondary" onClick={handleApplyCustomDates} className="h-10 px-3 shrink-0">
+                                                Apply
+                                            </Button>
+                                        </div>
+
+                                        <Button onClick={() => setIsTransactionModalOpen(true)} className="gap-2 h-10 hidden sm:flex shrink-0">
+                                            <Plus className="h-4 w-4" /> New Transaction
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-2 sm:flex items-center gap-2.5 w-full sm:w-auto">
+                                        <Select value={currentFilter} onValueChange={handleFilterChange}>
+                                            <SelectTrigger className="w-full sm:w-[160px] h-10 border-zinc-800 text-zinc-300">
+                                                <SlidersHorizontal className="mr-2 h-4 w-4 shrink-0" />
+                                                <SelectValue placeholder="Range" />
+                                            </SelectTrigger>
+                                            <SelectContent className="border-zinc-800 bg-background text-zinc-300">
+                                                <SelectItem value="this_day">This Day</SelectItem>
+                                                <SelectItem value="this_week">This Week</SelectItem>
+                                                <SelectItem value="this_month">This Month</SelectItem>
+                                                <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                                                <SelectItem value="this_year">This Year</SelectItem>
+                                                <SelectItem value="custom">Custom</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+
+                                        <Button onClick={() => setIsTransactionModalOpen(true)} className="gap-2 h-10 w-full sm:w-auto">
+                                            <Plus className="h-4 w-4" /> 
+                                            <span className="inline sm:hidden">New</span>
+                                            <span className="hidden sm:inline">New Transaction</span>
                                         </Button>
                                     </div>
                                 )}
-
-                                <Button onClick={() => setIsTransactionModalOpen(true)} className="gap-2">
-                                    <Plus className="h-4 w-4" /> New Transaction
-                                </Button>
                             </div>
                         </div>
 
@@ -346,15 +378,15 @@ export default function Dashboard({
                         </div>
 
                         {/* Main Table & Chart Layout */}
-                        <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 items-stretch">
-                            <Card className="xl:col-span-2 border-zinc-800 flex flex-col">
-                                <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
+                        <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 items-start">
+                            <Card className="xl:col-span-2 border-zinc-800 flex flex-col max-h-[520px]">
+                                <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap shrink-0">
                                     <div className="flex items-center gap-3">
                                         <Select value={activeView} onValueChange={setActiveView}>
                                             <SelectTrigger className="w-[200px] h-9 font-semibold border-zinc-800 text-zinc-300">
                                                 <SelectValue />
                                             </SelectTrigger>
-                                            <SelectContent>
+                                            <SelectContent className="border-zinc-800 bg-background text-zinc-300">
                                                 <SelectItem value="transactions">Transactions</SelectItem>
                                                 <SelectItem value="accounts">Accounts</SelectItem>
                                             </SelectContent>
@@ -374,10 +406,10 @@ export default function Dashboard({
                                     </Button>
                                 </CardHeader>
 
-                                <CardContent className="flex-1">
+                                <CardContent className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                                     {activeView === 'transactions' ? (
                                         <Table>
-                                            <TableHeader>
+                                            <TableHeader className="sticky top-0  z-10">
                                                 <TableRow className="border-b border-zinc-800">
                                                     <TableHead className="text-zinc-400">Date</TableHead>
                                                     <TableHead className="text-zinc-400">Description</TableHead>
@@ -419,7 +451,7 @@ export default function Dashboard({
                                         </Table>
                                     ) : (
                                         <Table>
-                                            <TableHeader>
+                                            <TableHeader className="sticky top-0 z-10">
                                                 <TableRow className="border-b border-zinc-800">
                                                     <TableHead className="text-zinc-400">Account Name</TableHead>
                                                     <TableHead className="text-right text-zinc-400">Balance</TableHead>
@@ -446,16 +478,16 @@ export default function Dashboard({
                                 </CardContent>
                             </Card>
 
-                            {/* Expense Chart Card - Matches height of table */}
-                            <Card className="border-zinc-800 flex flex-col justify-between h-full">
-                                <CardHeader>
+                            {/* Expense Chart Card - Capped to 10-Row Table Height */}
+                            <Card className="border-zinc-800 flex flex-col justify-between max-h-[515px]">
+                                <CardHeader className="shrink-0">
                                     <CardTitle className="flex items-center gap-2 text-zinc-200">
                                         <PieChartIcon className="h-5 w-5 text-zinc-400" />
                                         Expense Categories
                                     </CardTitle>
                                     <CardDescription className="text-zinc-400">Click a category to view transactions.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="flex-1 flex flex-col min-h-0">
+                                <CardContent className="flex-1 flex flex-col min-h-0 overflow-hidden">
                                     <ExpensePieChart 
                                         data={categoryBreakdown?.expense || []} 
                                         formatCurrency={formatCurrency} 
