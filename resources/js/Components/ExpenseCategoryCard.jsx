@@ -4,7 +4,7 @@ import { PieChart as PieIcon } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import CategoryTransactionsModal from '@/components/CategoryTransactionsModal';
 
-// Flexible SVG Donut Chart (matching Dashboard design)
+// SVG Donut Chart Component
 function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
     const [hoveredIndex, setHoveredIndex] = useState(null);
 
@@ -131,6 +131,7 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
     );
 }
 
+// Named export matched with Index.jsx
 export function ExpenseCategoryCard({ categoryData = [], accounts = [], className = '' }) {
     const [selectedCategory, setSelectedCategory] = useState(null);
 
