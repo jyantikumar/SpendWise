@@ -38,6 +38,51 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 import { DateTransactionsDialog } from '@/components/DateTransactionsDialog';
 
+// Custom Tooltip for Desktop Bar Chart
+const CategoryBarTooltip = ({ active, payload, formatCurrency }) => {
+    if (active && payload && payload.length) {
+        const data = payload[0].payload;
+        const color = data.color || '#3b82f6';
+
+        return (
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-2.5 shadow-md text-xs space-y-1">
+                <p className="font-semibold" style={{ color }}>
+                    {data.name}
+                </p>
+                <p className="text-zinc-200">
+                    <span className="text-zinc-400">Total Expense: </span>
+                    <span className="font-semibold text-zinc-100">{formatCurrency(data.total)}</span>
+                </p>
+            </div>
+        );
+    }
+
+    return null;
+};
+
+// Custom Tooltip for Cash Flow Trajectory Area Chart
+const AreaFlowTooltip = ({ active, payload, label, formatCurrency, type }) => {
+    if (active && payload && payload.length) {
+        const rawDate = payload[0]?.payload?.rawDate;
+        const val = payload[0]?.value || 0;
+        const strokeColor = type === 'income' ? '#10b981' : type === 'expense' ? '#f43f5e' : '#3b82f6';
+
+        return (
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-2.5 shadow-md text-xs space-y-1">
+                <p className="text-zinc-400 font-semibold">
+                    {rawDate ? `Date: ${rawDate} (${label})` : `Date: ${label}`}
+                </p>
+                <p className="font-bold" style={{ color: strokeColor }}>
+                    {type === 'all' ? 'Net Flow: ' : 'Amount: '}
+                    {formatCurrency(val)}
+                </p>
+            </div>
+        );
+    }
+
+    return null;
+};
+
 export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendData = [], categoryData = [], calendar = {}, filters = {} }) {
     const [range, setRange] = useState(filters.range || 'this_month');
     const [type, setType] = useState(filters.type || 'expense');
@@ -47,6 +92,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
     const [calendarMonth, setCalendarMonth] = useState(filters.calendar_month || new Date().toISOString().slice(0, 7));
 
     const [selectedDayObj, setSelectedDayObj] = useState(null);
+    const [hoveredPieSlice, setHoveredPieSlice] = useState(null);
 
     const formatCurrency = (val) => 
         new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
@@ -106,6 +152,8 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
         { name: 'Income', value: incomeVal, color: '#10b981' },
         { name: 'Expense', value: expenseVal, color: '#f43f5e' },
     ];
+
+    const categoryTotalSum = categoryData.reduce((acc, curr) => acc + (parseFloat(curr.total) || 0), 0);
 
     return (
         <TooltipProvider>
@@ -352,22 +400,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                                     tickLine={false}
                                                     tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
                                                 />
-                                                <Tooltip 
-                                                    labelFormatter={(label, payload) => {
-                                                        const rawDate = payload?.[0]?.payload?.rawDate;
-                                                        return rawDate ? `Date: ${rawDate} (${label})` : `Date: ${label}`;
-                                                    }}
-                                                    formatter={(val) => [formatCurrency(val), type === 'all' ? 'Net Flow' : 'Amount']}
-                                                    contentStyle={{ 
-                                                        backgroundColor: '#18181b', 
-                                                        borderColor: '#27272a', 
-                                                        borderRadius: '8px', 
-                                                        fontSize: '12px',
-                                                        color: '#f4f4f5'
-                                                    }}
-                                                    itemStyle={{ color: '#f4f4f5' }}
-                                                    labelStyle={{ color: '#a1a1aa', fontWeight: '600', marginBottom: '2px' }}
-                                                />
+                                                <Tooltip content={<AreaFlowTooltip formatCurrency={formatCurrency} type={type} />} />
                                                 <Area 
                                                     type="monotone" 
                                                     dataKey={type === 'all' ? 'Net' : 'Amount'} 
@@ -477,33 +510,103 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 </CardHeader>
                                 <CardContent>
                                     {categoryData.length > 0 ? (
-                                        <div className="h-[260px] w-full">
-                                            <ResponsiveContainer width="100%" height="100%">
-                                                <BarChart data={categoryData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                                                    <XAxis 
-                                                        dataKey="name" 
-                                                        tick={{ fontSize: 11 }} 
-                                                        tickLine={false}
-                                                        interval={0}
-                                                    />
-                                                    <YAxis 
-                                                        tick={{ fontSize: 11 }} 
-                                                        tickLine={false}
-                                                        tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
-                                                    />
-                                                    <Tooltip 
-                                                        formatter={(val) => [formatCurrency(val), 'Total Expense']}
-                                                        contentStyle={{ borderRadius: '8px', fontSize: '12px', borderColor: '#27272a', backgroundColor: '#18181b', color: '#f4f4f5' }}
-                                                    />
-                                                    <Bar dataKey="total" radius={[6, 6, 0, 0]}>
-                                                        {categoryData.map((entry, index) => (
-                                                            <Cell key={`cell-${index}`} fill={entry.color || '#3b82f6'} />
-                                                        ))}
-                                                    </Bar>
-                                                </BarChart>
-                                            </ResponsiveContainer>
-                                        </div>
+                                        <>
+                                            {/* Donut Chart View (Visible on Small Screens) */}
+                                            <div className="block md:hidden">
+                                                <div className="flex flex-col items-center gap-4">
+                                                    <div className="relative w-48 h-48 shrink-0 flex items-center justify-center">
+                                                        <ResponsiveContainer width="100%" height="100%">
+                                                            <PieChart>
+                                                                <Pie
+                                                                    data={categoryData}
+                                                                    cx="50%"
+                                                                    cy="50%"
+                                                                    innerRadius={55}
+                                                                    outerRadius={80}
+                                                                    paddingAngle={3}
+                                                                    dataKey="total"
+                                                                    onMouseEnter={(_, index) => setHoveredPieSlice(categoryData[index])}
+                                                                    onMouseLeave={() => setHoveredPieSlice(null)}
+                                                                >
+                                                                    {categoryData.map((entry, index) => (
+                                                                        <Cell key={`cell-${index}`} fill={entry.color || '#3b82f6'} className="cursor-pointer" />
+                                                                    ))}
+                                                                </Pie>
+                                                            </PieChart>
+                                                        </ResponsiveContainer>
+
+                                                        {/* Dynamic Interactive Center Label */}
+                                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none p-2 min-w-0">
+                                                            <span 
+                                                                className="text-[10px] uppercase font-bold tracking-wider truncate max-w-[100px]"
+                                                                style={{ color: hoveredPieSlice ? (hoveredPieSlice.color || '#3b82f6') : '#a1a1aa' }}
+                                                            >
+                                                                {hoveredPieSlice ? hoveredPieSlice.name : 'Total'}
+                                                            </span>
+                                                            <span className="text-sm font-bold tracking-tight text-zinc-100 truncate max-w-[110px]">
+                                                                {formatCurrency(hoveredPieSlice ? hoveredPieSlice.total : categoryTotalSum)}
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div className="w-full space-y-2 max-h-[220px] overflow-y-auto pr-1">
+                                                        {categoryData.map((item, index) => {
+                                                            const val = parseFloat(item.total) || 0;
+                                                            const pct = categoryTotalSum > 0 ? ((val / categoryTotalSum) * 100).toFixed(0) : 0;
+                                                            const isHovered = hoveredPieSlice?.name === item.name;
+
+                                                            return (
+                                                                <div 
+                                                                    key={item.name || index} 
+                                                                    className={`flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer text-xs ${
+                                                                        isHovered 
+                                                                            ? 'bg-zinc-800/80 border-zinc-700' 
+                                                                            : 'bg-zinc-900/50 border-zinc-800/60 hover:bg-zinc-800/40'
+                                                                    }`}
+                                                                    onMouseEnter={() => setHoveredPieSlice(item)}
+                                                                    onMouseLeave={() => setHoveredPieSlice(null)}
+                                                                >
+                                                                    <div className="flex items-center gap-2 truncate pr-2">
+                                                                        <span className="h-2.5 w-2.5 rounded-full border-none shrink-0" style={{ backgroundColor: item.color || '#3b82f6' }} />
+                                                                        <span className="truncate text-zinc-300 font-medium">{item.name}</span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-3 shrink-0">
+                                                                        <span className="text-zinc-500 text-[11px] font-mono">{pct}%</span>
+                                                                        <span className="font-semibold text-zinc-200">{formatCurrency(val)}</span>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* Bar Chart View (Visible on Medium & Larger Screens) */}
+                                            <div className="hidden md:block h-[260px] w-full">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <BarChart data={categoryData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
+                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                                                        <XAxis 
+                                                            dataKey="name" 
+                                                            tick={{ fontSize: 11 }} 
+                                                            tickLine={false}
+                                                            interval={0}
+                                                        />
+                                                        <YAxis 
+                                                            tick={{ fontSize: 11 }} 
+                                                            tickLine={false}
+                                                            tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
+                                                        />
+                                                        <Tooltip content={<CategoryBarTooltip formatCurrency={formatCurrency} />} />
+                                                        <Bar dataKey="total" radius={[6, 6, 0, 0]}>
+                                                            {categoryData.map((entry, index) => (
+                                                                <Cell key={`cell-${index}`} fill={entry.color || '#3b82f6'} />
+                                                            ))}
+                                                        </Bar>
+                                                    </BarChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </>
                                     ) : (
                                         <div className="flex flex-col items-center justify-center h-48 text-zinc-400">
                                             <BarChart3 className="h-8 w-8 stroke-1 opacity-50 mb-2" />

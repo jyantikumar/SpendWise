@@ -87,7 +87,7 @@ export default function AccountTypeIndex({ auth, accountTypes }) {
                                     <TableHeader>
                                         <TableRow className="border-b border-zinc-800">
                                             <TableHead className="text-zinc-400">Type Name</TableHead>
-                                            <TableHead className="text-right text-zinc-400">Actions</TableHead>
+                                            <TableHead className="text-right text-zinc-400"></TableHead>
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
