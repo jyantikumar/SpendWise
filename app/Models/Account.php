@@ -14,39 +14,31 @@ class Account extends Model
     protected $fillable = [
         'user_id',
         'name',
-        'type', // e.g., 'bank', 'cash', 'credit_card', 'e_wallet'
+        'type',
         'balance',
         'currency',
+        'color', // 👈 Added color field
         'is_active',
     ];
 
     protected function casts(): array
     {
         return [
-            'balance' => 'decimal:2',
+            'balance'   => 'decimal:2',
             'is_active' => 'boolean',
         ];
     }
 
-    /**
-     * Get the user that owns the account.
-     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /**
-     * Get all primary transactions for this account.
-     */
     public function transactions(): HasMany
     {
         return $this->hasMany(Transaction::class);
     }
 
-    /**
-     * Get all transfer-destination transactions linked to this account.
-     */
     public function destinationTransfers(): HasMany
     {
         return $this->hasMany(Transaction::class, 'destination_account_id');

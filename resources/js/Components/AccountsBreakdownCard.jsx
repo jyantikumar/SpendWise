@@ -98,7 +98,7 @@ function AccountPieChart({ data = [], formatCurrency, onAccountClick }) {
 
                 <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none p-2">
                     <span className="text-[10px] uppercase font-semibold text-zinc-400 tracking-wider truncate max-w-[90px]">
-                        {activeItem ? activeItem.name : 'Total Balance'}
+                        {activeItem ? activeItem.name : 'Total:'}
                     </span>
                     <span className="text-sm font-bold tracking-tight text-zinc-200">
                         {activeItem ? formatCurrency(activeItem.value) : formatCurrency(total)}

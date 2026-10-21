@@ -175,8 +175,16 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                                 >
                                                     <TableCell className="font-medium">
                                                         <div className="flex items-center gap-3">
-                                                            <div className="relative flex h-8 w-8 items-center justify-center rounded-lg bg-zinc-800 text-zinc-300 border border-zinc-700">
-                                                                <Wallet className="h-4 w-4" />
+                                                            {/* Account Badge Icon with Saved Dynamic Hex Color */}
+                                                            <div 
+                                                                className="relative flex h-8 w-8 items-center justify-center rounded-lg border shrink-0 transition-colors"
+                                                                style={{ 
+                                                                    backgroundColor: acc.color ? `${acc.color}20` : '#27272a', 
+                                                                    borderColor: acc.color || '#3f3f46' 
+                                                                }}
+                                                            >
+                                                                <Wallet className="h-4 w-4" style={{ color: acc.color || '#f4f4f5' }} />
+                                                                
                                                                 {/* Status Dot Indicator */}
                                                                 <span 
                                                                     className={`absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-zinc-950 ${
@@ -185,6 +193,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                                                     title={acc.is_active ? 'Active' : 'Inactive'}
                                                                 />
                                                             </div>
+
                                                             <div>
                                                                 <div className="font-semibold text-zinc-200 flex items-center gap-2">
                                                                     {acc.name}

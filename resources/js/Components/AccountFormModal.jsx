@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
-import { BadgeCheck, BadgeX, Plus } from 'lucide-react';
+import { BadgeCheck, BadgeX, Plus, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -17,6 +17,20 @@ import {
 
 import AccountTypeFormModal from '@/components/AccountTypeFormModal';
 
+// Preset Hex Color Palette
+const HEX_PRESETS = [
+    '#3B82F6', // Blue
+    '#10B981', // Emerald
+    '#8B5CF6', // Purple
+    '#F59E0B', // Amber
+    '#EC4899', // Pink
+    '#06B6D4', // Cyan
+    '#F97316', // Orange
+    '#6366F1', // Indigo
+    '#14B8A6', // Teal
+    '#64748B', // Slate
+];
+
 export default function AccountFormModal({
     isOpen,
     onClose,
@@ -32,7 +46,7 @@ export default function AccountFormModal({
         type: accountTypes[0]?.name || '',
         balance: '0.00',
         currency: 'PHP',
-        color: '#3b82f6',
+        color: '#3B82F6',
         is_active: true,
     });
 
@@ -47,7 +61,7 @@ export default function AccountFormModal({
                 type: editingAccount.type || accountTypes[0]?.name || '',
                 balance: editingAccount.balance ? String(editingAccount.balance) : '0.00',
                 currency: editingAccount.currency || 'PHP',
-                color: editingAccount.color || '#3b82f6',
+                color: editingAccount.color || '#3B82F6',
                 is_active: Boolean(editingAccount.is_active),
             });
         } else {
@@ -57,7 +71,7 @@ export default function AccountFormModal({
                 type: accountTypes[0]?.name || '',
                 balance: '0.00',
                 currency: 'PHP',
-                color: '#3b82f6',
+                color: '#3B82F6',
                 is_active: true,
             });
         }
@@ -69,6 +83,14 @@ export default function AccountFormModal({
         if (latestType) {
             setData('type', latestType.name);
         }
+    };
+
+    const handleHexInputChange = (e) => {
+        let val = e.target.value;
+        if (!val.startsWith('#')) {
+            val = '#' + val.replace(/#/g, '');
+        }
+        setData('color', val.toUpperCase());
     };
 
     const handleSubmit = (e) => {
@@ -187,26 +209,41 @@ export default function AccountFormModal({
                             </div>
                         </div>
 
-                        {/* Account Badge Color Picker */}
+                        {/* Hex Color Swatches + Manual Hex Code Input */}
                         <div className="grid gap-2">
-                            <label className="text-sm font-medium">Account Color</label>
-                            <div className="flex items-center gap-3 w-full">
-                                <div className="relative flex items-center shrink-0">
-                                    <Input 
-                                        type="color" 
-                                        value={data.color} 
-                                        onChange={(e) => setData('color', e.target.value)}
-                                        className="w-10 h-10 p-0.5 rounded-full border-zinc-700 bg-transparent cursor-pointer overflow-hidden"
-                                    />
-                                </div>
+                            <label className="text-sm font-medium">Account Color (Hex Code)</label>
+                            
+                            {/* Swatches Grid */}
+                            <div className="flex flex-wrap items-center gap-2 py-1">
+                                {HEX_PRESETS.map((hex) => (
+                                    <button
+                                        key={hex}
+                                        type="button"
+                                        onClick={() => setData('color', hex)}
+                                        style={{ backgroundColor: hex }}
+                                        className={`h-7 w-7 rounded-full flex items-center justify-center transition-transform hover:scale-110 focus:outline-none ${
+                                            data.color === hex ? 'ring-2 ring-white ring-offset-2 ring-offset-zinc-950 scale-105' : ''
+                                        }`}
+                                    >
+                                        {data.color === hex && <Check className="h-3.5 w-3.5 text-white drop-shadow-sm" />}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Hex Input Field */}
+                            <div className="flex items-center gap-3 w-full mt-1">
+                                <div 
+                                    className="w-10 h-10 rounded-lg border border-zinc-700 shrink-0 shadow-sm"
+                                    style={{ backgroundColor: data.color.length === 7 ? data.color : '#3B82F6' }}
+                                />
 
                                 <Input 
                                     type="text"
                                     maxLength={7}
                                     value={data.color}
-                                    onChange={(e) => setData('color', e.target.value)}
+                                    onChange={handleHexInputChange}
                                     className="flex-1 h-10 font-mono text-xs uppercase border-zinc-800"
-                                    placeholder="#000000"
+                                    placeholder="#3B82F6"
                                 />
                             </div>
                             {errors.color && <p className="text-xs text-rose-500">{errors.color}</p>}

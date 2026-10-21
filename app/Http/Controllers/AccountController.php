@@ -36,9 +36,6 @@ class AccountController extends Controller
         ]);
     }
 
-    /**
-     * API Endpoint for Account Transactions Modal filtering (Paginated)
-     */
     public function accountTransactions(Request $request, Account $account)
     {
         if ($account->user_id !== $request->user()->id) {
@@ -75,7 +72,6 @@ class AccountController extends Controller
                 $q->whereDate('transaction_date', '<=', $endDate);
             });
 
-        // Compute summary amount over filtered set
         $allFiltered = (clone $query)->get(['id', 'type', 'amount', 'destination_account_id']);
         if ($type === 'expense') {
             $summaryAmount = $allFiltered->where('type', 'expense')->sum('amount');
@@ -93,7 +89,6 @@ class AccountController extends Controller
             }, 0);
         }
 
-        // Paginate 8 items per page
         $paginatedTransactions = $query
             ->select('id', 'user_id', 'account_id', 'destination_account_id', 'category_id', 'type', 'amount', 'description', 'transaction_date')
             ->with(['category:id,name', 'account:id,name', 'destinationAccount:id,name'])
@@ -121,6 +116,7 @@ class AccountController extends Controller
             'type'      => ['required', 'string', 'max:50'],
             'balance'   => ['required', 'numeric', 'min:-999999999.99', 'max:999999999.99'],
             'currency'  => ['required', 'string', 'size:3'],
+            'color'     => ['nullable', 'string', 'max:7'], // 👈 Validate color
             'is_active' => ['required', 'boolean'],
         ]);
 
@@ -140,6 +136,7 @@ class AccountController extends Controller
             'type'      => ['required', 'string', 'max:50'],
             'balance'   => ['required', 'numeric', 'min:-999999999.99', 'max:999999999.99'],
             'currency'  => ['required', 'string', 'size:3'],
+            'color'     => ['nullable', 'string', 'max:7'], // 👈 Validate color
             'is_active' => ['required', 'boolean'],
         ]);
 
