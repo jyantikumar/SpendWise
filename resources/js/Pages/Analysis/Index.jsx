@@ -4,8 +4,6 @@ import {
     ResponsiveContainer, 
     AreaChart, 
     Area, 
-    BarChart, 
-    Bar, 
     PieChart, 
     Pie, 
     XAxis, 
@@ -37,28 +35,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { DateTransactionsDialog } from '@/components/DateTransactionsDialog';
-
-// Custom Tooltip for Desktop Bar Chart
-const CategoryBarTooltip = ({ active, payload, formatCurrency }) => {
-    if (active && payload && payload.length) {
-        const data = payload[0].payload;
-        const color = data.color || '#3b82f6';
-
-        return (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-2.5 shadow-md text-xs space-y-1">
-                <p className="font-semibold" style={{ color }}>
-                    {data.name}
-                </p>
-                <p className="text-zinc-200">
-                    <span className="text-zinc-400">Total Expense: </span>
-                    <span className="font-semibold text-zinc-100">{formatCurrency(data.total)}</span>
-                </p>
-            </div>
-        );
-    }
-
-    return null;
-};
+import { ExpenseCategoryCard } from '@/components/ExpenseCategoryCard';
 
 // Custom Tooltip for Cash Flow Trajectory Area Chart
 const AreaFlowTooltip = ({ active, payload, label, formatCurrency, type }) => {
@@ -92,7 +69,6 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
     const [calendarMonth, setCalendarMonth] = useState(filters.calendar_month || new Date().toISOString().slice(0, 7));
 
     const [selectedDayObj, setSelectedDayObj] = useState(null);
-    const [hoveredPieSlice, setHoveredPieSlice] = useState(null);
 
     const formatCurrency = (val) => 
         new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
@@ -153,8 +129,6 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
         { name: 'Expense', value: expenseVal, color: '#f43f5e' },
     ];
 
-    const categoryTotalSum = categoryData.reduce((acc, curr) => acc + (parseFloat(curr.total) || 0), 0);
-
     return (
         <TooltipProvider>
             <SidebarProvider>
@@ -166,7 +140,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                     <header className="flex h-16 shrink-0 items-center gap-2 border-b border-zinc-800 px-4">
                         <SidebarTrigger className="-ml-1" />
                         <Separator orientation="vertical" className="mr-2 h-4 bg-zinc-800" />
-                        <h1 className="text-lg font-semibold tracking-tight text-zinc-200">Financial Analysis & Insights</h1>
+                        <h1 className="text-lg font-semibold tracking-tight text-zinc-200">Visual Analytics</h1>
                     </header>
 
                     <main className="flex flex-1 flex-col gap-6 p-4 md:gap-8 md:p-8">
@@ -185,7 +159,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 value={type} 
                                 onValueChange={(val) => {
                                     setType(val);
-                                    applyFilters({ type: val });
+                                    applyFilters({ type:val });
                                 }}
                             >
                                 <SelectTrigger className="w-[180px] h-9 border-zinc-800 text-zinc-300">
@@ -501,120 +475,12 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 </CardContent>
                             </Card>
 
-                            <Card className="border-zinc-800 lg:col-span-3">
-                                <CardHeader>
-                                    <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
-                                        <PieIcon className="h-4 w-4 text-primary" /> Expense Category Distribution
-                                    </CardTitle>
-                                    <CardDescription className="text-zinc-400">Top expense categories ranked by spending volume for the filtered duration.</CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    {categoryData.length > 0 ? (
-                                        <>
-                                            {/* Donut Chart View (Visible on Small Screens) */}
-                                            <div className="block md:hidden">
-                                                <div className="flex flex-col items-center gap-4">
-                                                    <div className="relative w-48 h-48 shrink-0 flex items-center justify-center">
-                                                        <ResponsiveContainer width="100%" height="100%">
-                                                            <PieChart>
-                                                                <Pie
-                                                                    data={categoryData}
-                                                                    cx="50%"
-                                                                    cy="50%"
-                                                                    innerRadius={55}
-                                                                    outerRadius={80}
-                                                                    paddingAngle={3}
-                                                                    dataKey="total"
-                                                                    onMouseEnter={(_, index) => setHoveredPieSlice(categoryData[index])}
-                                                                    onMouseLeave={() => setHoveredPieSlice(null)}
-                                                                >
-                                                                    {categoryData.map((entry, index) => (
-                                                                        <Cell key={`cell-${index}`} fill={entry.color || '#3b82f6'} className="cursor-pointer" />
-                                                                    ))}
-                                                                </Pie>
-                                                            </PieChart>
-                                                        </ResponsiveContainer>
-
-                                                        {/* Dynamic Interactive Center Label */}
-                                                        <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none p-2 min-w-0">
-                                                            <span 
-                                                                className="text-[10px] uppercase font-bold tracking-wider truncate max-w-[100px]"
-                                                                style={{ color: hoveredPieSlice ? (hoveredPieSlice.color || '#3b82f6') : '#a1a1aa' }}
-                                                            >
-                                                                {hoveredPieSlice ? hoveredPieSlice.name : 'Total'}
-                                                            </span>
-                                                            <span className="text-sm font-bold tracking-tight text-zinc-100 truncate max-w-[110px]">
-                                                                {formatCurrency(hoveredPieSlice ? hoveredPieSlice.total : categoryTotalSum)}
-                                                            </span>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="w-full space-y-2 max-h-[220px] overflow-y-auto pr-1">
-                                                        {categoryData.map((item, index) => {
-                                                            const val = parseFloat(item.total) || 0;
-                                                            const pct = categoryTotalSum > 0 ? ((val / categoryTotalSum) * 100).toFixed(0) : 0;
-                                                            const isHovered = hoveredPieSlice?.name === item.name;
-
-                                                            return (
-                                                                <div 
-                                                                    key={item.name || index} 
-                                                                    className={`flex items-center justify-between p-2 rounded-lg border transition-all cursor-pointer text-xs ${
-                                                                        isHovered 
-                                                                            ? 'bg-zinc-800/80 border-zinc-700' 
-                                                                            : 'bg-zinc-900/50 border-zinc-800/60 hover:bg-zinc-800/40'
-                                                                    }`}
-                                                                    onMouseEnter={() => setHoveredPieSlice(item)}
-                                                                    onMouseLeave={() => setHoveredPieSlice(null)}
-                                                                >
-                                                                    <div className="flex items-center gap-2 truncate pr-2">
-                                                                        <span className="h-2.5 w-2.5 rounded-full border-none shrink-0" style={{ backgroundColor: item.color || '#3b82f6' }} />
-                                                                        <span className="truncate text-zinc-300 font-medium">{item.name}</span>
-                                                                    </div>
-                                                                    <div className="flex items-center gap-3 shrink-0">
-                                                                        <span className="text-zinc-500 text-[11px] font-mono">{pct}%</span>
-                                                                        <span className="font-semibold text-zinc-200">{formatCurrency(val)}</span>
-                                                                    </div>
-                                                                </div>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* Bar Chart View (Visible on Medium & Larger Screens) */}
-                                            <div className="hidden md:block h-[260px] w-full">
-                                                <ResponsiveContainer width="100%" height="100%">
-                                                    <BarChart data={categoryData} margin={{ top: 10, right: 10, left: 0, bottom: 20 }}>
-                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                                                        <XAxis 
-                                                            dataKey="name" 
-                                                            tick={{ fontSize: 11 }} 
-                                                            tickLine={false}
-                                                            interval={0}
-                                                        />
-                                                        <YAxis 
-                                                            tick={{ fontSize: 11 }} 
-                                                            tickLine={false}
-                                                            tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
-                                                        />
-                                                        <Tooltip content={<CategoryBarTooltip formatCurrency={formatCurrency} />} />
-                                                        <Bar dataKey="total" radius={[6, 6, 0, 0]}>
-                                                            {categoryData.map((entry, index) => (
-                                                                <Cell key={`cell-${index}`} fill={entry.color || '#3b82f6'} />
-                                                            ))}
-                                                        </Bar>
-                                                    </BarChart>
-                                                </ResponsiveContainer>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="flex flex-col items-center justify-center h-48 text-zinc-400">
-                                            <BarChart3 className="h-8 w-8 stroke-1 opacity-50 mb-2" />
-                                            <p className="text-sm font-medium">No expense category data available for this range.</p>
-                                        </div>
-                                    )}
-                                </CardContent>
-                            </Card>
+                            {/* In Index_2.jsx line 328 */}
+                            <ExpenseCategoryCard 
+                                categoryData={categoryData} 
+                                accounts={accounts}
+                                className="lg:col-span-3"
+                            />
                         </div>
                     </main>
                 </SidebarInset>
