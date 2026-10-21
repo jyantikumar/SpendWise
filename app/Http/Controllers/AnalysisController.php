@@ -53,10 +53,13 @@ class AnalysisController extends Controller
                 });
             });
 
-        // 2. Fetch Transactions matching Type filter for Chart & Metric processing
+        // 2. Fetch Transactions matching Type filter (EXCLUDING transfers for flow calculations)
         $typeFilteredQuery = (clone $baseQuery)
             ->when($type !== 'all', function ($q) use ($type) {
                 $q->where('type', $type);
+            }, function ($q) {
+                // When type is 'all', exclude internal transfers from peak & flow calculations
+                $q->whereIn('type', ['income', 'expense']);
             });
 
         $transactions = $typeFilteredQuery->with(['category', 'account', 'destinationAccount'])->get();
@@ -70,7 +73,7 @@ class AnalysisController extends Controller
         $totalDays           = max(1, $startDate->diffInDays($endDate) + 1);
         $dailyAverage        = $totalFilteredAmount / $totalDays;
 
-        // Peak Day Calculation
+        // Peak Day Calculation (Excludes transfers)
         $dailySums = $transactions->groupBy(function ($tx) {
             return Carbon::parse($tx->transaction_date)->format('Y-m-d');
         })->map(function ($dayTxs) {
@@ -78,7 +81,8 @@ class AnalysisController extends Controller
         });
 
         $peakAmount = $dailySums->max() ?? 0;
-        $peakDate   = $dailySums->search($peakAmount) ?? null;
+        $peakDateRaw = $dailySums->search($peakAmount) ?? null;
+        $peakDate    = $peakDateRaw ? Carbon::parse($peakDateRaw)->format('M d, Y') : null;
 
         // 4. Line/Area Chart Trend Data
         $trendData    = [];
@@ -136,7 +140,7 @@ class AnalysisController extends Controller
             ->values()
             ->take(8);
 
-        // 6. Selectable Calendar Grid (Eager load relationships for detail modal)
+        // 6. Selectable Calendar Grid
         try {
             $calendarCarbon = Carbon::parse($calendarMonth)->startOfMonth();
         } catch (\Exception $e) {
@@ -154,7 +158,7 @@ class AnalysisController extends Controller
                         ->orWhere('destination_account_id', $accountId);
                 });
             })
-            ->with(['category', 'account', 'destinationAccount']) // 👈 Added eager loading here
+            ->with(['category', 'account', 'destinationAccount'])
             ->orderBy('transaction_date', 'asc')
             ->get();
 
@@ -180,7 +184,7 @@ class AnalysisController extends Controller
                 'income'       => (float) $incomeSum,
                 'expense'      => (float) $expenseSum,
                 'isToday'      => $currentDateStr === $today->format('Y-m-d'),
-                'transactions' => $dayTransactions->values()->toArray(), // 👈 Passed transaction objects here
+                'transactions' => $dayTransactions->values()->toArray(),
             ];
         }
 

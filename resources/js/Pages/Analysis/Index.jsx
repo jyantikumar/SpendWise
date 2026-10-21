@@ -15,6 +15,7 @@ import {
 import { 
     BarChart3, 
     TrendingUp, 
+    TrendingDown,
     DollarSign, 
     Calendar as CalendarIcon, 
     SlidersHorizontal,
@@ -22,7 +23,9 @@ import {
     Zap,
     PieChart as PieIcon,
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Sparkles,
+    Scale
 } from 'lucide-react';
 
 import { AppSidebar } from '@/components/app-sidebar';
@@ -36,6 +39,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 
 import { DateTransactionsDialog } from '@/components/DateTransactionsDialog';
 import { ExpenseCategoryCard } from '@/components/ExpenseCategoryCard';
+import { AccountsBreakdownCard } from '@/components/AccountsBreakdownCard';
 
 // Custom Tooltip for Cash Flow Trajectory Area Chart
 const AreaFlowTooltip = ({ active, payload, label, formatCurrency, type }) => {
@@ -60,7 +64,7 @@ const AreaFlowTooltip = ({ active, payload, label, formatCurrency, type }) => {
     return null;
 };
 
-export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendData = [], categoryData = [], calendar = {}, filters = {} }) {
+export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendData = [], categoryData = [], calendar = {}, filters = {}, categories = [] }) {
     const [range, setRange] = useState(filters.range || 'this_month');
     const [type, setType] = useState(filters.type || 'expense');
     const [accountId, setAccountId] = useState(filters.account_id || 'all');
@@ -129,6 +133,12 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
         { name: 'Expense', value: expenseVal, color: '#f43f5e' },
     ];
 
+    // Computations: Financial Health & Insights
+    const savingsRate = incomeVal > 0 ? Math.max(0, Math.min(100, (((incomeVal - expenseVal) / incomeVal) * 100))) : 0;
+    const topCategory = categoryData && categoryData.length > 0 ? categoryData[0] : null;
+    const topCategoryPct = expenseVal > 0 && topCategory ? (((parseFloat(topCategory.total) || 0) / expenseVal) * 100) : 0;
+    const momChangePct = kpis?.momExpenseChange !== undefined ? kpis.momExpenseChange : null;
+
     return (
         <TooltipProvider>
             <SidebarProvider>
@@ -159,7 +169,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 value={type} 
                                 onValueChange={(val) => {
                                     setType(val);
-                                    applyFilters({ type:val });
+                                    applyFilters({ type: val });
                                 }}
                             >
                                 <SelectTrigger className="w-[180px] h-9 border-zinc-800 text-zinc-300">
@@ -340,7 +350,10 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                             </Card>
                         </div>
 
-                        {/* Main Charts & Calendar Layout */}
+                        {/* Financial Health & Smart Insights */}
+                       
+
+                        {/* Top Section: Cash Flow Trajectory & Daily Activity */}
                         <div className="grid gap-6 lg:grid-cols-3">
                             <Card className="border-zinc-800 lg:col-span-2 flex flex-col justify-between">
                                 <CardHeader>
@@ -474,12 +487,20 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                     </div>
                                 </CardContent>
                             </Card>
+                        </div>
 
-                            {/* In Index_2.jsx line 328 */}
+                        {/* Bottom Section: Side-by-Side Distribution Cards */}
+                        <div className="grid gap-6 lg:grid-cols-2">
+                            {/* Left Side: Expense Category Distribution */}
                             <ExpenseCategoryCard 
                                 categoryData={categoryData} 
                                 accounts={accounts}
-                                className="lg:col-span-3"
+                            />
+
+                            {/* Right Side: Accounts Breakdown */}
+                            <AccountsBreakdownCard 
+                                accounts={accounts} 
+                                categories={categories}
                             />
                         </div>
                     </main>

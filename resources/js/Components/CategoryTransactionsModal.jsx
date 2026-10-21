@@ -134,7 +134,7 @@ export default function CategoryTransactionsModal({
                             />
                             <div className="min-w-0">
                                 <DialogTitle className="text-lg sm:text-xl font-bold text-zinc-200 truncate">
-                                    {category?.name || 'Category'} Transactions
+                                    {category?.name || 'Category'}
                                 </DialogTitle>
                                 <DialogDescription className="text-xs text-zinc-400 mt-0.5 truncate">
                                 </DialogDescription>
