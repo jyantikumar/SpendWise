@@ -14,36 +14,39 @@ class AnalysisController extends Controller
     {
         $user = $request->user();
 
-        // Filter Inputs
-        $range          = $request->input('range', 'this_month');
-        $type           = $request->input('type', 'expense'); // 'expense', 'income', 'all'
+        // 1. Explicitly check if range is present in the request query
+        $range          = $request->input('range', 'monthly');
+        $type           = $request->input('type', 'expense');
         $accountId      = $request->input('account_id', 'all');
         $startDateInput = $request->input('start_date');
         $endDateInput   = $request->input('end_date');
         $calendarMonth  = $request->input('calendar_month', Carbon::now()->format('Y-m'));
 
-        // Calculate Date Range Boundaries
         $today = Carbon::today();
 
+        // 2. Date Boundary Resolution
         if ($range === '1_week') {
             $startDate = Carbon::now()->subDays(6)->startOfDay();
             $endDate   = Carbon::now()->endOfDay();
         } elseif ($range === '6_months') {
             $startDate = Carbon::now()->subMonths(6)->startOfDay();
             $endDate   = Carbon::now()->endOfDay();
-        } elseif ($range === 'this_year' || $range === 'monthly') {
+        } elseif ($range === 'this_year') {
             $startDate = Carbon::now()->startOfYear();
             $endDate   = Carbon::now()->endOfDay();
+        } elseif ($range === 'monthly') {
+            $startDate = Carbon::now()->startOfYear();
+            $endDate   = Carbon::now()->endOfYear();
         } elseif ($range === 'custom' && $startDateInput && $endDateInput) {
             $startDate = Carbon::parse($startDateInput)->startOfDay();
             $endDate   = Carbon::parse($endDateInput)->endOfDay();
         } else {
-            // Default: 'this_month'
-            $startDate = Carbon::now()->startOfMonth();
-            $endDate   = Carbon::now()->endOfDay();
+            // Explicitly handles 'this_month' or scoped month drill-down
+            $startDate = Carbon::parse($calendarMonth)->startOfMonth();
+            $endDate   = Carbon::parse($calendarMonth)->endOfMonth();
         }
 
-        // 1. Base Query for Charts & KPIs
+        // 3. Base Query for Charts & KPIs
         $baseQuery = Transaction::where('user_id', $user->id)
             ->whereBetween('transaction_date', [$startDate, $endDate])
             ->when($accountId && $accountId !== 'all', function ($q) use ($accountId) {
@@ -53,7 +56,7 @@ class AnalysisController extends Controller
                 });
             });
 
-        // 2. Fetch Transactions matching Type filter (EXCLUDING transfers for flow calculations)
+        // 4. Fetch Transactions matching Type filter (EXCLUDING transfers)
         $typeFilteredQuery = (clone $baseQuery)
             ->when($type !== 'all', function ($q) use ($type) {
                 $q->where('type', $type);
@@ -63,7 +66,7 @@ class AnalysisController extends Controller
 
         $transactions = $typeFilteredQuery->with(['category', 'account', 'destinationAccount'])->get();
 
-        // 3. Period Summary KPIs
+        // 5. Period Summary KPIs
         $totalIncome  = (clone $baseQuery)->where('type', 'income')->sum('amount');
         $totalExpense = (clone $baseQuery)->where('type', 'expense')->sum('amount');
         $netCashFlow  = $totalIncome - $totalExpense;
@@ -72,7 +75,7 @@ class AnalysisController extends Controller
         $totalDays           = max(1, $startDate->diffInDays($endDate) + 1);
         $dailyAverage        = $totalFilteredAmount / $totalDays;
 
-        // Peak Day Calculation (Excludes transfers)
+        // Peak Day Calculation
         $dailySums = $transactions->groupBy(function ($tx) {
             return Carbon::parse($tx->transaction_date)->format('Y-m-d');
         })->map(function ($dayTxs) {
@@ -83,7 +86,7 @@ class AnalysisController extends Controller
         $peakDateRaw = $dailySums->search($peakAmount) ?? null;
         $peakDate    = $peakDateRaw ? Carbon::parse($peakDateRaw)->format('M d, Y') : null;
 
-        // 4. Line/Area Chart Trend Data
+        // 6. Line/Area Chart Trend Data
         $trendData    = [];
         $periodCursor = (clone $startDate)->startOfDay();
         $endCursor    = (clone $endDate)->startOfDay();
@@ -118,17 +121,23 @@ class AnalysisController extends Controller
             $periodCursor->addDay();
         }
 
-        // 5. Monthly Comparison Bar Chart Data (Grouped by Month)
+        // 7. Monthly Comparison Bar Chart Data with YYYY-MM key
         $monthlyComparisonData = [];
-        $monthlyCursor = (clone $startDate)->startOfMonth();
-        $monthlyEnd    = (clone $endDate)->endOfMonth();
+        $monthlyCursor = Carbon::now()->startOfYear();
+        $monthlyEnd    = Carbon::now()->endOfYear();
 
         while ($monthlyCursor->lte($monthlyEnd)) {
-            $yearMonth = $monthlyCursor->format('Y-m');
+            $yearMonth  = $monthlyCursor->format('Y-m');
             $monthLabel = $monthlyCursor->format('M Y');
 
-            $monthTxs = (clone $baseQuery)
+            $monthTxs = Transaction::where('user_id', $user->id)
                 ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m') = ?", [$yearMonth])
+                ->when($accountId && $accountId !== 'all', function ($q) use ($accountId) {
+                    $q->where(function ($sub) use ($accountId) {
+                        $sub->where('account_id', $accountId)
+                            ->orWhere('destination_account_id', $accountId);
+                    });
+                })
                 ->whereIn('type', ['income', 'expense'])
                 ->get();
 
@@ -136,16 +145,17 @@ class AnalysisController extends Controller
             $exp = $monthTxs->where('type', 'expense')->sum('amount');
 
             $monthlyComparisonData[] = [
-                'month'   => $monthLabel,
-                'Income'  => (float) $inc,
-                'Expense' => (float) $exp,
-                'Net'     => (float) ($inc - $exp),
+                'month'     => $monthLabel,
+                'rawMonth'  => $yearMonth,
+                'Income'    => (float) $inc,
+                'Expense'   => (float) $exp,
+                'Net'       => (float) ($inc - $exp),
             ];
 
             $monthlyCursor->addMonth();
         }
 
-        // 6. Category Breakdown Bar Chart Data (Expenses Only)
+        // 8. Category Breakdown Data
         $categoryData = (clone $baseQuery)
             ->where('type', 'expense')
             ->whereNotNull('category_id')
@@ -166,7 +176,7 @@ class AnalysisController extends Controller
             ->values()
             ->take(8);
 
-        // 7. Selectable Calendar Grid
+        // 9. Selectable Calendar Grid
         try {
             $calendarCarbon = Carbon::parse($calendarMonth)->startOfMonth();
         } catch (\Exception $e) {

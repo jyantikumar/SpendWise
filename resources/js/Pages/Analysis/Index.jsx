@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Head, router } from '@inertiajs/react';
 import { 
     ResponsiveContainer, 
@@ -18,7 +18,6 @@ import {
 import { 
     BarChart3, 
     TrendingUp, 
-    TrendingDown,
     DollarSign, 
     Calendar as CalendarIcon, 
     SlidersHorizontal,
@@ -27,9 +26,8 @@ import {
     PieChart as PieIcon,
     ChevronLeft,
     ChevronRight,
-    Sparkles,
-    Scale,
-    Columns3
+    Columns3,
+    ArrowLeft
 } from 'lucide-react';
 
 import { AppSidebar } from '@/components/app-sidebar';
@@ -39,13 +37,13 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { DateTransactionsDialog } from '@/components/DateTransactionsDialog';
 import { ExpenseCategoryCard } from '@/components/ExpenseCategoryCard';
 import { AccountsBreakdownCard } from '@/components/AccountsBreakdownCard';
 
-// Custom Tooltip for Cash Flow Trajectory Area Chart
+// Tooltips
 const AreaFlowTooltip = ({ active, payload, label, formatCurrency, type }) => {
     if (active && payload && payload.length) {
         const rawDate = payload[0]?.payload?.rawDate;
@@ -64,12 +62,10 @@ const AreaFlowTooltip = ({ active, payload, label, formatCurrency, type }) => {
             </div>
         );
     }
-
     return null;
 };
 
-// Custom Tooltip for Monthly Bar Comparison Chart
-const MonthlyBarTooltip = ({ active, payload, label, formatCurrency }) => {
+const BarComparisonTooltip = ({ active, payload, label, formatCurrency }) => {
     if (active && payload && payload.length) {
         return (
             <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3 shadow-md text-xs space-y-1.5">
@@ -80,6 +76,9 @@ const MonthlyBarTooltip = ({ active, payload, label, formatCurrency }) => {
                         <span>{formatCurrency(entry.value)}</span>
                     </div>
                 ))}
+                <p className="text-[10px] text-zinc-500 italic pt-1 border-t border-zinc-800">
+                    Click bar to view daily breakdown & calendar
+                </p>
             </div>
         );
     }
@@ -97,7 +96,7 @@ export default function AnalysisIndex({
     filters = {}, 
     categories = [] 
 }) {
-    const [range, setRange] = useState(filters.range || 'this_month');
+    const [range, setRange] = useState(filters.range || 'monthly');
     const [type, setType] = useState(filters.type || 'expense');
     const [accountId, setAccountId] = useState(filters.account_id || 'all');
     const [startDate, setStartDate] = useState(filters.start_date || '');
@@ -105,6 +104,13 @@ export default function AnalysisIndex({
     const [calendarMonth, setCalendarMonth] = useState(filters.calendar_month || new Date().toISOString().slice(0, 7));
 
     const [selectedDayObj, setSelectedDayObj] = useState(null);
+    const [isChartLoading, setIsChartLoading] = useState(false);
+
+    // Keep internal state aligned when server returns new props
+    useEffect(() => {
+        if (filters.range) setRange(filters.range);
+        if (filters.calendar_month) setCalendarMonth(filters.calendar_month);
+    }, [filters.range, filters.calendar_month]);
 
     const formatCurrency = (val) => 
         new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
@@ -118,6 +124,8 @@ export default function AnalysisIndex({
     };
 
     const applyFilters = (overrides = {}) => {
+        setIsChartLoading(true);
+
         const query = {
             range: overrides.range !== undefined ? overrides.range : range,
             type: overrides.type !== undefined ? overrides.type : type,
@@ -128,10 +136,31 @@ export default function AnalysisIndex({
         };
 
         router.get(route('analysis.index'), query, {
-            preserveState: true,
+            preserveState: false,
             preserveScroll: true,
             replace: true,
+            onFinish: () => setIsChartLoading(false),
         });
+    };
+
+    // Drill down into month upon clicking chart element
+    const handleMonthBarClick = (data) => {
+        const targetMonth = data?.rawMonth || data?.payload?.rawMonth;
+        if (targetMonth) {
+            setIsChartLoading(true);
+
+            router.get(route('analysis.index'), {
+                range: 'this_month',
+                calendar_month: targetMonth,
+                type: type,
+                account_id: accountId,
+            }, {
+                preserveState: false,
+                preserveScroll: true,
+                replace: true,
+                onFinish: () => setIsChartLoading(false),
+            });
+        }
     };
 
     const handlePrevMonth = () => {
@@ -236,17 +265,30 @@ export default function AnalysisIndex({
                                     applyFilters({ range: val });
                                 }}
                             >
-                                <SelectTrigger className="w-[200px] h-9 border-zinc-800 text-zinc-300">
+                                <SelectTrigger className="w-[220px] h-9 border-zinc-800 text-zinc-300">
                                     <SlidersHorizontal className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
                                     <SelectValue placeholder="Range" />
                                 </SelectTrigger>
-                                <SelectContent className="border-zinc-800">
-                                    <SelectItem value="1_week">1 Week</SelectItem>
-                                    <SelectItem value="this_month">This Month</SelectItem>
-                                    <SelectItem value="monthly">Monthly</SelectItem>
-                                    <SelectItem value="6_months">6 Months</SelectItem>
-                                    <SelectItem value="this_year">This Year</SelectItem>
-                                    <SelectItem value="custom">Custom Range</SelectItem>
+                                <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
+                                    <SelectGroup>
+                                        <SelectLabel className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 px-2 py-1">
+                                            Aggregated Comparisons
+                                        </SelectLabel>
+                                        <SelectItem value="monthly">Monthly Comparison</SelectItem>
+                                    </SelectGroup>
+
+                                    <SelectSeparator className="bg-zinc-800 my-1" />
+
+                                    <SelectGroup>
+                                        <SelectLabel className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 px-2 py-1">
+                                            Time Horizons
+                                        </SelectLabel>
+                                        <SelectItem value="this_month">This Month</SelectItem>
+                                        <SelectItem value="1_week">1 Week</SelectItem>
+                                        <SelectItem value="6_months">6 Months</SelectItem>
+                                        <SelectItem value="this_year">This Year</SelectItem>
+                                        <SelectItem value="custom">Custom Range</SelectItem>
+                                    </SelectGroup>
                                 </SelectContent>
                             </Select>
 
@@ -377,185 +419,235 @@ export default function AnalysisIndex({
                             </Card>
                         </div>
 
-                        {/* CONDITIONAL RENDERING: Monthly Comparison Bar Chart vs. Daily Trajectory + Calendar */}
-                        {range === 'monthly' ? (
-                            <Card className="border-zinc-800">
-                                <CardHeader>
-                                    <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
-                                        <Columns3 className="h-4 w-4 text-primary" /> Monthly Cash Flow Comparison
-                                    </CardTitle>
-                                    <CardDescription className="text-zinc-400">
-                                        Comparing total monthly income vs. total monthly expense across the current year.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent className="pt-2">
-                                    <div className="h-[320px] w-full">
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <BarChart data={monthlyComparisonData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                                <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                                                <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} />
-                                                <YAxis 
-                                                    tick={{ fontSize: 11 }} 
-                                                    tickLine={false}
-                                                    tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
-                                                />
-                                                <Tooltip content={<MonthlyBarTooltip formatCurrency={formatCurrency} />} />
-                                                <Legend 
-                                                    wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
-                                                />
-                                                <Bar dataKey="Income" fill="#10b981" radius={[4, 4, 0, 0]} />
-                                                <Bar dataKey="Expense" fill="#f43f5e" radius={[4, 4, 0, 0]} />
-                                            </BarChart>
-                                        </ResponsiveContainer>
+                        {/* CONDITIONAL MAIN SECTION WITH LOADING WRAPPER */}
+                        <div className="relative">
+                            {isChartLoading && (
+                                <div className="absolute inset-0 bg-background/60 backdrop-blur-xs z-20 flex flex-col items-center justify-center rounded-xl border border-zinc-800 transition-all">
+                                    <div className="flex items-center gap-3 bg-zinc-900 border border-zinc-800 px-4 py-2.5 rounded-lg shadow-lg">
+                                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                                        <span className="text-xs font-medium text-zinc-300">Fetching trajectory data...</span>
                                     </div>
-                                </CardContent>
-                            </Card>
-                        ) : (
-                            <div className="grid gap-6 lg:grid-cols-3">
-                                <Card className="border-zinc-800 lg:col-span-2 flex flex-col justify-between">
+                                </div>
+                            )}
+
+                            {range === 'monthly' ? (
+                                <Card className="border-zinc-800">
                                     <CardHeader>
-                                        <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
-                                            <TrendingUp className="h-4 w-4 text-primary" /> Cash Flow Trajectory
+                                        <CardTitle className="text-base font-semibold flex items-center justify-between text-zinc-200">
+                                            <span className="flex items-center gap-2">
+                                                <Columns3 className="h-4 w-4 text-primary" /> Monthly Cash Flow Comparison
+                                            </span>
+                                            <span className="text-xs font-normal text-zinc-400 bg-zinc-800 px-2.5 py-1 rounded-md border border-zinc-700">
+                                                💡 Click any bar to view daily details
+                                            </span>
                                         </CardTitle>
-                                        <CardDescription className="text-zinc-400">Daily movement and aggregate trend for the selected horizon.</CardDescription>
+                                        <CardDescription className="text-zinc-400">
+                                            Comparing total monthly income vs. total monthly expense across the year.
+                                        </CardDescription>
                                     </CardHeader>
                                     <CardContent className="pt-2">
-                                        <div className="h-[280px] w-full">
+                                        <div className="h-[320px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
-                                                <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                                    <defs>
-                                                        <linearGradient id="flowGradient" x1="0" y1="0" x2="0" y2="1">
-                                                            <stop 
-                                                                offset="5%" 
-                                                                stopColor={type === 'income' ? '#10b981' : type === 'expense' ? '#f43f5e' : '#3b82f6'} 
-                                                                stopOpacity={0.4}
-                                                            />
-                                                            <stop 
-                                                                offset="95%" 
-                                                                stopColor={type === 'income' ? '#10b981' : type === 'expense' ? '#f43f5e' : '#3b82f6'} 
-                                                                stopOpacity={0.0}
-                                                            />
-                                                        </linearGradient>
-                                                    </defs>
+                                                <BarChart 
+                                                    data={monthlyComparisonData} 
+                                                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                                                >
                                                     <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                                                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} />
+                                                    <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} />
                                                     <YAxis 
                                                         tick={{ fontSize: 11 }} 
                                                         tickLine={false}
                                                         tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
                                                     />
-                                                    <Tooltip content={<AreaFlowTooltip formatCurrency={formatCurrency} type={type} />} />
-                                                    <Area 
-                                                        type="monotone" 
-                                                        dataKey={type === 'all' ? 'Net' : 'Amount'} 
-                                                        stroke={type === 'income' ? '#10b981' : type === 'expense' ? '#f43f5e' : '#3b82f6'} 
-                                                        strokeWidth={2.5}
-                                                        fillOpacity={1} 
-                                                        fill="url(#flowGradient)" 
-                                                    />
-                                                </AreaChart>
+                                                    <Tooltip content={<BarComparisonTooltip formatCurrency={formatCurrency} />} />
+                                                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                                                    
+                                                    <Bar 
+                                                        dataKey="Income" 
+                                                        fill="#10b981" 
+                                                        radius={[4, 4, 0, 0]} 
+                                                        onClick={(data) => handleMonthBarClick(data)}
+                                                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                                                    >
+                                                        {monthlyComparisonData.map((entry, index) => (
+                                                            <Cell key={`income-cell-${index}`} className="cursor-pointer" />
+                                                        ))}
+                                                    </Bar>
+                                                    <Bar 
+                                                        dataKey="Expense" 
+                                                        fill="#f43f5e" 
+                                                        radius={[4, 4, 0, 0]} 
+                                                        onClick={(data) => handleMonthBarClick(data)}
+                                                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                                                    >
+                                                        {monthlyComparisonData.map((entry, index) => (
+                                                            <Cell key={`expense-cell-${index}`} className="cursor-pointer" />
+                                                        ))}
+                                                    </Bar>
+                                                </BarChart>
                                             </ResponsiveContainer>
                                         </div>
                                     </CardContent>
                                 </Card>
-
-                                <Card className="border-zinc-800 flex flex-col justify-between">
-                                    <CardHeader className="pb-3">
-                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                            <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
-                                                 Daily Activity
-                                            </CardTitle>
-
-                                            <div className="flex items-center gap-1">
-                                                <Button 
-                                                    variant="outline" 
-                                                    size="icon-sm" 
-                                                    className="h-7 w-7 border-zinc-800 text-zinc-300" 
-                                                    onClick={handlePrevMonth}
-                                                    title="Previous Month"
-                                                >
-                                                    <ChevronLeft className="h-3.5 w-3.5" />
-                                                </Button>
-
-                                                <Input 
-                                                    type="month"
-                                                    value={calendar.month || calendarMonth}
-                                                    onChange={handleMonthSelect}
-                                                    className="h-7 text-xs w-[125px] px-2 border-zinc-800 text-zinc-300"
-                                                />
-
-                                                <Button 
-                                                    variant="outline" 
-                                                    size="icon-sm" 
-                                                    className="h-7 w-7 border-zinc-800 text-zinc-300" 
-                                                    onClick={handleNextMonth}
-                                                    title="Next Month"
-                                                >
-                                                    <ChevronRight className="h-3.5 w-3.5" />
-                                                </Button>
+                            ) : (
+                                <div className="grid gap-6 lg:grid-cols-3">
+                                    <Card className="border-zinc-800 lg:col-span-2 flex flex-col justify-between">
+                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                            <div>
+                                                <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
+                                                    <TrendingUp className="h-4 w-4 text-primary" /> Cash Flow Trajectory
+                                                </CardTitle>
+                                                <CardDescription className="text-zinc-400">Daily movement for selected horizon.</CardDescription>
                                             </div>
-                                        </div>
-                                        <CardDescription className="text-xs text-zinc-400">
-                                            Click any day to view recorded transactions.
-                                        </CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="grid grid-cols-7 gap-1 text-center">
-                                            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-                                                <div key={day} className="text-[11px] font-medium text-zinc-400 py-1">
-                                                    {day}
-                                                </div>
-                                            ))}
-                                            {calendar.days?.map((dayObj, idx) => (
-                                                <div key={idx} className="aspect-square flex items-center justify-center p-0.5">
-                                                    {dayObj ? (
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => setSelectedDayObj(dayObj)}
-                                                            title={`${dayObj.date} | Income: ${formatCurrency(dayObj.income)} | Expense: ${formatCurrency(dayObj.expense)}`}
-                                                            className={`w-full h-full rounded-md flex flex-col items-center justify-between p-1 transition-all border border-zinc-800/60 cursor-pointer ${
-                                                                dayObj.isToday 
-                                                                    ? 'ring-2 ring-primary ring-offset-1 border-primary bg-primary/5' 
-                                                                    : 'bg-card hover:bg-muted/80'
-                                                            }`}
-                                                        >
-                                                            <span className="text-[10px] font-semibold text-zinc-400 self-start leading-none">
-                                                                {dayObj.dayNumber}
-                                                            </span>
 
-                                                            <div className="flex flex-col w-full text-[9px] leading-tight font-medium overflow-hidden">
-                                                                {dayObj.income > 0 && (
-                                                                    <span className="text-emerald-500 truncate font-semibold">
-                                                                        +{formatCompactCurrency(dayObj.income)}
-                                                                    </span>
-                                                                )}
-                                                                {dayObj.expense > 0 && (
-                                                                    <span className="text-rose-500 truncate font-semibold">
-                                                                        -{formatCompactCurrency(dayObj.expense)}
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                        </button>
-                                                    ) : (
-                                                        <div className="w-full h-full rounded-md bg-transparent" />
-                                                    )}
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => {
+                                                    setRange('monthly');
+                                                    applyFilters({ range: 'monthly' });
+                                                }}
+                                                className="h-8 border-zinc-800 text-xs text-zinc-300 gap-1.5"
+                                            >
+                                                <ArrowLeft className="h-3.5 w-3.5" /> Back to Monthly Overview
+                                            </Button>
+                                        </CardHeader>
+                                        <CardContent className="pt-2">
+                                            <div className="h-[280px] w-full">
+                                                <ResponsiveContainer width="100%" height="100%">
+                                                    <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                                        <defs>
+                                                            <linearGradient id="flowGradient" x1="0" y1="0" x2="0" y2="1">
+                                                                <stop 
+                                                                    offset="5%" 
+                                                                    stopColor={type === 'income' ? '#10b981' : type === 'expense' ? '#f43f5e' : '#3b82f6'} 
+                                                                    stopOpacity={0.4}
+                                                                />
+                                                                <stop 
+                                                                    offset="95%" 
+                                                                    stopColor={type === 'income' ? '#10b981' : type === 'expense' ? '#f43f5e' : '#3b82f6'} 
+                                                                    stopOpacity={0.0}
+                                                                />
+                                                            </linearGradient>
+                                                        </defs>
+                                                        <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                                                        <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} />
+                                                        <YAxis 
+                                                            tick={{ fontSize: 11 }} 
+                                                            tickLine={false}
+                                                            tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
+                                                        />
+                                                        <Tooltip content={<AreaFlowTooltip formatCurrency={formatCurrency} type={type} />} />
+                                                        <Area 
+                                                            type="monotone" 
+                                                            dataKey={type === 'all' ? 'Net' : 'Amount'} 
+                                                            stroke={type === 'income' ? '#10b981' : type === 'expense' ? '#f43f5e' : '#3b82f6'} 
+                                                            strokeWidth={2.5}
+                                                            fillOpacity={1} 
+                                                            fill="url(#flowGradient)" 
+                                                        />
+                                                    </AreaChart>
+                                                </ResponsiveContainer>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+
+                                    <Card className="border-zinc-800 flex flex-col justify-between">
+                                        <CardHeader className="pb-3">
+                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
+                                                     Daily Activity
+                                                </CardTitle>
+
+                                                <div className="flex items-center gap-1">
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="icon-sm" 
+                                                        className="h-7 w-7 border-zinc-800 text-zinc-300" 
+                                                        onClick={handlePrevMonth}
+                                                        title="Previous Month"
+                                                    >
+                                                        <ChevronLeft className="h-3.5 w-3.5" />
+                                                    </Button>
+
+                                                    <Input 
+                                                        type="month"
+                                                        value={calendar.month || calendarMonth}
+                                                        onChange={handleMonthSelect}
+                                                        className="h-7 text-xs w-[125px] px-2 border-zinc-800 text-zinc-300"
+                                                    />
+
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="icon-sm" 
+                                                        className="h-7 w-7 border-zinc-800 text-zinc-300" 
+                                                        onClick={handleNextMonth}
+                                                        title="Next Month"
+                                                    >
+                                                        <ChevronRight className="h-3.5 w-3.5" />
+                                                    </Button>
                                                 </div>
-                                            ))}
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </div>
-                        )}
+                                            </div>
+                                            <CardDescription className="text-xs text-zinc-400">
+                                                Click any day to view recorded transactions.
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="grid grid-cols-7 gap-1 text-center">
+                                                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+                                                    <div key={day} className="text-[11px] font-medium text-zinc-400 py-1">
+                                                        {day}
+                                                    </div>
+                                                ))}
+                                                {calendar.days?.map((dayObj, idx) => (
+                                                    <div key={idx} className="aspect-square flex items-center justify-center p-0.5">
+                                                        {dayObj ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setSelectedDayObj(dayObj)}
+                                                                title={`${dayObj.date} | Income: ${formatCurrency(dayObj.income)} | Expense: ${formatCurrency(dayObj.expense)}`}
+                                                                className={`w-full h-full rounded-md flex flex-col items-center justify-between p-1 transition-all border border-zinc-800/60 cursor-pointer ${
+                                                                    dayObj.isToday 
+                                                                        ? 'ring-2 ring-primary ring-offset-1 border-primary bg-primary/5' 
+                                                                        : 'bg-card hover:bg-muted/80'
+                                                                }`}
+                                                            >
+                                                                <span className="text-[10px] font-semibold text-zinc-400 self-start leading-none">
+                                                                    {dayObj.dayNumber}
+                                                                </span>
+
+                                                                <div className="flex flex-col w-full text-[9px] leading-tight font-medium overflow-hidden">
+                                                                    {dayObj.income > 0 && (
+                                                                        <span className="text-emerald-500 truncate font-semibold">
+                                                                            +{formatCompactCurrency(dayObj.income)}
+                                                                        </span>
+                                                                    )}
+                                                                    {dayObj.expense > 0 && (
+                                                                        <span className="text-rose-500 truncate font-semibold">
+                                                                            -{formatCompactCurrency(dayObj.expense)}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </button>
+                                                        ) : (
+                                                            <div className="w-full h-full rounded-md bg-transparent" />
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                </div>
+                            )}
+                        </div>
 
                         {/* Bottom Section: Side-by-Side Distribution Cards */}
                         <div className="grid gap-6 lg:grid-cols-2">
-                            {/* Left Side: Expense Category Distribution */}
                             <ExpenseCategoryCard 
                                 categoryData={categoryData} 
                                 accounts={accounts}
                             />
 
-                            {/* Right Side: Accounts Breakdown */}
                             <AccountsBreakdownCard 
                                 accounts={accounts} 
                                 categories={categories}
