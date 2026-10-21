@@ -20,9 +20,21 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { 
+    AlertDialog, 
+    AlertDialogAction, 
+    AlertDialogCancel, 
+    AlertDialogContent, 
+    AlertDialogDescription, 
+    AlertDialogFooter, 
+    AlertDialogHeader, 
+    AlertDialogTitle 
+} from '@/components/ui/alert-dialog';
 
 import CategoryTransactionsModal from '@/components/CategoryTransactionsModal';
+import AccountTransactionsModal from '@/components/AccountTransactionsModal';
 import TransactionFormModal from '@/components/TransactionFormModal';
+import { TransactionDetailSheet } from '@/components/TransactionDetailSheet';
 
 // Flexible SVG Donut / Pie Chart Component
 function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
@@ -162,10 +174,17 @@ export default function Dashboard({
     customDates = {}
 }) {
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
+    const [editingTransaction, setEditingTransaction] = useState(null);
+    const [deletingTransaction, setDeletingTransaction] = useState(null);
+    const [selectedDetailTransaction, setSelectedDetailTransaction] = useState(null);
+
     const [activeView, setActiveView] = useState('transactions');
 
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
+    const [selectedAccount, setSelectedAccount] = useState(null);
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
     const [startDateInput, setStartDateInput] = useState(customDates.startDate || '');
     const [endDateInput, setEndDateInput] = useState(customDates.endDate || '');
@@ -232,6 +251,28 @@ export default function Dashboard({
         setIsCategoryModalOpen(true);
     };
 
+    const handleAccountClick = (acc) => {
+        setSelectedAccount(acc);
+        setIsAccountModalOpen(true);
+    };
+
+    const openCreateModal = () => {
+        setEditingTransaction(null);
+        setIsTransactionModalOpen(true);
+    };
+
+    const openEditModal = (transaction) => {
+        setEditingTransaction(transaction);
+        setIsTransactionModalOpen(true);
+    };
+
+    const handleDelete = () => {
+        if (!deletingTransaction) return;
+        router.delete(route('transactions.destroy', deletingTransaction.id), {
+            onSuccess: () => setDeletingTransaction(null),
+        });
+    };
+
     return (
         <TooltipProvider>
             <SidebarProvider>
@@ -273,7 +314,7 @@ export default function Dashboard({
                                                 </SelectContent>
                                             </Select>
 
-                                            <Button onClick={() => setIsTransactionModalOpen(true)} className="gap-2 h-10 sm:hidden">
+                                            <Button onClick={openCreateModal} className="gap-2 h-10 sm:hidden">
                                                 <Plus className="h-4 w-4" /> New
                                             </Button>
                                         </div>
@@ -297,7 +338,7 @@ export default function Dashboard({
                                             </Button>
                                         </div>
 
-                                        <Button onClick={() => setIsTransactionModalOpen(true)} className="gap-2 h-10 hidden sm:flex shrink-0">
+                                        <Button onClick={openCreateModal} className="gap-2 h-10 hidden sm:flex shrink-0">
                                             <Plus className="h-4 w-4" /> New Transaction
                                         </Button>
                                     </div>
@@ -318,7 +359,7 @@ export default function Dashboard({
                                             </SelectContent>
                                         </Select>
 
-                                        <Button onClick={() => setIsTransactionModalOpen(true)} className="gap-2 h-10 w-full sm:w-auto">
+                                        <Button onClick={openCreateModal} className="gap-2 h-10 w-full sm:w-auto">
                                             <Plus className="h-4 w-4" /> 
                                             <span className="inline sm:hidden">New</span>
                                             <span className="hidden sm:inline">New Transaction</span>
@@ -393,8 +434,8 @@ export default function Dashboard({
                                         </Select>
                                         <CardDescription className="hidden sm:inline text-zinc-400">
                                             {activeView === 'transactions' 
-                                                ? "Recent transaction history." 
-                                                : 'Active financial accounts.'}
+                                                ? "Recent transaction history. Click a row to view details." 
+                                                : 'Active financial accounts. Click a row to view transactions.'}
                                         </CardDescription>
                                     </div>
 
@@ -409,7 +450,7 @@ export default function Dashboard({
                                 <CardContent className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                                     {activeView === 'transactions' ? (
                                         <Table>
-                                            <TableHeader className="sticky top-0  z-10">
+                                            <TableHeader className="sticky top-0 z-10">
                                                 <TableRow className="border-b border-zinc-800">
                                                     <TableHead className="text-zinc-400">Date</TableHead>
                                                     <TableHead className="text-zinc-400">Description</TableHead>
@@ -419,7 +460,11 @@ export default function Dashboard({
                                             <TableBody>
                                                 {latestTransactions && latestTransactions.length > 0 ? (
                                                     latestTransactions.map((tx) => (
-                                                        <TableRow key={tx.id} className="border-b border-zinc-800">
+                                                        <TableRow 
+                                                            key={tx.id} 
+                                                            className="border-b border-zinc-800 cursor-pointer hover:bg-muted/50 transition-colors"
+                                                            onClick={() => setSelectedDetailTransaction(tx)}
+                                                        >
                                                             <TableCell className="font-medium whitespace-nowrap text-xs text-zinc-300">
                                                                 {formatDateOnly(tx.transaction_date)}
                                                             </TableCell>
@@ -460,9 +505,13 @@ export default function Dashboard({
                                             <TableBody>
                                                 {accounts && accounts.length > 0 ? (
                                                     accounts.map((acc) => (
-                                                        <TableRow key={acc.id} className="border-b border-zinc-800">
+                                                        <TableRow 
+                                                            key={acc.id} 
+                                                            className="border-b border-zinc-800 cursor-pointer hover:bg-muted/50 transition-colors"
+                                                            onClick={() => handleAccountClick(acc)}
+                                                        >
                                                             <TableCell className="font-medium text-zinc-300">{acc.name}</TableCell>
-                                                            <TableCell className="text-right font-semibold text-zinc-300">{formatCurrency(acc.balance)}</TableCell>
+                                                            <TableCell className="text-right font-semibold text-zinc-300">{formatCurrency(acc.balance, acc.currency)}</TableCell>
                                                         </TableRow>
                                                     ))
                                                 ) : (
@@ -479,7 +528,7 @@ export default function Dashboard({
                             </Card>
 
                             {/* Expense Chart Card - Capped to 10-Row Table Height */}
-                            <Card className="border-zinc-800 flex flex-col justify-between max-h-[515px]">
+                            <Card className="border-zinc-800 flex flex-col justify-between max-h-[520px]">
                                 <CardHeader className="shrink-0">
                                     <CardTitle className="flex items-center gap-2 text-zinc-200">
                                         <PieChartIcon className="h-5 w-5 text-zinc-400" />
@@ -508,12 +557,47 @@ export default function Dashboard({
                     initialEndDate={initialModalEnd}
                 />
 
+                <AccountTransactionsModal
+                    isOpen={isAccountModalOpen}
+                    onClose={() => setIsAccountModalOpen(false)}
+                    account={selectedAccount}
+                    categories={categories}
+                    initialStartDate={initialModalStart}
+                    initialEndDate={initialModalEnd}
+                />
+
                 <TransactionFormModal 
                     isOpen={isTransactionModalOpen}
                     onClose={() => setIsTransactionModalOpen(false)}
+                    editingTransaction={editingTransaction}
                     accounts={accounts}
                     categories={categories}
                 />
+
+                <TransactionDetailSheet 
+                    open={!!selectedDetailTransaction}
+                    onOpenChange={(open) => !open && setSelectedDetailTransaction(null)}
+                    transaction={selectedDetailTransaction}
+                    onEdit={openEditModal}
+                    onDelete={setDeletingTransaction}
+                />
+
+                <AlertDialog open={!!deletingTransaction} onOpenChange={(open) => !open && setDeletingTransaction(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the transaction record.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700">
+                                Delete
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </SidebarProvider>
         </TooltipProvider>
     );
