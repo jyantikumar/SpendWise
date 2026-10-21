@@ -43,7 +43,7 @@ import { DateTransactionsDialog } from '@/components/DateTransactionsDialog';
 import { ExpenseCategoryCard } from '@/components/ExpenseCategoryCard';
 import { AccountsBreakdownCard } from '@/components/AccountsBreakdownCard';
 
-// Tooltips
+// Responsive Tooltips
 const AreaFlowTooltip = ({ active, payload, label, formatCurrency, type }) => {
     if (active && payload && payload.length) {
         const rawDate = payload[0]?.payload?.rawDate;
@@ -51,12 +51,12 @@ const AreaFlowTooltip = ({ active, payload, label, formatCurrency, type }) => {
         const strokeColor = type === 'income' ? '#10b981' : type === 'expense' ? '#f43f5e' : '#3b82f6';
 
         return (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-2.5 shadow-md text-xs space-y-1">
-                <p className="text-zinc-400 font-semibold">
-                    {rawDate ? `Date: ${rawDate} (${label})` : `Date: ${label}`}
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-2 shadow-md text-xs space-y-1">
+                <p className="text-zinc-400 font-semibold text-[11px]">
+                    {rawDate ? `Date: ${rawDate}` : label}
                 </p>
-                <p className="font-bold" style={{ color: strokeColor }}>
-                    {type === 'all' ? 'Net Flow: ' : 'Amount: '}
+                <p className="font-bold text-xs" style={{ color: strokeColor }}>
+                    {type === 'all' ? 'Net: ' : 'Amount: '}
                     {formatCurrency(val)}
                 </p>
             </div>
@@ -68,17 +68,14 @@ const AreaFlowTooltip = ({ active, payload, label, formatCurrency, type }) => {
 const BarComparisonTooltip = ({ active, payload, label, formatCurrency }) => {
     if (active && payload && payload.length) {
         return (
-            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3 shadow-md text-xs space-y-1.5">
-                <p className="text-zinc-300 font-bold border-b border-zinc-800 pb-1">{label}</p>
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-2.5 shadow-md text-xs space-y-1">
+                <p className="text-zinc-300 font-bold border-b border-zinc-800 pb-1 text-[11px]">{label}</p>
                 {payload.map((entry, index) => (
-                    <div key={index} className="flex items-center justify-between gap-4 font-semibold" style={{ color: entry.fill }}>
+                    <div key={index} className="flex items-center justify-between gap-3 font-semibold text-[11px]" style={{ color: entry.fill }}>
                         <span>{entry.name}:</span>
                         <span>{formatCurrency(entry.value)}</span>
                     </div>
                 ))}
-                <p className="text-[10px] text-zinc-500 italic pt-1 border-t border-zinc-800">
-                    Click bar to view daily breakdown & calendar
-                </p>
             </div>
         );
     }
@@ -106,7 +103,6 @@ export default function AnalysisIndex({
     const [selectedDayObj, setSelectedDayObj] = useState(null);
     const [isChartLoading, setIsChartLoading] = useState(false);
 
-    // Keep internal state aligned when server returns new props
     useEffect(() => {
         if (filters.range) setRange(filters.range);
         if (filters.calendar_month) setCalendarMonth(filters.calendar_month);
@@ -118,7 +114,7 @@ export default function AnalysisIndex({
     const formatCompactCurrency = (val) => {
         if (!val || val === 0) return '';
         if (val >= 1000) {
-            return `₱${(val / 1000).toFixed(1)}k`;
+            return `₱${(val / 1000).toFixed(0)}k`;
         }
         return `₱${Math.round(val)}`;
     };
@@ -143,7 +139,6 @@ export default function AnalysisIndex({
         });
     };
 
-    // Drill down into month upon clicking chart element
     const handleMonthBarClick = (data) => {
         const targetMonth = data?.rawMonth || data?.payload?.rawMonth;
         if (targetMonth) {
@@ -205,21 +200,21 @@ export default function AnalysisIndex({
                     <header className="flex h-16 shrink-0 items-center gap-2 border-b border-zinc-800 px-4">
                         <SidebarTrigger className="-ml-1" />
                         <Separator orientation="vertical" className="mr-2 h-4 bg-zinc-800" />
-                        <h1 className="text-lg font-semibold tracking-tight text-zinc-200">Visual Analytics</h1>
+                        <h1 className="text-base sm:text-lg font-semibold tracking-tight text-zinc-200">Visual Analytics</h1>
                     </header>
 
-                    <main className="flex flex-1 flex-col gap-6 p-4 md:gap-8 md:p-8">
+                    <main className="flex flex-1 flex-col gap-4 p-3 sm:p-6 md:gap-8 md:p-8">
                         <div>
-                            <h2 className="text-2xl font-bold tracking-tight flex items-center gap-2 text-zinc-100">
-                                <BarChart3 className="h-6 w-6 text-primary" /> Visual Analytics
+                            <h2 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2 text-zinc-100">
+                                <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> Visual Analytics
                             </h2>
-                            <p className="text-sm text-zinc-400">
+                            <p className="text-xs sm:text-sm text-zinc-400">
                                 Track cash velocity, daily spending activity, and category distribution.
                             </p>
                         </div>
 
-                        {/* Controls Bar */}
-                        <div className="flex flex-wrap items-center gap-3 w-full">
+                        {/* Controls Bar - Mobile Stacked / Desktop Flex */}
+                        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 sm:gap-3 w-full">
                             <Select 
                                 value={type} 
                                 onValueChange={(val) => {
@@ -227,7 +222,7 @@ export default function AnalysisIndex({
                                     applyFilters({ type: val });
                                 }}
                             >
-                                <SelectTrigger className="w-[180px] h-9 border-zinc-800 text-zinc-300">
+                                <SelectTrigger className="w-full sm:w-[160px] h-9 border-zinc-800 text-zinc-300">
                                     <SelectValue placeholder="Type" />
                                 </SelectTrigger>
                                 <SelectContent className="border-zinc-800">
@@ -244,7 +239,7 @@ export default function AnalysisIndex({
                                     applyFilters({ account_id: val });
                                 }}
                             >
-                                <SelectTrigger className="w-[210px] h-9 border-zinc-800 text-zinc-300">
+                                <SelectTrigger className="w-full sm:w-[190px] h-9 border-zinc-800 text-zinc-300">
                                     <Wallet className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
                                     <SelectValue placeholder="All Accounts" />
                                 </SelectTrigger>
@@ -265,7 +260,7 @@ export default function AnalysisIndex({
                                     applyFilters({ range: val });
                                 }}
                             >
-                                <SelectTrigger className="w-[220px] h-9 border-zinc-800 text-zinc-300">
+                                <SelectTrigger className="w-full sm:w-[200px] h-9 border-zinc-800 text-zinc-300">
                                     <SlidersHorizontal className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
                                     <SelectValue placeholder="Range" />
                                 </SelectTrigger>
@@ -293,24 +288,24 @@ export default function AnalysisIndex({
                             </Select>
 
                             {range === 'custom' && (
-                                <div className="flex items-center gap-2">
+                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                                     <Input
                                         type="date"
                                         value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
-                                        className="h-9 w-[140px] text-xs border-zinc-800 text-zinc-300"
+                                        className="h-9 w-full sm:w-[130px] text-xs border-zinc-800 text-zinc-300"
                                     />
-                                    <span className="text-xs text-zinc-400">to</span>
+                                    <span className="text-xs text-zinc-400 text-center sm:text-left">to</span>
                                     <Input
                                         type="date"
                                         value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}
-                                        className="h-9 w-[140px] text-xs border-zinc-800 text-zinc-300"
+                                        className="h-9 w-full sm:w-[130px] text-xs border-zinc-800 text-zinc-300"
                                     />
                                     <Button 
                                         size="sm" 
                                         onClick={() => applyFilters({ range: 'custom' })}
-                                        className="h-9 px-3 text-xs"
+                                        className="h-9 w-full sm:w-auto px-3 text-xs"
                                     >
                                         Apply
                                     </Button>
@@ -318,8 +313,8 @@ export default function AnalysisIndex({
                             )}
                         </div>
 
-                        {/* KPI Summary Tiles */}
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        {/* KPI Summary Tiles - Single Column on Mobile */}
+                        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                             <Card className="border-zinc-800 flex flex-col justify-between">
                                 <CardHeader className="pb-1 pt-3 px-4 flex flex-row items-center justify-between space-y-0">
                                     <CardTitle className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
@@ -330,15 +325,15 @@ export default function AnalysisIndex({
                                 <CardContent className="px-4 pb-3 pt-1">
                                     {totalFlow > 0 ? (
                                         <div className="flex items-center justify-between gap-2">
-                                            <div className="h-[80px] w-[80px] shrink-0">
+                                            <div className="h-[75px] w-[75px] shrink-0">
                                                 <ResponsiveContainer width="100%" height="100%">
                                                     <PieChart>
                                                         <Pie
                                                             data={incomeVsExpenseData}
                                                             cx="50%"
                                                             cy="50%"
-                                                            innerRadius={24}
-                                                            outerRadius={38}
+                                                            innerRadius={22}
+                                                            outerRadius={35}
                                                             paddingAngle={3}
                                                             dataKey="value"
                                                         >
@@ -346,36 +341,32 @@ export default function AnalysisIndex({
                                                                 <Cell key={`cell-${index}`} fill={entry.color} />
                                                             ))}
                                                         </Pie>
-                                                        <Tooltip 
-                                                            formatter={(val) => [formatCurrency(val), 'Amount']}
-                                                            contentStyle={{ borderRadius: '8px', fontSize: '11px', borderColor: '#27272a', backgroundColor: '#18181b', color: '#f4f4f5' }}
-                                                        />
                                                     </PieChart>
                                                 </ResponsiveContainer>
                                             </div>
 
-                                            <div className="flex flex-col justify-center gap-1.5 flex-1 text-xs">
+                                            <div className="flex flex-col justify-center gap-1 flex-1 text-xs">
                                                 <div className="flex items-center justify-between">
-                                                    <span className="flex items-center gap-1.5 text-zinc-400 font-medium">
+                                                    <span className="flex items-center gap-1 text-zinc-400 font-medium text-[11px]">
                                                         <span className="h-2 w-2 rounded-full bg-emerald-500 shrink-0" /> Income
                                                     </span>
-                                                    <span className="font-bold text-emerald-500">
+                                                    <span className="font-bold text-emerald-500 text-xs">
                                                         {formatCurrency(incomeVal)}
                                                     </span>
                                                 </div>
                                                 <div className="flex items-center justify-between">
-                                                    <span className="flex items-center gap-1.5 text-zinc-400 font-medium">
+                                                    <span className="flex items-center gap-1 text-zinc-400 font-medium text-[11px]">
                                                         <span className="h-2 w-2 rounded-full bg-rose-500 shrink-0" /> Expense
                                                     </span>
-                                                    <span className="font-bold text-rose-500">
+                                                    <span className="font-bold text-rose-500 text-xs">
                                                         {formatCurrency(expenseVal)}
                                                     </span>
                                                 </div>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="flex flex-col items-center justify-center h-[80px] text-zinc-400 text-xs">
-                                            No flow recorded for this range.
+                                        <div className="flex flex-col items-center justify-center h-[75px] text-zinc-400 text-xs">
+                                            No flow recorded.
                                         </div>
                                     )}
                                 </CardContent>
@@ -383,84 +374,84 @@ export default function AnalysisIndex({
 
                             <Card className="border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-zinc-400">Daily Average ({type})</CardTitle>
+                                    <CardTitle className="text-xs sm:text-sm font-medium text-zinc-400">Daily Average ({type})</CardTitle>
                                     <Zap className="h-4 w-4 text-amber-500" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold text-zinc-200">{formatCurrency(kpis?.dailyAverage)}</div>
-                                    <p className="text-xs text-zinc-400 mt-1">Mean flow per day across {kpis?.totalDays} days</p>
+                                    <div className="text-xl sm:text-2xl font-bold text-zinc-200">{formatCurrency(kpis?.dailyAverage)}</div>
+                                    <p className="text-[11px] text-zinc-400 mt-1">Across {kpis?.totalDays} days</p>
                                 </CardContent>
                             </Card>
 
                             <Card className="border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-zinc-400">Peak Activity Day</CardTitle>
+                                    <CardTitle className="text-xs sm:text-sm font-medium text-zinc-400">Peak Activity Day</CardTitle>
                                     <CalendarIcon className="h-4 w-4 text-zinc-400" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-2xl font-bold text-zinc-200">{formatCurrency(kpis?.peakAmount)}</div>
-                                    <p className="text-xs text-zinc-400 mt-1">
-                                        {kpis?.peakDate ? `Highest on ${kpis.peakDate}` : 'No activity recorded'}
+                                    <div className="text-xl sm:text-2xl font-bold text-zinc-200">{formatCurrency(kpis?.peakAmount)}</div>
+                                    <p className="text-[11px] text-zinc-400 mt-1 truncate">
+                                        {kpis?.peakDate ? `Peak on ${kpis.peakDate}` : 'No activity'}
                                     </p>
                                 </CardContent>
                             </Card>
 
                             <Card className="border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-zinc-400">Net Cash Flow</CardTitle>
+                                    <CardTitle className="text-xs sm:text-sm font-medium text-zinc-400">Net Cash Flow</CardTitle>
                                     <DollarSign className="h-4 w-4 text-zinc-400" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className={`text-2xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                    <div className={`text-xl sm:text-2xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                                         {formatCurrency(kpis?.netCashFlow)}
                                     </div>
-                                    <p className="text-xs text-zinc-400 mt-1">Total Income - Total Expenses</p>
+                                    <p className="text-[11px] text-zinc-400 mt-1">Income - Expenses</p>
                                 </CardContent>
                             </Card>
                         </div>
 
-                        {/* CONDITIONAL MAIN SECTION WITH LOADING WRAPPER */}
+                        {/* CONDITIONAL MAIN SECTION */}
                         <div className="relative">
                             {isChartLoading && (
                                 <div className="absolute inset-0 bg-background/60 backdrop-blur-xs z-20 flex flex-col items-center justify-center rounded-xl border border-zinc-800 transition-all">
-                                    <div className="flex items-center gap-3 bg-zinc-900 border border-zinc-800 px-4 py-2.5 rounded-lg shadow-lg">
+                                    <div className="flex items-center gap-2.5 bg-zinc-900 border border-zinc-800 px-3.5 py-2 rounded-lg shadow-lg">
                                         <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                                        <span className="text-xs font-medium text-zinc-300">Fetching data...</span>
+                                        <span className="text-xs font-medium text-zinc-300">Fetching trajectory data...</span>
                                     </div>
                                 </div>
                             )}
 
                             {range === 'monthly' ? (
                                 <Card className="border-zinc-800">
-                                    <CardHeader>
-                                        <CardTitle className="text-base font-semibold flex items-center justify-between text-zinc-200">
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm sm:text-base font-semibold flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-zinc-200">
                                             <span className="flex items-center gap-2">
                                                 <Columns3 className="h-4 w-4 text-primary" /> Monthly Cash Flow Comparison
                                             </span>
-                                            <span className="text-xs font-normal text-zinc-400 bg-zinc-800 px-2.5 py-1 rounded-md border border-zinc-700">
-                                                💡 Click any bar to view daily details
+                                            <span className="text-[10px] sm:text-xs font-normal text-zinc-400 bg-zinc-800/80 px-2 py-1 rounded-md border border-zinc-700/80 self-start sm:self-auto">
+                                                💡 Tap bar to view daily details
                                             </span>
                                         </CardTitle>
-                                        <CardDescription className="text-zinc-400">
-                                            Comparing total monthly income vs. total monthly expense across the year.
+                                        <CardDescription className="text-xs text-zinc-400">
+                                            Comparing monthly income vs. monthly expense.
                                         </CardDescription>
                                     </CardHeader>
-                                    <CardContent className="pt-2">
-                                        <div className="h-[320px] w-full">
+                                    <CardContent className="px-2 sm:px-6 pt-2">
+                                        <div className="h-[240px] sm:h-[320px] w-full">
                                             <ResponsiveContainer width="100%" height="100%">
                                                 <BarChart 
                                                     data={monthlyComparisonData} 
-                                                    margin={{ top: 10, right: 10, left: 0, bottom: 0 }}
+                                                    margin={{ top: 10, right: 0, left: -20, bottom: 0 }}
                                                 >
                                                     <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                                                    <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} />
+                                                    <XAxis dataKey="month" tick={{ fontSize: 10 }} tickLine={false} />
                                                     <YAxis 
-                                                        tick={{ fontSize: 11 }} 
+                                                        tick={{ fontSize: 10 }} 
                                                         tickLine={false}
                                                         tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
                                                     />
                                                     <Tooltip content={<BarComparisonTooltip formatCurrency={formatCurrency} />} />
-                                                    <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
+                                                    <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
                                                     
                                                     <Bar 
                                                         dataKey="Income" 
@@ -490,14 +481,14 @@ export default function AnalysisIndex({
                                     </CardContent>
                                 </Card>
                             ) : (
-                                <div className="grid gap-6 lg:grid-cols-3">
+                                <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
                                     <Card className="border-zinc-800 lg:col-span-2 flex flex-col justify-between">
-                                        <CardHeader className="flex flex-row items-center justify-between pb-2">
+                                        <CardHeader className="flex flex-col sm:flex-row sm:items-center justify-between pb-2 gap-2">
                                             <div>
-                                                <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
+                                                <CardTitle className="text-sm sm:text-base font-semibold flex items-center gap-2 text-zinc-200">
                                                     <TrendingUp className="h-4 w-4 text-primary" /> Cash Flow Trajectory
                                                 </CardTitle>
-                                                <CardDescription className="text-zinc-400">Daily movement for selected horizon.</CardDescription>
+                                                <CardDescription className="text-xs text-zinc-400">Daily movement for selected horizon.</CardDescription>
                                             </div>
 
                                             <Button
@@ -507,15 +498,15 @@ export default function AnalysisIndex({
                                                     setRange('monthly');
                                                     applyFilters({ range: 'monthly' });
                                                 }}
-                                                className="h-8 border-zinc-800 text-xs text-zinc-300 gap-1.5"
+                                                className="h-8 border-zinc-800 text-xs text-zinc-300 gap-1.5 self-start sm:self-auto"
                                             >
                                                 <ArrowLeft className="h-3.5 w-3.5" /> Back to Monthly Overview
                                             </Button>
                                         </CardHeader>
-                                        <CardContent className="pt-2">
-                                            <div className="h-[280px] w-full">
+                                        <CardContent className="px-2 sm:px-6 pt-2">
+                                            <div className="h-[220px] sm:h-[280px] w-full">
                                                 <ResponsiveContainer width="100%" height="100%">
-                                                    <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                                    <AreaChart data={trendData} margin={{ top: 10, right: 0, left: -20, bottom: 0 }}>
                                                         <defs>
                                                             <linearGradient id="flowGradient" x1="0" y1="0" x2="0" y2="1">
                                                                 <stop 
@@ -531,9 +522,9 @@ export default function AnalysisIndex({
                                                             </linearGradient>
                                                         </defs>
                                                         <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                                                        <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} />
+                                                        <XAxis dataKey="date" tick={{ fontSize: 10 }} tickLine={false} />
                                                         <YAxis 
-                                                            tick={{ fontSize: 11 }} 
+                                                            tick={{ fontSize: 10 }} 
                                                             tickLine={false}
                                                             tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
                                                         />
@@ -542,7 +533,7 @@ export default function AnalysisIndex({
                                                             type="monotone" 
                                                             dataKey={type === 'all' ? 'Net' : 'Amount'} 
                                                             stroke={type === 'income' ? '#10b981' : type === 'expense' ? '#f43f5e' : '#3b82f6'} 
-                                                            strokeWidth={2.5}
+                                                            strokeWidth={2}
                                                             fillOpacity={1} 
                                                             fill="url(#flowGradient)" 
                                                         />
@@ -553,13 +544,13 @@ export default function AnalysisIndex({
                                     </Card>
 
                                     <Card className="border-zinc-800 flex flex-col justify-between">
-                                        <CardHeader className="pb-3">
+                                        <CardHeader className="pb-3 px-3 sm:px-6">
                                             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                                <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
+                                                <CardTitle className="text-sm sm:text-base font-semibold text-zinc-200">
                                                      Daily Activity
                                                 </CardTitle>
 
-                                                <div className="flex items-center gap-1">
+                                                <div className="flex items-center gap-1 self-start sm:self-auto">
                                                     <Button 
                                                         variant="outline" 
                                                         size="icon-sm" 
@@ -574,7 +565,7 @@ export default function AnalysisIndex({
                                                         type="month"
                                                         value={calendar.month || calendarMonth}
                                                         onChange={handleMonthSelect}
-                                                        className="h-7 text-xs w-[125px] px-2 border-zinc-800 text-zinc-300"
+                                                        className="h-7 text-xs w-[120px] px-1.5 border-zinc-800 text-zinc-300"
                                                     />
 
                                                     <Button 
@@ -589,13 +580,13 @@ export default function AnalysisIndex({
                                                 </div>
                                             </div>
                                             <CardDescription className="text-xs text-zinc-400">
-                                                Click any day to view recorded transactions.
+                                                Tap any day to view transactions.
                                             </CardDescription>
                                         </CardHeader>
-                                        <CardContent>
-                                            <div className="grid grid-cols-7 gap-1 text-center">
+                                        <CardContent className="px-2 sm:px-6">
+                                            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center">
                                                 {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-                                                    <div key={day} className="text-[11px] font-medium text-zinc-400 py-1">
+                                                    <div key={day} className="text-[10px] sm:text-[11px] font-medium text-zinc-400 py-1">
                                                         {day}
                                                     </div>
                                                 ))}
@@ -606,17 +597,17 @@ export default function AnalysisIndex({
                                                                 type="button"
                                                                 onClick={() => setSelectedDayObj(dayObj)}
                                                                 title={`${dayObj.date} | Income: ${formatCurrency(dayObj.income)} | Expense: ${formatCurrency(dayObj.expense)}`}
-                                                                className={`w-full h-full rounded-md flex flex-col items-center justify-between p-1 transition-all border border-zinc-800/60 cursor-pointer ${
+                                                                className={`w-full h-full rounded-md flex flex-col items-center justify-between p-0.5 sm:p-1 transition-all border border-zinc-800/60 cursor-pointer ${
                                                                     dayObj.isToday 
-                                                                        ? 'ring-2 ring-primary ring-offset-1 border-primary bg-primary/5' 
+                                                                        ? 'ring-1 sm:ring-2 ring-primary ring-offset-1 border-primary bg-primary/5' 
                                                                         : 'bg-card hover:bg-muted/80'
                                                                 }`}
                                                             >
-                                                                <span className="text-[10px] font-semibold text-zinc-400 self-start leading-none">
+                                                                <span className="text-[9px] sm:text-[10px] font-semibold text-zinc-400 self-start leading-none">
                                                                     {dayObj.dayNumber}
                                                                 </span>
 
-                                                                <div className="flex flex-col w-full text-[9px] leading-tight font-medium overflow-hidden">
+                                                                <div className="flex flex-col w-full text-[8px] sm:text-[9px] leading-tight font-medium overflow-hidden">
                                                                     {dayObj.income > 0 && (
                                                                         <span className="text-emerald-500 truncate font-semibold">
                                                                             +{formatCompactCurrency(dayObj.income)}
@@ -642,7 +633,7 @@ export default function AnalysisIndex({
                         </div>
 
                         {/* Bottom Section: Side-by-Side Distribution Cards */}
-                        <div className="grid gap-6 lg:grid-cols-2">
+                        <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
                             <ExpenseCategoryCard 
                                 categoryData={categoryData} 
                                 accounts={accounts}
