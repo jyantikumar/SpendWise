@@ -27,6 +27,7 @@ import {
     ChevronLeft,
     ChevronRight,
     Columns3,
+    CalendarDays,
     ArrowLeft
 } from 'lucide-react';
 
@@ -65,7 +66,7 @@ const AreaFlowTooltip = ({ active, payload, label, formatCurrency, type }) => {
     return null;
 };
 
-const BarComparisonTooltip = ({ active, payload, label, formatCurrency }) => {
+const BarComparisonTooltip = ({ active, payload, label, formatCurrency, subtext }) => {
     if (active && payload && payload.length) {
         return (
             <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-2.5 shadow-md text-xs space-y-1">
@@ -76,6 +77,11 @@ const BarComparisonTooltip = ({ active, payload, label, formatCurrency }) => {
                         <span>{formatCurrency(entry.value)}</span>
                     </div>
                 ))}
+                {subtext && (
+                    <p className="text-[10px] text-zinc-500 italic pt-1 border-t border-zinc-800">
+                        {subtext}
+                    </p>
+                )}
             </div>
         );
     }
@@ -88,6 +94,7 @@ export default function AnalysisIndex({
     kpis = {}, 
     trendData = [], 
     monthlyComparisonData = [], 
+    yearlyComparisonData = [],
     categoryData = [], 
     calendar = {}, 
     filters = {}, 
@@ -139,6 +146,7 @@ export default function AnalysisIndex({
         });
     };
 
+    // Drill down from Monthly view to Daily view
     const handleMonthBarClick = (data) => {
         const targetMonth = data?.rawMonth || data?.payload?.rawMonth;
         if (targetMonth) {
@@ -147,6 +155,26 @@ export default function AnalysisIndex({
             router.get(route('analysis.index'), {
                 range: 'this_month',
                 calendar_month: targetMonth,
+                type: type,
+                account_id: accountId,
+            }, {
+                preserveState: false,
+                preserveScroll: true,
+                replace: true,
+                onFinish: () => setIsChartLoading(false),
+            });
+        }
+    };
+
+    // Drill down from Yearly view to Monthly view for that year
+    const handleYearBarClick = (data) => {
+        const targetYear = data?.rawYear || data?.payload?.rawYear;
+        if (targetYear) {
+            setIsChartLoading(true);
+
+            router.get(route('analysis.index'), {
+                range: 'monthly',
+                year: targetYear,
                 type: type,
                 account_id: accountId,
             }, {
@@ -270,6 +298,7 @@ export default function AnalysisIndex({
                                             Aggregated Comparisons
                                         </SelectLabel>
                                         <SelectItem value="monthly">Monthly Comparison</SelectItem>
+                                        <SelectItem value="yearly">Yearly Comparison</SelectItem>
                                     </SelectGroup>
 
                                     <SelectSeparator className="bg-zinc-800 my-1" />
@@ -313,7 +342,7 @@ export default function AnalysisIndex({
                             )}
                         </div>
 
-                        {/* KPI Summary Tiles - Single Column on Mobile */}
+                        {/* KPI Summary Tiles */}
                         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                             <Card className="border-zinc-800 flex flex-col justify-between">
                                 <CardHeader className="pb-1 pt-3 px-4 flex flex-row items-center justify-between space-y-0">
@@ -450,7 +479,7 @@ export default function AnalysisIndex({
                                                         tickLine={false}
                                                         tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
                                                     />
-                                                    <Tooltip content={<BarComparisonTooltip formatCurrency={formatCurrency} />} />
+                                                    <Tooltip content={<BarComparisonTooltip formatCurrency={formatCurrency} subtext="Click bar to view daily breakdown & calendar" />} />
                                                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
                                                     
                                                     <Bar 
@@ -473,6 +502,65 @@ export default function AnalysisIndex({
                                                     >
                                                         {monthlyComparisonData.map((entry, index) => (
                                                             <Cell key={`expense-cell-${index}`} className="cursor-pointer" />
+                                                        ))}
+                                                    </Bar>
+                                                </BarChart>
+                                            </ResponsiveContainer>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ) : range === 'yearly' ? (
+                                <Card className="border-zinc-800">
+                                    <CardHeader className="pb-2">
+                                        <CardTitle className="text-sm sm:text-base font-semibold flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-zinc-200">
+                                            <span className="flex items-center gap-2">
+                                                <CalendarDays className="h-4 w-4 text-primary" /> Yearly Cash Flow Comparison
+                                            </span>
+                                            <span className="text-[10px] sm:text-xs font-normal text-zinc-400 bg-zinc-800/80 px-2 py-1 rounded-md border border-zinc-700/80 self-start sm:self-auto">
+                                                💡 Tap year bar to drill down into monthly breakdown
+                                            </span>
+                                        </CardTitle>
+                                        <CardDescription className="text-xs text-zinc-400">
+                                            Multi-year cash flow comparison across recorded history.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="px-2 sm:px-6 pt-2">
+                                        <div className="h-[240px] sm:h-[320px] w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <BarChart 
+                                                    data={yearlyComparisonData} 
+                                                    margin={{ top: 10, right: 0, left: -20, bottom: 0 }}
+                                                >
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                                                    <XAxis dataKey="year" tick={{ fontSize: 10 }} tickLine={false} />
+                                                    <YAxis 
+                                                        tick={{ fontSize: 10 }} 
+                                                        tickLine={false}
+                                                        tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
+                                                    />
+                                                    <Tooltip content={<BarComparisonTooltip formatCurrency={formatCurrency} subtext="Click bar to drill down into monthly comparison" />} />
+                                                    <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
+                                                    
+                                                    <Bar 
+                                                        dataKey="Income" 
+                                                        fill="#10b981" 
+                                                        radius={[4, 4, 0, 0]} 
+                                                        onClick={(data) => handleYearBarClick(data)}
+                                                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                                                    >
+                                                        {yearlyComparisonData.map((entry, index) => (
+                                                            <Cell key={`yr-income-cell-${index}`} className="cursor-pointer" />
+                                                        ))}
+                                                    </Bar>
+                                                    <Bar 
+                                                        dataKey="Expense" 
+                                                        fill="#f43f5e" 
+                                                        radius={[4, 4, 0, 0]} 
+                                                        onClick={(data) => handleYearBarClick(data)}
+                                                        className="cursor-pointer hover:opacity-80 transition-opacity"
+                                                    >
+                                                        {yearlyComparisonData.map((entry, index) => (
+                                                            <Cell key={`yr-expense-cell-${index}`} className="cursor-pointer" />
                                                         ))}
                                                     </Bar>
                                                 </BarChart>
