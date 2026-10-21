@@ -4,12 +4,15 @@ import {
     ResponsiveContainer, 
     AreaChart, 
     Area, 
+    BarChart,
+    Bar,
     PieChart, 
     Pie, 
     XAxis, 
     YAxis, 
     CartesianGrid, 
     Tooltip, 
+    Legend,
     Cell 
 } from 'recharts';
 import { 
@@ -25,7 +28,8 @@ import {
     ChevronLeft,
     ChevronRight,
     Sparkles,
-    Scale
+    Scale,
+    Columns3
 } from 'lucide-react';
 
 import { AppSidebar } from '@/components/app-sidebar';
@@ -64,7 +68,35 @@ const AreaFlowTooltip = ({ active, payload, label, formatCurrency, type }) => {
     return null;
 };
 
-export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendData = [], categoryData = [], calendar = {}, filters = {}, categories = [] }) {
+// Custom Tooltip for Monthly Bar Comparison Chart
+const MonthlyBarTooltip = ({ active, payload, label, formatCurrency }) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="rounded-lg border border-zinc-800 bg-zinc-900 p-3 shadow-md text-xs space-y-1.5">
+                <p className="text-zinc-300 font-bold border-b border-zinc-800 pb-1">{label}</p>
+                {payload.map((entry, index) => (
+                    <div key={index} className="flex items-center justify-between gap-4 font-semibold" style={{ color: entry.fill }}>
+                        <span>{entry.name}:</span>
+                        <span>{formatCurrency(entry.value)}</span>
+                    </div>
+                ))}
+            </div>
+        );
+    }
+    return null;
+};
+
+export default function AnalysisIndex({ 
+    auth, 
+    accounts = [], 
+    kpis = {}, 
+    trendData = [], 
+    monthlyComparisonData = [], 
+    categoryData = [], 
+    calendar = {}, 
+    filters = {}, 
+    categories = [] 
+}) {
     const [range, setRange] = useState(filters.range || 'this_month');
     const [type, setType] = useState(filters.type || 'expense');
     const [accountId, setAccountId] = useState(filters.account_id || 'all');
@@ -132,12 +164,6 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
         { name: 'Income', value: incomeVal, color: '#10b981' },
         { name: 'Expense', value: expenseVal, color: '#f43f5e' },
     ];
-
-    // Computations: Financial Health & Insights
-    const savingsRate = incomeVal > 0 ? Math.max(0, Math.min(100, (((incomeVal - expenseVal) / incomeVal) * 100))) : 0;
-    const topCategory = categoryData && categoryData.length > 0 ? categoryData[0] : null;
-    const topCategoryPct = expenseVal > 0 && topCategory ? (((parseFloat(topCategory.total) || 0) / expenseVal) * 100) : 0;
-    const momChangePct = kpis?.momExpenseChange !== undefined ? kpis.momExpenseChange : null;
 
     return (
         <TooltipProvider>
@@ -217,6 +243,7 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                                 <SelectContent className="border-zinc-800">
                                     <SelectItem value="1_week">1 Week</SelectItem>
                                     <SelectItem value="this_month">This Month</SelectItem>
+                                    <SelectItem value="monthly">Monthly</SelectItem>
                                     <SelectItem value="6_months">6 Months</SelectItem>
                                     <SelectItem value="this_year">This Year</SelectItem>
                                     <SelectItem value="custom">Custom Range</SelectItem>
@@ -350,144 +377,175 @@ export default function AnalysisIndex({ auth, accounts = [], kpis = {}, trendDat
                             </Card>
                         </div>
 
-                        {/* Financial Health & Smart Insights */}
-                       
-
-                        {/* Top Section: Cash Flow Trajectory & Daily Activity */}
-                        <div className="grid gap-6 lg:grid-cols-3">
-                            <Card className="border-zinc-800 lg:col-span-2 flex flex-col justify-between">
+                        {/* CONDITIONAL RENDERING: Monthly Comparison Bar Chart vs. Daily Trajectory + Calendar */}
+                        {range === 'monthly' ? (
+                            <Card className="border-zinc-800">
                                 <CardHeader>
                                     <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
-                                        <TrendingUp className="h-4 w-4 text-primary" /> Cash Flow Trajectory
+                                        <Columns3 className="h-4 w-4 text-primary" /> Monthly Cash Flow Comparison
                                     </CardTitle>
-                                    <CardDescription className="text-zinc-400">Daily movement and aggregate trend for the selected horizon.</CardDescription>
+                                    <CardDescription className="text-zinc-400">
+                                        Comparing total monthly income vs. total monthly expense across the current year.
+                                    </CardDescription>
                                 </CardHeader>
                                 <CardContent className="pt-2">
-                                    <div className="h-[280px] w-full">
+                                    <div className="h-[320px] w-full">
                                         <ResponsiveContainer width="100%" height="100%">
-                                            <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                                                <defs>
-                                                    <linearGradient id="flowGradient" x1="0" y1="0" x2="0" y2="1">
-                                                        <stop 
-                                                            offset="5%" 
-                                                            stopColor={type === 'income' ? '#10b981' : type === 'expense' ? '#f43f5e' : '#3b82f6'} 
-                                                            stopOpacity={0.4}
-                                                        />
-                                                        <stop 
-                                                            offset="95%" 
-                                                            stopColor={type === 'income' ? '#10b981' : type === 'expense' ? '#f43f5e' : '#3b82f6'} 
-                                                            stopOpacity={0.0}
-                                                        />
-                                                    </linearGradient>
-                                                </defs>
+                                            <BarChart data={monthlyComparisonData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                                                 <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
-                                                <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} />
+                                                <XAxis dataKey="month" tick={{ fontSize: 11 }} tickLine={false} />
                                                 <YAxis 
                                                     tick={{ fontSize: 11 }} 
                                                     tickLine={false}
                                                     tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
                                                 />
-                                                <Tooltip content={<AreaFlowTooltip formatCurrency={formatCurrency} type={type} />} />
-                                                <Area 
-                                                    type="monotone" 
-                                                    dataKey={type === 'all' ? 'Net' : 'Amount'} 
-                                                    stroke={type === 'income' ? '#10b981' : type === 'expense' ? '#f43f5e' : '#3b82f6'} 
-                                                    strokeWidth={2.5}
-                                                    fillOpacity={1} 
-                                                    fill="url(#flowGradient)" 
+                                                <Tooltip content={<MonthlyBarTooltip formatCurrency={formatCurrency} />} />
+                                                <Legend 
+                                                    wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }}
                                                 />
-                                            </AreaChart>
+                                                <Bar dataKey="Income" fill="#10b981" radius={[4, 4, 0, 0]} />
+                                                <Bar dataKey="Expense" fill="#f43f5e" radius={[4, 4, 0, 0]} />
+                                            </BarChart>
                                         </ResponsiveContainer>
                                     </div>
                                 </CardContent>
                             </Card>
-
-                            <Card className="border-zinc-800 flex flex-col justify-between">
-                                <CardHeader className="pb-3">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        ) : (
+                            <div className="grid gap-6 lg:grid-cols-3">
+                                <Card className="border-zinc-800 lg:col-span-2 flex flex-col justify-between">
+                                    <CardHeader>
                                         <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
-                                             Daily Activity
+                                            <TrendingUp className="h-4 w-4 text-primary" /> Cash Flow Trajectory
                                         </CardTitle>
-
-                                        <div className="flex items-center gap-1">
-                                            <Button 
-                                                variant="outline" 
-                                                size="icon-sm" 
-                                                className="h-7 w-7 border-zinc-800 text-zinc-300" 
-                                                onClick={handlePrevMonth}
-                                                title="Previous Month"
-                                            >
-                                                <ChevronLeft className="h-3.5 w-3.5" />
-                                            </Button>
-
-                                            <Input 
-                                                type="month"
-                                                value={calendar.month || calendarMonth}
-                                                onChange={handleMonthSelect}
-                                                className="h-7 text-xs w-[125px] px-2 border-zinc-800 text-zinc-300"
-                                            />
-
-                                            <Button 
-                                                variant="outline" 
-                                                size="icon-sm" 
-                                                className="h-7 w-7 border-zinc-800 text-zinc-300" 
-                                                onClick={handleNextMonth}
-                                                title="Next Month"
-                                            >
-                                                <ChevronRight className="h-3.5 w-3.5" />
-                                            </Button>
+                                        <CardDescription className="text-zinc-400">Daily movement and aggregate trend for the selected horizon.</CardDescription>
+                                    </CardHeader>
+                                    <CardContent className="pt-2">
+                                        <div className="h-[280px] w-full">
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <AreaChart data={trendData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                                                    <defs>
+                                                        <linearGradient id="flowGradient" x1="0" y1="0" x2="0" y2="1">
+                                                            <stop 
+                                                                offset="5%" 
+                                                                stopColor={type === 'income' ? '#10b981' : type === 'expense' ? '#f43f5e' : '#3b82f6'} 
+                                                                stopOpacity={0.4}
+                                                            />
+                                                            <stop 
+                                                                offset="95%" 
+                                                                stopColor={type === 'income' ? '#10b981' : type === 'expense' ? '#f43f5e' : '#3b82f6'} 
+                                                                stopOpacity={0.0}
+                                                            />
+                                                        </linearGradient>
+                                                    </defs>
+                                                    <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.15} />
+                                                    <XAxis dataKey="date" tick={{ fontSize: 11 }} tickLine={false} />
+                                                    <YAxis 
+                                                        tick={{ fontSize: 11 }} 
+                                                        tickLine={false}
+                                                        tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
+                                                    />
+                                                    <Tooltip content={<AreaFlowTooltip formatCurrency={formatCurrency} type={type} />} />
+                                                    <Area 
+                                                        type="monotone" 
+                                                        dataKey={type === 'all' ? 'Net' : 'Amount'} 
+                                                        stroke={type === 'income' ? '#10b981' : type === 'expense' ? '#f43f5e' : '#3b82f6'} 
+                                                        strokeWidth={2.5}
+                                                        fillOpacity={1} 
+                                                        fill="url(#flowGradient)" 
+                                                    />
+                                                </AreaChart>
+                                            </ResponsiveContainer>
                                         </div>
-                                    </div>
-                                    <CardDescription className="text-xs text-zinc-400">
-                                        Click any day to view recorded transactions.
-                                    </CardDescription>
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="grid grid-cols-7 gap-1 text-center">
-                                        {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-                                            <div key={day} className="text-[11px] font-medium text-zinc-400 py-1">
-                                                {day}
-                                            </div>
-                                        ))}
-                                        {calendar.days?.map((dayObj, idx) => (
-                                            <div key={idx} className="aspect-square flex items-center justify-center p-0.5">
-                                                {dayObj ? (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => setSelectedDayObj(dayObj)}
-                                                        title={`${dayObj.date} | Income: ${formatCurrency(dayObj.income)} | Expense: ${formatCurrency(dayObj.expense)}`}
-                                                        className={`w-full h-full rounded-md flex flex-col items-center justify-between p-1 transition-all border border-zinc-800/60 cursor-pointer ${
-                                                            dayObj.isToday 
-                                                                ? 'ring-2 ring-primary ring-offset-1 border-primary bg-primary/5' 
-                                                                : 'bg-card hover:bg-muted/80'
-                                                        }`}
-                                                    >
-                                                        <span className="text-[10px] font-semibold text-zinc-400 self-start leading-none">
-                                                            {dayObj.dayNumber}
-                                                        </span>
+                                    </CardContent>
+                                </Card>
 
-                                                        <div className="flex flex-col w-full text-[9px] leading-tight font-medium overflow-hidden">
-                                                            {dayObj.income > 0 && (
-                                                                <span className="text-emerald-500 truncate font-semibold">
-                                                                    +{formatCompactCurrency(dayObj.income)}
-                                                                </span>
-                                                            )}
-                                                            {dayObj.expense > 0 && (
-                                                                <span className="text-rose-500 truncate font-semibold">
-                                                                    -{formatCompactCurrency(dayObj.expense)}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    </button>
-                                                ) : (
-                                                    <div className="w-full h-full rounded-md bg-transparent" />
-                                                )}
+                                <Card className="border-zinc-800 flex flex-col justify-between">
+                                    <CardHeader className="pb-3">
+                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                            <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
+                                                 Daily Activity
+                                            </CardTitle>
+
+                                            <div className="flex items-center gap-1">
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="icon-sm" 
+                                                    className="h-7 w-7 border-zinc-800 text-zinc-300" 
+                                                    onClick={handlePrevMonth}
+                                                    title="Previous Month"
+                                                >
+                                                    <ChevronLeft className="h-3.5 w-3.5" />
+                                                </Button>
+
+                                                <Input 
+                                                    type="month"
+                                                    value={calendar.month || calendarMonth}
+                                                    onChange={handleMonthSelect}
+                                                    className="h-7 text-xs w-[125px] px-2 border-zinc-800 text-zinc-300"
+                                                />
+
+                                                <Button 
+                                                    variant="outline" 
+                                                    size="icon-sm" 
+                                                    className="h-7 w-7 border-zinc-800 text-zinc-300" 
+                                                    onClick={handleNextMonth}
+                                                    title="Next Month"
+                                                >
+                                                    <ChevronRight className="h-3.5 w-3.5" />
+                                                </Button>
                                             </div>
-                                        ))}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        </div>
+                                        </div>
+                                        <CardDescription className="text-xs text-zinc-400">
+                                            Click any day to view recorded transactions.
+                                        </CardDescription>
+                                    </CardHeader>
+                                    <CardContent>
+                                        <div className="grid grid-cols-7 gap-1 text-center">
+                                            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+                                                <div key={day} className="text-[11px] font-medium text-zinc-400 py-1">
+                                                    {day}
+                                                </div>
+                                            ))}
+                                            {calendar.days?.map((dayObj, idx) => (
+                                                <div key={idx} className="aspect-square flex items-center justify-center p-0.5">
+                                                    {dayObj ? (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setSelectedDayObj(dayObj)}
+                                                            title={`${dayObj.date} | Income: ${formatCurrency(dayObj.income)} | Expense: ${formatCurrency(dayObj.expense)}`}
+                                                            className={`w-full h-full rounded-md flex flex-col items-center justify-between p-1 transition-all border border-zinc-800/60 cursor-pointer ${
+                                                                dayObj.isToday 
+                                                                    ? 'ring-2 ring-primary ring-offset-1 border-primary bg-primary/5' 
+                                                                    : 'bg-card hover:bg-muted/80'
+                                                            }`}
+                                                        >
+                                                            <span className="text-[10px] font-semibold text-zinc-400 self-start leading-none">
+                                                                {dayObj.dayNumber}
+                                                            </span>
+
+                                                            <div className="flex flex-col w-full text-[9px] leading-tight font-medium overflow-hidden">
+                                                                {dayObj.income > 0 && (
+                                                                    <span className="text-emerald-500 truncate font-semibold">
+                                                                        +{formatCompactCurrency(dayObj.income)}
+                                                                    </span>
+                                                                )}
+                                                                {dayObj.expense > 0 && (
+                                                                    <span className="text-rose-500 truncate font-semibold">
+                                                                        -{formatCompactCurrency(dayObj.expense)}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </button>
+                                                    ) : (
+                                                        <div className="w-full h-full rounded-md bg-transparent" />
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                        )}
 
                         {/* Bottom Section: Side-by-Side Distribution Cards */}
                         <div className="grid gap-6 lg:grid-cols-2">

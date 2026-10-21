@@ -31,7 +31,7 @@ class AnalysisController extends Controller
         } elseif ($range === '6_months') {
             $startDate = Carbon::now()->subMonths(6)->startOfDay();
             $endDate   = Carbon::now()->endOfDay();
-        } elseif ($range === 'this_year') {
+        } elseif ($range === 'this_year' || $range === 'monthly') {
             $startDate = Carbon::now()->startOfYear();
             $endDate   = Carbon::now()->endOfDay();
         } elseif ($range === 'custom' && $startDateInput && $endDateInput) {
@@ -58,7 +58,6 @@ class AnalysisController extends Controller
             ->when($type !== 'all', function ($q) use ($type) {
                 $q->where('type', $type);
             }, function ($q) {
-                // When type is 'all', exclude internal transfers from peak & flow calculations
                 $q->whereIn('type', ['income', 'expense']);
             });
 
@@ -80,7 +79,7 @@ class AnalysisController extends Controller
             return $dayTxs->sum('amount');
         });
 
-        $peakAmount = $dailySums->max() ?? 0;
+        $peakAmount  = $dailySums->max() ?? 0;
         $peakDateRaw = $dailySums->search($peakAmount) ?? null;
         $peakDate    = $peakDateRaw ? Carbon::parse($peakDateRaw)->format('M d, Y') : null;
 
@@ -119,7 +118,34 @@ class AnalysisController extends Controller
             $periodCursor->addDay();
         }
 
-        // 5. Category Breakdown Bar Chart Data (Expenses Only)
+        // 5. Monthly Comparison Bar Chart Data (Grouped by Month)
+        $monthlyComparisonData = [];
+        $monthlyCursor = (clone $startDate)->startOfMonth();
+        $monthlyEnd    = (clone $endDate)->endOfMonth();
+
+        while ($monthlyCursor->lte($monthlyEnd)) {
+            $yearMonth = $monthlyCursor->format('Y-m');
+            $monthLabel = $monthlyCursor->format('M Y');
+
+            $monthTxs = (clone $baseQuery)
+                ->whereRaw("DATE_FORMAT(transaction_date, '%Y-%m') = ?", [$yearMonth])
+                ->whereIn('type', ['income', 'expense'])
+                ->get();
+
+            $inc = $monthTxs->where('type', 'income')->sum('amount');
+            $exp = $monthTxs->where('type', 'expense')->sum('amount');
+
+            $monthlyComparisonData[] = [
+                'month'   => $monthLabel,
+                'Income'  => (float) $inc,
+                'Expense' => (float) $exp,
+                'Net'     => (float) ($inc - $exp),
+            ];
+
+            $monthlyCursor->addMonth();
+        }
+
+        // 6. Category Breakdown Bar Chart Data (Expenses Only)
         $categoryData = (clone $baseQuery)
             ->where('type', 'expense')
             ->whereNotNull('category_id')
@@ -140,7 +166,7 @@ class AnalysisController extends Controller
             ->values()
             ->take(8);
 
-        // 6. Selectable Calendar Grid
+        // 7. Selectable Calendar Grid
         try {
             $calendarCarbon = Carbon::parse($calendarMonth)->startOfMonth();
         } catch (\Exception $e) {
@@ -191,8 +217,8 @@ class AnalysisController extends Controller
         $accounts = $user->accounts()->orderBy('name')->get();
 
         return Inertia::render('Analysis/Index', [
-            'accounts'     => $accounts,
-            'kpis'         => [
+            'accounts'              => $accounts,
+            'kpis'                  => [
                 'totalIncome'         => (float) $totalIncome,
                 'totalExpense'        => (float) $totalExpense,
                 'netCashFlow'         => (float) $netCashFlow,
@@ -202,14 +228,15 @@ class AnalysisController extends Controller
                 'peakDate'            => $peakDate,
                 'totalDays'           => $totalDays,
             ],
-            'trendData'    => $trendData,
-            'categoryData' => $categoryData,
-            'calendar'     => [
+            'trendData'             => $trendData,
+            'monthlyComparisonData' => $monthlyComparisonData,
+            'categoryData'          => $categoryData,
+            'calendar'              => [
                 'month'     => $startOfMonth->format('Y-m'),
                 'monthName' => $startOfMonth->format('F Y'),
                 'days'      => $calendarDays,
             ],
-            'filters'      => [
+            'filters'               => [
                 'range'          => $range,
                 'type'           => $type,
                 'account_id'     => $accountId,
