@@ -32,13 +32,23 @@ import {
     DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 
-const navItems = [
-    { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-    { title: 'Transactions', url: '/transactions', icon: ReceiptText },
-    { title: 'Accounts', url: '/accounts', icon: Wallet },
-    { title: 'Account Types', url: '/account-types', icon: Layers },
-    { title: 'Categories', url: '/categories', icon: Tags },
-    { title: 'Analysis', url: '/analysis', icon: ChartLine },
+const navGroups = [
+    {
+        label: 'Main',
+        items: [
+            { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
+            { title: 'Transactions', url: '/transactions', icon: ReceiptText },
+            { title: 'Analysis', url: '/analysis', icon: ChartLine },
+        ],
+    },
+    {
+        label: 'Configuration',
+        items: [
+            { title: 'Accounts', url: '/accounts', icon: Wallet },
+            { title: 'Account Types', url: '/account-types', icon: Layers },
+            { title: 'Categories', url: '/categories', icon: Tags },
+        ],
+    },
 ];
 
 export function AppSidebar({ user }) {
@@ -78,36 +88,38 @@ export function AppSidebar({ user }) {
 
             {/* Navigation Items */}
             <SidebarContent>
-                <SidebarGroup>
-                    <SidebarGroupLabel className="text-zinc-500 font-medium text-xs uppercase tracking-wider">
-                        Menu
-                    </SidebarGroupLabel>
-                    <SidebarGroupContent>
-                        <SidebarMenu>
-                            {navItems.map((item) => {
-                                const isActive = url.startsWith(item.url);
+                {navGroups.map((group) => (
+                    <SidebarGroup key={group.label}>
+                        <SidebarGroupLabel className="text-zinc-500 font-medium text-xs uppercase tracking-wider">
+                            {group.label}
+                        </SidebarGroupLabel>
+                        <SidebarGroupContent>
+                            <SidebarMenu>
+                                {group.items.map((item) => {
+                                    const isActive = url.startsWith(item.url);
 
-                                return (
-                                    <SidebarMenuItem key={item.title}>
-                                        <SidebarMenuButton 
-                                            asChild 
-                                            isActive={isActive} 
-                                            tooltip={item.title}
-                                            className={`!bg-transparent text-zinc-300 hover:text-zinc-100 hover:!bg-zinc-800/40 ${
-                                                isActive ? '!bg-zinc-800 !text-zinc-100 font-semibold' : ''
-                                            }`}
-                                        >
-                                            <Link href={item.url} className="flex items-center gap-3">
-                                                <item.icon className="h-4 w-4 text-zinc-100" />
-                                                <span>{item.title}</span>
-                                            </Link>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                );
-                            })}
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
+                                    return (
+                                        <SidebarMenuItem key={item.title}>
+                                            <SidebarMenuButton 
+                                                asChild 
+                                                isActive={isActive} 
+                                                tooltip={item.title}
+                                                className={`!bg-transparent text-zinc-300 hover:text-zinc-100 hover:!bg-zinc-800/40 ${
+                                                    isActive ? '!bg-zinc-800 !text-zinc-100 font-semibold' : ''
+                                                }`}
+                                            >
+                                                <Link href={item.url} className="flex items-center gap-3">
+                                                    <item.icon className="h-4 w-4 text-zinc-100" />
+                                                    <span>{item.title}</span>
+                                                </Link>
+                                            </SidebarMenuButton>
+                                        </SidebarMenuItem>
+                                    );
+                                })}
+                            </SidebarMenu>
+                        </SidebarGroupContent>
+                    </SidebarGroup>
+                ))}
             </SidebarContent>
 
             {/* User Profile Footer */}

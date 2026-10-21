@@ -185,7 +185,7 @@ export function TransactionDetailSheet({
                             {/* Account (for non-transfers) */}
                             {transaction.type !== 'transfer' && (
                                 <div className="p-3 bg-muted/20 border border-zinc-800 rounded-lg flex items-start gap-2.5 min-w-0">
-                                    <div className="p-2 rounded-md bg-background border border-zinc-800 text-zinc-400 shrink-0">
+                                    <div className="hidden sm:block p-2 rounded-md bg-background border border-zinc-800 text-zinc-400 shrink-0">
                                         <Wallet className="h-4 w-4" />
                                     </div>
                                     <div className="space-y-0.5 min-w-0 flex-1">
@@ -200,7 +200,7 @@ export function TransactionDetailSheet({
                             {/* Category (for non-transfers) */}
                             {transaction.type !== 'transfer' && (
                                 <div className="p-3 bg-muted/20 border border-zinc-800 rounded-lg flex items-start gap-2.5 min-w-0">
-                                    <div className="p-2 rounded-md bg-background border border-zinc-800 text-zinc-400 shrink-0">
+                                    <div className="hidden sm:block p-2 rounded-md bg-background border border-zinc-800 text-zinc-400 shrink-0">
                                         <Tag className="h-4 w-4" />
                                     </div>
                                     <div className="space-y-0.5 min-w-0 flex-1">
