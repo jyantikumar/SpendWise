@@ -246,6 +246,23 @@ class AnalysisController extends Controller
             ];
         }
 
+        // Dynamic Range Label Construction
+        if ($range === 'this_month') {
+            $rangeLabel = Carbon::parse($calendarMonth)->format('F Y');
+        } elseif ($range === 'monthly') {
+            $rangeLabel = 'Monthly Comparison (' . $targetYear . ')';
+        } elseif ($range === 'yearly') {
+            $rangeLabel = 'Yearly Comparison';
+        } elseif ($range === '1_week') {
+            $rangeLabel = '1 Week';
+        } elseif ($range === '6_months') {
+            $rangeLabel = '6 Months';
+        } elseif ($range === 'this_year') {
+            $rangeLabel = 'This Year';
+        } else {
+            $rangeLabel = 'Custom Range';
+        }
+
         $accounts = $user->accounts()->orderBy('name')->get();
 
         return Inertia::render('Analysis/Index', [
@@ -271,6 +288,7 @@ class AnalysisController extends Controller
             ],
             'filters'               => [
                 'range'          => $range,
+                'range_label'    => $rangeLabel,
                 'type'           => $type,
                 'account_id'     => $accountId,
                 'start_date'     => $startDate->format('Y-m-d'),

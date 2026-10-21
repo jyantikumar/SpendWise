@@ -288,9 +288,11 @@ export default function AnalysisIndex({
                                     applyFilters({ range: val });
                                 }}
                             >
-                                <SelectTrigger className="w-full sm:w-[200px] h-9 border-zinc-800 text-zinc-300">
+                                <SelectTrigger className="w-full sm:w-[220px] h-9 border-zinc-800 text-zinc-300">
                                     <SlidersHorizontal className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                                    <SelectValue placeholder="Range" />
+                                    <SelectValue>
+                                        {filters.range_label || (range === 'this_month' ? 'This Month' : range)}
+                                    </SelectValue>
                                 </SelectTrigger>
                                 <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
                                     <SelectGroup>
@@ -307,7 +309,9 @@ export default function AnalysisIndex({
                                         <SelectLabel className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 px-2 py-1">
                                             Time Horizons
                                         </SelectLabel>
-                                        <SelectItem value="this_month">This Month</SelectItem>
+                                        <SelectItem value="this_month">
+                                            {range === 'this_month' && filters.range_label ? filters.range_label : 'This Month'}
+                                        </SelectItem>
                                         <SelectItem value="1_week">1 Week</SelectItem>
                                         <SelectItem value="6_months">6 Months</SelectItem>
                                         <SelectItem value="this_year">This Year</SelectItem>
