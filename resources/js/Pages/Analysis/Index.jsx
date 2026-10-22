@@ -299,8 +299,8 @@ export default function AnalysisIndex({
                                         <SelectLabel className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 px-2 py-1">
                                             Aggregated Comparisons
                                         </SelectLabel>
-                                        <SelectItem value="monthly">Monthly Comparison</SelectItem>
-                                        <SelectItem value="yearly">Yearly Comparison</SelectItem>
+                                        <SelectItem value="monthly">Monthly</SelectItem>
+                                        <SelectItem value="yearly">Yearly</SelectItem>
                                     </SelectGroup>
 
                                     <SelectSeparator className="bg-zinc-800 my-1" />

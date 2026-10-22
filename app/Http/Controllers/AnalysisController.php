@@ -250,9 +250,9 @@ class AnalysisController extends Controller
         if ($range === 'this_month') {
             $rangeLabel = Carbon::parse($calendarMonth)->format('F Y');
         } elseif ($range === 'monthly') {
-            $rangeLabel = 'Monthly Comparison (' . $targetYear . ')';
+            $rangeLabel = 'Monthly (' . $targetYear . ')';
         } elseif ($range === 'yearly') {
-            $rangeLabel = 'Yearly Comparison';
+            $rangeLabel = 'Yearly';
         } elseif ($range === '1_week') {
             $rangeLabel = '1 Week';
         } elseif ($range === '6_months') {
