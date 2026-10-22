@@ -9,11 +9,11 @@ import { toast } from 'sonner';
 
 export default function AuthenticatedLayout({ header, children }) {
     const { auth, flash, errors } = usePage().props;
-    const user = auth.user;
+    const user = auth?.user; // 👈 Added optional chaining
 
     const [showingNavigationDropdown, setShowingNavigationDropdown] = useState(false);
 
-    // 1. Trigger toast on backend success, error, warning, or info flash messages
+    // 1. Trigger toast on backend flash messages
     useEffect(() => {
         if (flash?.success) toast.success(flash.success);
         if (flash?.error) toast.error(flash.error);
@@ -32,8 +32,6 @@ export default function AuthenticatedLayout({ header, children }) {
 
     return (
         <div className="min-h-screen bg-gray-100">
-            {/* Sonner Toast Notification Container */}
-            <Toaster position="top-right" richColors />
 
             <nav className="border-b border-gray-100 bg-white">
                 <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -64,7 +62,7 @@ export default function AuthenticatedLayout({ header, children }) {
                                                 type="button"
                                                 className="inline-flex items-center rounded-md border border-transparent bg-white px-3 py-2 text-sm font-medium leading-4 text-gray-500 transition duration-150 ease-in-out hover:text-gray-700 focus:outline-none"
                                             >
-                                                {user.name}
+                                                {user?.name}
 
                                                 <svg
                                                     className="-me-0.5 ms-2 h-4 w-4"
@@ -161,10 +159,10 @@ export default function AuthenticatedLayout({ header, children }) {
                     <div className="border-t border-gray-200 pb-1 pt-4">
                         <div className="px-4">
                             <div className="text-base font-medium text-gray-800">
-                                {user.name}
+                                {user?.name}
                             </div>
                             <div className="text-sm font-medium text-gray-500">
-                                {user.email}
+                                {user?.email}
                             </div>
                         </div>
 

@@ -1,4 +1,3 @@
-// resources/js/components/app-sidebar.jsx
 import { 
     LayoutDashboard, 
     ReceiptText, 
@@ -9,7 +8,8 @@ import {
     Layers,
     DollarSign,
     ChevronUp,
-    ChartLine 
+    ChartLine,
+    Calendar
 } from 'lucide-react';
 import { Link, router, usePage } from '@inertiajs/react';
 
@@ -39,6 +39,7 @@ const navGroups = [
             { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
             { title: 'Transactions', url: '/transactions', icon: ReceiptText },
             { title: 'Analysis', url: '/analysis', icon: ChartLine },
+            { title: 'Subscriptions', url: '/subscriptions', icon: Calendar },
         ],
     },
     {

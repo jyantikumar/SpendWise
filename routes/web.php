@@ -7,6 +7,7 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountTypeController; 
 use App\Http\Controllers\AnalysisController;
+use App\Http\Controllers\RecurringTransactionController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -53,6 +54,11 @@ Route::get('/accounts/{account}/transactions', [AccountController::class, 'accou
 
     // Analysis Analytics Page
     Route::get('/analysis', [AnalysisController::class, 'index'])->name('analysis.index');
+
+Route::get('/subscriptions', [RecurringTransactionController::class, 'index'])->name('subscriptions.index');
+    Route::post('/recurring', [RecurringTransactionController::class, 'store'])->name('recurring.store');
+    Route::post('/recurring/{recurringTransaction}/process', [RecurringTransactionController::class, 'process'])->name('recurring.process');
+
 });
 
 require __DIR__.'/auth.php';
