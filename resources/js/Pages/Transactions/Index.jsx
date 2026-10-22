@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { 
     Plus, 
     Search, 
@@ -13,11 +13,9 @@ import {
     ChevronLeft,
     ChevronRight
 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { AppSidebar } from '@/components/app-sidebar';
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { Separator } from '@/components/ui/separator';
+import AppLayout from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -134,341 +132,331 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
     const handleDelete = () => {
         if (!deletingTransaction) return;
         router.delete(route('transactions.destroy', deletingTransaction.id), {
-            onSuccess: () => setDeletingTransaction(null),
+            onSuccess: () => {
+                toast.success('Transaction deleted successfully.');
+                setDeletingTransaction(null);
+                setSelectedDetailTransaction(null);
+            },
+            onError: () => {
+                toast.error('Failed to delete transaction.');
+            }
         });
     };
 
     return (
-        <TooltipProvider>
-            <SidebarProvider>
-                <Head title="Transactions - SpendWise" />
+        <AppLayout title="Transactions" headerTitle="Transaction Management">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Transactions</h2>
+                    <p className="text-sm text-zinc-400">
+                        Log and view income, expenses, and account transfers.
+                    </p>
+                </div>
 
-                <AppSidebar user={auth.user} />
+                <Button onClick={openCreateModal} className="gap-2">
+                    <Plus className="h-4 w-4" /> Add Transaction
+                </Button>
+            </div>
 
-                <SidebarInset>
-                    <header className="flex h-16 shrink-0 items-center gap-2 border-b border-zinc-800 px-4">
-                        <SidebarTrigger className="-ml-1" />
-                        <Separator orientation="vertical" className="mr-2 h-4 bg-zinc-800" />
-                        <h1 className="text-lg font-semibold tracking-tight text-zinc-200">Transaction Management</h1>
-                    </header>
+            {/* KPI Cards */}
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                <Card className="border-zinc-800">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium text-zinc-400">Total Balance</CardTitle>
+                        <Wallet className="h-4 w-4 text-zinc-400" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-zinc-200">{formatCurrency(kpis?.totalBalance)}</div>
+                        <p className="text-xs text-zinc-400 mt-1">Across liquid accounts</p>
+                    </CardContent>
+                </Card>
 
-                    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <div>
-                                <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Transactions</h2>
-                                <p className="text-sm text-zinc-400">
-                                    Log and view income, expenses, and account transfers.
-                                </p>
+                <Card className="border-zinc-800">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium text-zinc-400">Total Income</CardTitle>
+                        <TrendingUp className="h-4 w-4 text-emerald-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-emerald-500">{formatCurrency(kpis?.totalIncome)}</div>
+                        <p className="text-xs text-zinc-400 mt-1">Earned for current filter</p>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-zinc-800">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium text-zinc-400">Total Expenses</CardTitle>
+                        <TrendingDown className="h-4 w-4 text-rose-500" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold text-rose-500">{formatCurrency(kpis?.totalExpense)}</div>
+                        <p className="text-xs text-zinc-400 mt-1">Spent for current filter</p>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-zinc-800">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium text-zinc-400">Net Cash Flow</CardTitle>
+                        <DollarSign className="h-4 w-4 text-zinc-400" />
+                    </CardHeader>
+                    <CardContent>
+                        <div className={`text-2xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {formatCurrency(kpis?.netCashFlow)}
+                        </div>
+                        <p className="text-xs text-zinc-400 mt-1">Income minus expenses</p>
+                    </CardContent>
+                </Card>
+            </div>
+
+            {/* Filters Card */}
+            <Card className="border-zinc-800">
+                <CardHeader className="pb-3">
+                    <CardTitle className="text-base font-medium flex items-center gap-2 text-zinc-200">
+                        <Filter className="h-4 w-4 text-zinc-400" /> Filter Transactions
+                    </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                    <div className="flex flex-wrap items-center gap-3">
+                        <div className="relative min-w-[200px] flex-1">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
+                            <Input
+                                placeholder="Search description..."
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="pl-8 h-9 w-full border-zinc-800 text-zinc-300"
+                            />
+                        </div>
+
+                        <div className="w-[140px]">
+                            <Select 
+                                value={selectedType} 
+                                onValueChange={(val) => {
+                                    setSelectedType(val);
+                                    applyFilters({ type: val });
+                                }}
+                            >
+                                <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
+                                    <SelectValue placeholder="All Types" />
+                                </SelectTrigger>
+                                <SelectContent className="border-zinc-800 bg-background text-zinc-300">
+                                    <SelectItem value="all">All Types</SelectItem>
+                                    <SelectItem value="expense">Expense</SelectItem>
+                                    <SelectItem value="income">Income</SelectItem>
+                                    <SelectItem value="transfer">Transfer</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="w-[150px]">
+                            <Select 
+                                value={selectedAccount} 
+                                onValueChange={(val) => {
+                                    setSelectedAccount(val);
+                                    applyFilters({ account_id: val });
+                                }}
+                            >
+                                <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
+                                    <SelectValue placeholder="All Accounts" />
+                                </SelectTrigger>
+                                <SelectContent className="border-zinc-800 bg-background text-zinc-300">
+                                    <SelectItem value="all">All Accounts</SelectItem>
+                                    {accounts.map((acc) => (
+                                        <SelectItem key={acc.id} value={String(acc.id)}>
+                                            {acc.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        <div className="w-[150px]">
+                            <Select value={selectedRange} onValueChange={handleRangeChange}>
+                                <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
+                                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                                    <SelectValue placeholder="Range" />
+                                </SelectTrigger>
+                                <SelectContent className="border-zinc-800 bg-background text-zinc-300">
+                                    <SelectItem value="this_day">This Day</SelectItem>
+                                    <SelectItem value="this_week">This Week</SelectItem>
+                                    <SelectItem value="this_month">This Month</SelectItem>
+                                    <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                                    <SelectItem value="this_year">This Year</SelectItem>
+                                    <SelectItem value="custom">Custom</SelectItem>
+                                    <SelectItem value="all">All Time</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+
+                        {selectedRange === 'custom' && (
+                            <div className="flex items-center gap-2">
+                                <Input 
+                                    type="date" 
+                                    value={startDate} 
+                                    onChange={(e) => setStartDate(e.target.value)}
+                                    className="w-[130px] h-9 border-zinc-800 text-zinc-300 text-xs"
+                                />
+                                <span className="text-xs text-zinc-400">to</span>
+                                <Input 
+                                    type="date" 
+                                    value={endDate} 
+                                    onChange={(e) => setEndDate(e.target.value)}
+                                    className="w-[130px] h-9 border-zinc-800 text-zinc-300 text-xs"
+                                />
+                                <Button size="sm" variant="secondary" onClick={handleApplyCustomDates} className="h-9 px-3">
+                                    Apply
+                                </Button>
                             </div>
+                        )}
 
-                            <Button onClick={openCreateModal} className="gap-2">
-                                <Plus className="h-4 w-4" /> Add Transaction
+                        {hasActiveFilters && (
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={handleResetFilters}
+                                className="text-xs text-zinc-400 hover:text-zinc-200 gap-1 h-9 ml-auto"
+                            >
+                                <X className="h-3.5 w-3.5" /> Clear
+                            </Button>
+                        )}
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Transaction History Table */}
+            <Card className="border-zinc-800">
+                <CardHeader>
+                    <CardTitle className="text-zinc-200">Transaction History</CardTitle>
+                    <CardDescription className="text-zinc-400">Recent financial activity recorded across all accounts. Click any row to view details.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="border-b border-zinc-800">
+                                <TableHead className="text-zinc-400">Date</TableHead>
+                                <TableHead className="text-zinc-400">Description</TableHead>
+                                <TableHead className="text-zinc-400">Account</TableHead>
+                                <TableHead className="text-right text-zinc-400">Amount</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {transactionList.length > 0 ? (
+                                transactionList.map((tx) => (
+                                    <TableRow 
+                                        key={tx.id} 
+                                        className="cursor-pointer hover:bg-muted/50 border-b border-zinc-800 transition-colors"
+                                        onClick={() => setSelectedDetailTransaction(tx)}
+                                    >
+                                        <TableCell className="font-medium whitespace-nowrap text-zinc-300 text-xs">
+                                            {tx.transaction_date ? String(tx.transaction_date).split('T')[0] : (tx.date || '—')}
+                                        </TableCell>
+                                        
+                                        <TableCell className="max-w-[200px] truncate text-zinc-300 text-sm">
+                                            {tx.description || <span className="text-zinc-500 text-xs italic">No description</span>}
+                                        </TableCell>
+                                        <TableCell className="text-xs text-zinc-400">
+                                            {tx.type === 'transfer' ? (
+                                                <span className="inline-flex items-center gap-1.5 font-medium">
+                                                    <span>{tx.account?.name || '—'}</span>
+                                                    <span className="text-zinc-500 font-normal text-xs">→</span>
+                                                    <span className="text-emerald-400">
+                                                        {tx.destination_account?.name || accounts.find(a => String(a.id) === String(tx.destination_account_id))?.name || '—'}
+                                                    </span>
+                                                </span>
+                                            ) : (
+                                                tx.account?.name || '—'
+                                            )}
+                                        </TableCell>
+                                        <TableCell className={`text-right font-semibold text-sm whitespace-nowrap ${
+                                            tx.type === 'income' 
+                                                ? 'text-emerald-500' 
+                                                : tx.type === 'expense' 
+                                                ? 'text-rose-500' 
+                                                : 'text-blue-400'
+                                        }`}>
+                                            {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
+                                            {formatCurrency(tx.amount)}
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow className="border-b border-zinc-800">
+                                    <TableCell colSpan={4} className="h-24 text-center text-zinc-400">
+                                        No transactions match your criteria.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+
+                {totalRecords > 0 && (
+                    <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-zinc-800 px-6 py-4 text-xs text-zinc-400">
+                        <div>
+                            Showing <span className="font-medium text-zinc-200">{fromRecord}</span> to{' '}
+                            <span className="font-medium text-zinc-200">{toRecord}</span> of{' '}
+                            <span className="font-medium text-zinc-200">{totalRecords}</span> records
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={!prevLink}
+                                onClick={() => prevLink && router.visit(prevLink, { preserveState: true, preserveScroll: true })}
+                                className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
+                            >
+                                <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
+                            </Button>
+
+                            <span className="text-xs font-medium text-zinc-300 px-1">
+                                {currentPage} / {lastPage}
+                            </span>
+
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                disabled={!nextLink}
+                                onClick={() => nextLink && router.visit(nextLink, { preserveState: true, preserveScroll: true })}
+                                className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
+                            >
+                                Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
                             </Button>
                         </div>
+                    </CardFooter>
+                )}
+            </Card>
 
-                        {/* KPI Cards */}
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                            <Card className="border-zinc-800">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-zinc-400">Total Balance</CardTitle>
-                                    <Wallet className="h-4 w-4 text-zinc-400" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-zinc-200">{formatCurrency(kpis?.totalBalance)}</div>
-                                    <p className="text-xs text-zinc-400 mt-1">Across liquid accounts</p>
-                                </CardContent>
-                            </Card>
+            <TransactionDetailSheet 
+                open={!!selectedDetailTransaction}
+                onOpenChange={(open) => !open && setSelectedDetailTransaction(null)}
+                transaction={selectedDetailTransaction}
+                onEdit={openEditModal}
+                onDelete={setDeletingTransaction}
+            />
 
-                            <Card className="border-zinc-800">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-zinc-400">Total Income</CardTitle>
-                                    <TrendingUp className="h-4 w-4 text-emerald-500" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-emerald-500">{formatCurrency(kpis?.totalIncome)}</div>
-                                    <p className="text-xs text-zinc-400 mt-1">Earned for current filter</p>
-                                </CardContent>
-                            </Card>
+            <TransactionFormModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                editingTransaction={editingTransaction}
+                accounts={accounts}
+                categories={categories}
+            />
 
-                            <Card className="border-zinc-800">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-zinc-400">Total Expenses</CardTitle>
-                                    <TrendingDown className="h-4 w-4 text-rose-500" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className="text-2xl font-bold text-rose-500">{formatCurrency(kpis?.totalExpense)}</div>
-                                    <p className="text-xs text-zinc-400 mt-1">Spent for current filter</p>
-                                </CardContent>
-                            </Card>
-
-                            <Card className="border-zinc-800">
-                                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                                    <CardTitle className="text-sm font-medium text-zinc-400">Net Cash Flow</CardTitle>
-                                    <DollarSign className="h-4 w-4 text-zinc-400" />
-                                </CardHeader>
-                                <CardContent>
-                                    <div className={`text-2xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                        {formatCurrency(kpis?.netCashFlow)}
-                                    </div>
-                                    <p className="text-xs text-zinc-400 mt-1">Income minus expenses</p>
-                                </CardContent>
-                            </Card>
-                        </div>
-
-                        {/* Filters Card */}
-                        <Card className="border-zinc-800">
-                            <CardHeader className="pb-3">
-                                <CardTitle className="text-base font-medium flex items-center gap-2 text-zinc-200">
-                                    <Filter className="h-4 w-4 text-zinc-400" /> Filter Transactions
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-3">
-                                <div className="flex flex-wrap items-center gap-3">
-                                    <div className="relative min-w-[200px] flex-1">
-                                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
-                                        <Input
-                                            placeholder="Search description..."
-                                            value={search}
-                                            onChange={(e) => setSearch(e.target.value)}
-                                            className="pl-8 h-9 w-full border-zinc-800 text-zinc-300"
-                                        />
-                                    </div>
-
-                                    <div className="w-[140px]">
-                                        <Select 
-                                            value={selectedType} 
-                                            onValueChange={(val) => {
-                                                setSelectedType(val);
-                                                applyFilters({ type: val });
-                                            }}
-                                        >
-                                            <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
-                                                <SelectValue placeholder="All Types" />
-                                            </SelectTrigger>
-                                            <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                                <SelectItem value="all">All Types</SelectItem>
-                                                <SelectItem value="expense">Expense</SelectItem>
-                                                <SelectItem value="income">Income</SelectItem>
-                                                <SelectItem value="transfer">Transfer</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    <div className="w-[150px]">
-                                        <Select 
-                                            value={selectedAccount} 
-                                            onValueChange={(val) => {
-                                                setSelectedAccount(val);
-                                                applyFilters({ account_id: val });
-                                            }}
-                                        >
-                                            <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
-                                                <SelectValue placeholder="All Accounts" />
-                                            </SelectTrigger>
-                                            <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                                <SelectItem value="all">All Accounts</SelectItem>
-                                                {accounts.map((acc) => (
-                                                    <SelectItem key={acc.id} value={String(acc.id)}>
-                                                        {acc.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    <div className="w-[150px]">
-                                        <Select value={selectedRange} onValueChange={handleRangeChange}>
-                                            <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
-                                                <SlidersHorizontal className="mr-2 h-4 w-4" />
-                                                <SelectValue placeholder="Range" />
-                                            </SelectTrigger>
-                                            <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                                <SelectItem value="this_day">This Day</SelectItem>
-                                                <SelectItem value="this_week">This Week</SelectItem>
-                                                <SelectItem value="this_month">This Month</SelectItem>
-                                                <SelectItem value="last_30_days">Last 30 Days</SelectItem>
-                                                <SelectItem value="this_year">This Year</SelectItem>
-                                                <SelectItem value="custom">Custom</SelectItem>
-                                                <SelectItem value="all">All Time</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-
-                                    {selectedRange === 'custom' && (
-                                        <div className="flex items-center gap-2">
-                                            <Input 
-                                                type="date" 
-                                                value={startDate} 
-                                                onChange={(e) => setStartDate(e.target.value)}
-                                                className="w-[130px] h-9 border-zinc-800 text-zinc-300 text-xs"
-                                            />
-                                            <span className="text-xs text-zinc-400">to</span>
-                                            <Input 
-                                                type="date" 
-                                                value={endDate} 
-                                                onChange={(e) => setEndDate(e.target.value)}
-                                                className="w-[130px] h-9 border-zinc-800 text-zinc-300 text-xs"
-                                            />
-                                            <Button size="sm" variant="secondary" onClick={handleApplyCustomDates} className="h-9 px-3">
-                                                Apply
-                                            </Button>
-                                        </div>
-                                    )}
-
-                                    {hasActiveFilters && (
-                                        <Button 
-                                            variant="ghost" 
-                                            size="sm" 
-                                            onClick={handleResetFilters}
-                                            className="text-xs text-zinc-400 hover:text-zinc-200 gap-1 h-9 ml-auto"
-                                        >
-                                            <X className="h-3.5 w-3.5" /> Clear
-                                        </Button>
-                                    )}
-                                </div>
-                            </CardContent>
-                        </Card>
-
-                        {/* Transaction History Table */}
-                        <Card className="border-zinc-800">
-                            <CardHeader>
-                                <CardTitle className="text-zinc-200">Transaction History</CardTitle>
-                                <CardDescription className="text-zinc-400">Recent financial activity recorded across all accounts. Click any row to view details.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow className="border-b border-zinc-800">
-                                            <TableHead className="text-zinc-400">Date</TableHead>
-                                            <TableHead className="text-zinc-400">Description</TableHead>
-                                            <TableHead className="text-zinc-400">Account</TableHead>
-                                            <TableHead className="text-right text-zinc-400">Amount</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {transactionList.length > 0 ? (
-                                            transactionList.map((tx) => (
-                                                <TableRow 
-                                                    key={tx.id} 
-                                                    className="cursor-pointer hover:bg-muted/50 border-b border-zinc-800 transition-colors"
-                                                    onClick={() => setSelectedDetailTransaction(tx)}
-                                                >
-                                                    <TableCell className="font-medium whitespace-nowrap text-zinc-300 text-xs">
-                                                        {tx.transaction_date ? String(tx.transaction_date).split('T')[0] : (tx.date || '—')}
-                                                    </TableCell>
-                                                    
-                                                    <TableCell className="max-w-[200px] truncate text-zinc-300 text-sm">
-                                                        {tx.description || <span className="text-zinc-500 text-xs italic">No description</span>}
-                                                    </TableCell>
-                                                    <TableCell className="text-xs text-zinc-400">
-                                                        {tx.type === 'transfer' ? (
-                                                            <span className="inline-flex items-center gap-1.5 font-medium">
-                                                                <span>{tx.account?.name || '—'}</span>
-                                                                <span className="text-zinc-500 font-normal text-xs">→</span>
-                                                                <span className="text-emerald-400">
-                                                                    {tx.destination_account?.name || accounts.find(a => String(a.id) === String(tx.destination_account_id))?.name || '—'}
-                                                                </span>
-                                                            </span>
-                                                        ) : (
-                                                            tx.account?.name || '—'
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell className={`text-right font-semibold text-sm whitespace-nowrap ${
-                                                        tx.type === 'income' 
-                                                            ? 'text-emerald-500' 
-                                                            : tx.type === 'expense' 
-                                                            ? 'text-rose-500' 
-                                                            : 'text-blue-400'
-                                                    }`}>
-                                                        {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
-                                                        {formatCurrency(tx.amount)}
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        ) : (
-                                            <TableRow className="border-b border-zinc-800">
-                                                <TableCell colSpan={4} className="h-24 text-center text-zinc-400">
-                                                    No transactions match your criteria.
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-
-                            {/* Refactored Clean Pagination Footer */}
-                            {totalRecords > 0 && (
-                                <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-zinc-800 px-6 py-4 text-xs text-zinc-400">
-                                    <div>
-                                        Showing <span className="font-medium text-zinc-200">{fromRecord}</span> to{' '}
-                                        <span className="font-medium text-zinc-200">{toRecord}</span> of{' '}
-                                        <span className="font-medium text-zinc-200">{totalRecords}</span> records
-                                    </div>
-
-                                    <div className="flex items-center gap-2">
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            disabled={!prevLink}
-                                            onClick={() => prevLink && router.visit(prevLink, { preserveState: true, preserveScroll: true })}
-                                            className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
-                                        >
-                                            <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
-                                        </Button>
-
-                                        <span className="text-xs font-medium text-zinc-300 px-1">
-                                            {currentPage} / {lastPage}
-                                        </span>
-
-                                        <Button
-                                            variant="outline"
-                                            size="sm"
-                                            disabled={!nextLink}
-                                            onClick={() => nextLink && router.visit(nextLink, { preserveState: true, preserveScroll: true })}
-                                            className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
-                                        >
-                                            Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                                        </Button>
-                                    </div>
-                                </CardFooter>
-                            )}
-                        </Card>
-                    </main>
-                </SidebarInset>
-
-                <TransactionDetailSheet 
-                    open={!!selectedDetailTransaction}
-                    onOpenChange={(open) => !open && setSelectedDetailTransaction(null)}
-                    transaction={selectedDetailTransaction}
-                    onEdit={openEditModal}
-                    onDelete={setDeletingTransaction}
-                />
-
-                <TransactionFormModal
-                    isOpen={isModalOpen}
-                    onClose={() => setIsModalOpen(false)}
-                    editingTransaction={editingTransaction}
-                    accounts={accounts}
-                    categories={categories}
-                />
-
-                <AlertDialog open={!!deletingTransaction} onOpenChange={(open) => !open && setDeletingTransaction(null)}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the transaction record.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700">
-                                Delete
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </SidebarProvider>
-        </TooltipProvider>
+            <AlertDialog open={!!deletingTransaction} onOpenChange={(open) => !open && setDeletingTransaction(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the transaction record.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </AppLayout>
     );
 }

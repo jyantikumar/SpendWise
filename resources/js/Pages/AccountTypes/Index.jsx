@@ -1,11 +1,9 @@
 import { useState } from 'react';
-import { Head, router } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { Plus, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
-import { AppSidebar } from '@/components/app-sidebar';
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { TooltipProvider } from '@/components/ui/tooltip';
-import { Separator } from '@/components/ui/separator';
+import AppLayout from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -46,128 +44,119 @@ export default function AccountTypeIndex({ auth, accountTypes }) {
     const handleDelete = () => {
         if (!deletingType) return;
         router.delete(route('account-types.destroy', deletingType.id), {
-            onSuccess: () => setDeletingType(null),
+            onSuccess: () => {
+                toast.success(`Account type "${deletingType.name}" deleted successfully.`);
+                setDeletingType(null);
+            },
+            onError: () => {
+                toast.error('Failed to delete account type.');
+            }
         });
     };
 
     return (
-        <TooltipProvider>
-            <SidebarProvider>
-                <Head title="Account Types - SpendWise" />
-                <AppSidebar user={auth.user} />
+        <AppLayout title="Account Types" headerTitle="Account Types">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Custom Account Types</h2>
+                    <p className="text-sm text-zinc-400">
+                        Define asset classes, banking types, and wallet classifications for your accounts.
+                    </p>
+                </div>
 
-                <SidebarInset>
-                    <header className="flex h-16 shrink-0 items-center gap-2 border-b border-zinc-800 px-4">
-                        <SidebarTrigger className="-ml-1" />
-                        <Separator orientation="vertical" className="mr-2 h-4 bg-zinc-800" />
-                        <h1 className="text-lg font-semibold tracking-tight text-zinc-200">Account Types</h1>
-                    </header>
+                <Button onClick={openCreateModal} className="gap-2">
+                    <Plus className="h-4 w-4" /> Add Account Type
+                </Button>
+            </div>
 
-                    <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                            <div>
-                                <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Custom Account Types</h2>
-                                <p className="text-sm text-zinc-400">
-                                    Define asset classes, banking types, and wallet classifications for your accounts.
-                                </p>
-                            </div>
+            <Card className="border-zinc-800">
+                <CardHeader>
+                    <CardTitle className="text-zinc-200">All Account Types</CardTitle>
+                    <CardDescription className="text-zinc-400">Manage classifications and color badges.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow className="border-b border-zinc-800">
+                                <TableHead className="text-zinc-400">Type Name</TableHead>
+                                <TableHead className="text-right text-zinc-400"></TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {accountTypes && accountTypes.length > 0 ? (
+                                accountTypes.map((type) => (
+                                    <TableRow key={type.id} className="border-b border-zinc-800 transition-colors hover:bg-muted/50">
+                                        <TableCell className="font-medium text-zinc-300">
+                                            <div className="flex items-center gap-3">
+                                                <div 
+                                                    className="h-3.5 w-3.5 rounded-full" 
+                                                    style={{ backgroundColor: type.color || '#3b82f6' }}
+                                                />
+                                                <span>{type.name}</span>
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <button
+                                                        type="button"
+                                                        className="h-8 w-8 inline-flex items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 outline-none transition-colors"
+                                                    >
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                    </button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="border-zinc-800 bg-background text-zinc-300">
+                                                    <DropdownMenuItem onClick={() => openEditModal(type)} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800">
+                                                        <Pencil className="mr-2 h-4 w-4 text-zinc-400" /> Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem 
+                                                        onClick={() => setDeletingType(type)} 
+                                                        className="text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30 cursor-pointer"
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4 text-rose-400" /> Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
+                            ) : (
+                                <TableRow className="border-b border-zinc-800">
+                                    <TableCell colSpan={2} className="text-center py-8 text-zinc-400">
+                                        No account types created yet.
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+            </Card>
 
-                            <Button onClick={openCreateModal} className="gap-2">
-                                <Plus className="h-4 w-4" /> Add Account Type
-                            </Button>
-                        </div>
+            {/* Reusable Account Type Form Modal */}
+            <AccountTypeFormModal
+                isOpen={isModalOpen}
+                onClose={() => setIsModalOpen(false)}
+                editingType={editingType}
+            />
 
-                        <Card className="border-zinc-800">
-                            <CardHeader>
-                                <CardTitle className="text-zinc-200">All Account Types</CardTitle>
-                                <CardDescription className="text-zinc-400">Manage classifications and color badges.</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow className="border-b border-zinc-800">
-                                            <TableHead className="text-zinc-400">Type Name</TableHead>
-                                            <TableHead className="text-right text-zinc-400"></TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {accountTypes && accountTypes.length > 0 ? (
-                                            accountTypes.map((type) => (
-                                                <TableRow key={type.id} className="border-b border-zinc-800 transition-colors hover:bg-muted/50">
-                                                    <TableCell className="font-medium text-zinc-300">
-                                                        <div className="flex items-center gap-3">
-                                                            <div 
-                                                                className="h-3.5 w-3.5 rounded-full" 
-                                                                style={{ backgroundColor: type.color || '#3b82f6' }}
-                                                            />
-                                                            <span>{type.name}</span>
-                                                        </div>
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <button
-                                                                    type="button"
-                                                                    className="h-8 w-8 inline-flex items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 outline-none transition-colors"
-                                                                >
-                                                                    <MoreHorizontal className="h-4 w-4" />
-                                                                </button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end" className="border-zinc-800 bg-background text-zinc-300">
-                                                                <DropdownMenuItem onClick={() => openEditModal(type)} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800">
-                                                                    <Pencil className="mr-2 h-4 w-4 text-zinc-400" /> Edit
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem 
-                                                                    onClick={() => setDeletingType(type)} 
-                                                                    className="text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30 cursor-pointer"
-                                                                >
-                                                                    <Trash2 className="mr-2 h-4 w-4 text-rose-400" /> Delete
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </TableCell>
-                                                </TableRow>
-                                            ))
-                                        ) : (
-                                            <TableRow className="border-b border-zinc-800">
-                                                <TableCell colSpan={3} className="text-center py-8 text-zinc-400">
-                                                    No account types created yet.
-                                                </TableCell>
-                                            </TableRow>
-                                        )}
-                                    </TableBody>
-                                </Table>
-                            </CardContent>
-                        </Card>
-                    </main>
-
-                    {/* Reusable Account Type Form Modal */}
-                    <AccountTypeFormModal
-                        isOpen={isModalOpen}
-                        onClose={() => setIsModalOpen(false)}
-                        editingType={editingType}
-                    />
-
-                    {/* Delete Confirmation Alert */}
-                    <AlertDialog open={!!deletingType} onOpenChange={() => setDeletingType(null)}>
-                        <AlertDialogContent>
-                            <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Account Type?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                    Are you sure you want to delete <strong>{deletingType?.name}</strong>? 
-                                    Accounts linked to this type will retain their name, but their type classification link will be cleared.
-                                </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700 text-white">
-                                    Delete
-                                </AlertDialogAction>
-                            </AlertDialogFooter>
-                        </AlertDialogContent>
-                    </AlertDialog>
-                </SidebarInset>
-            </SidebarProvider>
-        </TooltipProvider>
+            {/* Delete Confirmation Alert */}
+            <AlertDialog open={!!deletingType} onOpenChange={() => setDeletingType(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Account Type?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete <strong>{deletingType?.name}</strong>? 
+                            Accounts linked to this type will retain their name, but their type classification link will be cleared.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700 text-white">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+        </AppLayout>
     );
 }
