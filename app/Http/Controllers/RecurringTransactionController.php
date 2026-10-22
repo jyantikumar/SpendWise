@@ -52,6 +52,46 @@ class RecurringTransactionController extends Controller
         return redirect()->back()->with('success', 'Recurring transaction created successfully.');
     }
 
+    // Update existing recurring transaction rule
+    public function update(Request $request, RecurringTransaction $recurringTransaction)
+    {
+        if ($recurringTransaction->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'title'       => 'required|string|max:255',
+            'amount'      => 'required|numeric|min:0.01',
+            'type'        => 'required|in:income,expense',
+            'frequency'   => 'required|in:daily,weekly,monthly,yearly',
+            'account_id'  => 'required|exists:accounts,id',
+            'category_id' => 'nullable|exists:categories,id',
+            'start_date'  => 'required|date',
+            'auto_create' => 'boolean',
+        ]);
+
+        // Keep next_due_date updated if start_date is modified
+        if ($recurringTransaction->start_date !== $validated['start_date'] && !$recurringTransaction->last_generated_at) {
+            $validated['next_due_date'] = $validated['start_date'];
+        }
+
+        $recurringTransaction->update($validated);
+
+        return redirect()->back()->with('success', 'Recurring transaction updated successfully.');
+    }
+
+    // Delete recurring transaction rule
+    public function destroy(Request $request, RecurringTransaction $recurringTransaction)
+    {
+        if ($recurringTransaction->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $recurringTransaction->delete();
+
+        return redirect()->back()->with('success', 'Recurring transaction deleted successfully.');
+    }
+
     // Manual execution trigger ("Pay Now" button)
     public function process(Request $request, RecurringTransaction $recurringTransaction)
     {

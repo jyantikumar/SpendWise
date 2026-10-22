@@ -55,10 +55,12 @@ Route::get('/accounts/{account}/transactions', [AccountController::class, 'accou
     // Analysis Analytics Page
     Route::get('/analysis', [AnalysisController::class, 'index'])->name('analysis.index');
 
-Route::get('/subscriptions', [RecurringTransactionController::class, 'index'])->name('subscriptions.index');
+   Route::get('/subscriptions', [RecurringTransactionController::class, 'index'])->name('subscriptions.index');
     Route::post('/recurring', [RecurringTransactionController::class, 'store'])->name('recurring.store');
+    Route::put('/recurring/{recurringTransaction}', [RecurringTransactionController::class, 'update'])->name('recurring.update');
+    Route::delete('/recurring/{recurringTransaction}', [RecurringTransactionController::class, 'destroy'])->name('recurring.destroy');
     Route::post('/recurring/{recurringTransaction}/process', [RecurringTransactionController::class, 'process'])->name('recurring.process');
-
+    Route::patch('/recurring/{recurringTransaction}/toggle', [RecurringTransactionController::class, 'toggle'])->name('recurring.toggle');
 });
 
 require __DIR__.'/auth.php';

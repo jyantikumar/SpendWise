@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { 
     Dialog, 
@@ -19,8 +20,10 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 
-export function CreateRecurringDialog({ open, onOpenChange, accounts = [], categories = [] }) {
-    const { data, setData, post, processing, errors, reset } = useForm({
+export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, accounts = [], categories = [] }) {
+    const isEditing = Boolean(editingItem);
+
+    const { data, setData, post, put, processing, errors, reset } = useForm({
         title: '',
         amount: '',
         type: 'expense',
@@ -31,7 +34,35 @@ export function CreateRecurringDialog({ open, onOpenChange, accounts = [], categ
         auto_create: true,
     });
 
-    // Filter categories dynamically according to selected transaction type (expense vs income)
+    // Populate or reset form fields when editingItem or open state changes
+    useEffect(() => {
+        if (editingItem) {
+            setData({
+                title: editingItem.title || '',
+                amount: editingItem.amount ? String(editingItem.amount) : '',
+                type: editingItem.type || 'expense',
+                frequency: editingItem.frequency || 'monthly',
+                account_id: editingItem.account_id ? String(editingItem.account_id) : (accounts[0]?.id ? String(accounts[0].id) : ''),
+                category_id: editingItem.category_id ? String(editingItem.category_id) : '',
+                start_date: editingItem.next_due_date ? String(editingItem.next_due_date).split('T')[0] : (editingItem.start_date ? String(editingItem.start_date).split('T')[0] : new Date().toISOString().slice(0, 10)),
+                auto_create: Boolean(editingItem.auto_create),
+            });
+        } else {
+            reset();
+            setData({
+                title: '',
+                amount: '',
+                type: 'expense',
+                frequency: 'monthly',
+                account_id: accounts[0]?.id ? String(accounts[0].id) : '',
+                category_id: '',
+                start_date: new Date().toISOString().slice(0, 10),
+                auto_create: true,
+            });
+        }
+    }, [editingItem, open]);
+
+    // Filter categories dynamically according to selected transaction type
     const filteredCategories = categories.filter(
         (cat) => !cat.type || cat.type === data.type
     );
@@ -46,12 +77,24 @@ export function CreateRecurringDialog({ open, onOpenChange, accounts = [], categ
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('recurring.store'), {
-            onSuccess: () => {
-                reset();
-                onOpenChange(false);
-            },
-        });
+
+        if (isEditing) {
+            put(route('recurring.update', editingItem.id), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    reset();
+                    onOpenChange(false);
+                },
+            });
+        } else {
+            post(route('recurring.store'), {
+                preserveScroll: true,
+                onSuccess: () => {
+                    reset();
+                    onOpenChange(false);
+                },
+            });
+        }
     };
 
     return (
@@ -59,10 +102,12 @@ export function CreateRecurringDialog({ open, onOpenChange, accounts = [], categ
             <DialogContent className="sm:max-w-[540px] border-zinc-800 bg-zinc-950 text-zinc-100">
                 <DialogHeader>
                     <DialogTitle className="text-lg font-semibold text-zinc-100">
-                        Add Recurring Transaction
+                        {isEditing ? 'Edit Recurring Rule' : 'Add Recurring Transaction'}
                     </DialogTitle>
                     <DialogDescription className="text-xs text-zinc-400">
-                        Configure a repeating bill, subscription, or automated income source.
+                        {isEditing 
+                            ? 'Update schedule, amounts, or auto-posting parameters for this recurring rule.'
+                            : 'Configure a repeating bill, subscription, or automated income source.'}
                     </DialogDescription>
                 </DialogHeader>
 
@@ -135,7 +180,7 @@ export function CreateRecurringDialog({ open, onOpenChange, accounts = [], categ
 
                         <div className="space-y-1.5">
                             <Label htmlFor="start_date" className="text-xs text-zinc-300">
-                                Start Date
+                                {isEditing ? 'Next Due Date' : 'Start Date'}
                             </Label>
                             <Input
                                 id="start_date"
@@ -209,7 +254,7 @@ export function CreateRecurringDialog({ open, onOpenChange, accounts = [], categ
                             Cancel
                         </Button>
                         <Button type="submit" disabled={processing} className="h-9 text-xs">
-                            {processing ? 'Saving...' : 'Create Rule'}
+                            {processing ? 'Saving...' : isEditing ? 'Update Rule' : 'Create Rule'}
                         </Button>
                     </DialogFooter>
                 </form>
