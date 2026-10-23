@@ -36,7 +36,7 @@ export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, 
     });
 
     useEffect(() => {
-        if (editingItem) {
+        if (editingItem && open) {
             setData({
                 title: editingItem.title || '',
                 amount: editingItem.amount ? String(editingItem.amount) : '',
@@ -48,24 +48,14 @@ export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, 
                 end_date: editingItem.end_date ? String(editingItem.end_date).split('T')[0] : '',
                 auto_create: Boolean(editingItem.auto_create),
             });
-        } else {
+        } else if (!open) {
             reset();
-            setData({
-                title: '',
-                amount: '',
-                type: 'expense',
-                frequency: 'monthly',
-                account_id: accounts[0]?.id ? String(accounts[0].id) : '',
-                category_id: '',
-                start_date: new Date().toISOString().slice(0, 10),
-                end_date: '',
-                auto_create: true,
-            });
         }
     }, [editingItem, open]);
 
+    // Ensure category list matches data.type OR includes the currently editing item's category so it doesn't get stripped out
     const filteredCategories = categories.filter(
-        (cat) => !cat.type || cat.type === data.type
+        (cat) => !cat.type || cat.type === data.type || String(cat.id) === String(editingItem?.category_id)
     );
 
     const handleTypeChange = (newType) => {
@@ -212,7 +202,7 @@ export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, 
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-1.5">
                             <Label className="text-xs text-zinc-300">Account</Label>
-                            <Select value={data.account_id} onValueChange={(val) => setData('account_id', val)}>
+                            <Select value={data.account_id ? String(data.account_id) : ''} onValueChange={(val) => setData('account_id', val)}>
                                 <SelectTrigger className="h-9 w-full border-zinc-800 bg-zinc-900 text-xs text-zinc-200">
                                     <SelectValue placeholder="Select account" />
                                 </SelectTrigger>
@@ -229,9 +219,9 @@ export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, 
 
                         <div className="space-y-1.5">
                             <Label className="text-xs text-zinc-300">Category</Label>
-                            <Select value={data.category_id} onValueChange={(val) => setData('category_id', val)}>
+                            <Select value={data.category_id ? String(data.category_id) : ''} onValueChange={(val) => setData('category_id', val)}>
                                 <SelectTrigger className="h-9 w-full border-zinc-800 bg-zinc-900 text-xs text-zinc-200">
-                                    <SelectValue placeholder="Optional" />
+                                    <SelectValue placeholder="" />
                                 </SelectTrigger>
                                 <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
                                     {filteredCategories.map((cat) => (
