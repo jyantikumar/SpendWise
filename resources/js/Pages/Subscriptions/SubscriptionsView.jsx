@@ -232,7 +232,7 @@ const totalMonthlyIncome = upcomingInstances
                                 value="rules" 
                                 className="text-xs px-4 h-7 w-full data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100"
                             >
-                                Recurring Rules ({filteredRules.length})
+                                Recurring ({filteredRules.length})
                             </TabsTrigger>
                         </TabsList>
                     </div>
