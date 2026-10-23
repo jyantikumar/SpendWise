@@ -176,439 +176,449 @@ export default function SubscriptionsView({
 
     return (
         <AppLayout title="Recurring & Subscriptions" headerTitle="Recurring & Subscriptions">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">
-                        <RefreshCw className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> Recurring & Subscriptions
-                    </h2>
-                    <p className="text-xs sm:text-sm text-zinc-400">
-                        Manage fixed operational cash outflows, memberships, and automated repeat income.
-                    </p>
+            <div className="space-y-6">
+                {/* Header Action Section */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">
+                            <RefreshCw className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> Recurring & Subscriptions
+                        </h2>
+                        <p className="text-xs sm:text-sm text-zinc-400">
+                            Manage fixed operational cash outflows, memberships, and automated repeat income.
+                        </p>
+                    </div>
+
+                    <Button onClick={openCreateModal} className="w-full sm:w-auto gap-2 text-xs h-9">
+                        <Plus className="h-4 w-4" /> Add Recurring Rule
+                    </Button>
                 </div>
 
-                <Button onClick={openCreateModal} className="gap-2 text-xs h-9">
-                    <Plus className="h-4 w-4" /> Add Recurring Rule
-                </Button>
-            </div>
+                {/* KPI Summary Grid */}
+                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
+                    <Card className="border-zinc-800">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-xs sm:text-sm font-medium text-zinc-400">Estimated Monthly Expenses</CardTitle>
+                            <Calendar className="h-4 w-4 text-rose-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-xl sm:text-2xl font-bold text-rose-500">{formatCurrency(totalMonthlyExpenses)}</div>
+                            <p className="text-[11px] text-zinc-400 mt-1">Normalized active commitments</p>
+                        </CardContent>
+                    </Card>
 
-            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
-                <Card className="border-zinc-800">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-xs sm:text-sm font-medium text-zinc-400">Estimated Monthly Expenses</CardTitle>
-                        <Calendar className="h-4 w-4 text-rose-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-xl sm:text-2xl font-bold text-rose-500">{formatCurrency(totalMonthlyExpenses)}</div>
-                        <p className="text-[11px] text-zinc-400 mt-1">Normalized active commitments</p>
-                    </CardContent>
-                </Card>
+                    <Card className="border-zinc-800">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-xs sm:text-sm font-medium text-zinc-400">Estimated Monthly Income</CardTitle>
+                            <TrendingUp className="h-4 w-4 text-emerald-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-xl sm:text-2xl font-bold text-emerald-500">{formatCurrency(totalMonthlyIncome)}</div>
+                            <p className="text-[11px] text-zinc-400 mt-1">Normalized active recurring inflows</p>
+                        </CardContent>
+                    </Card>
 
-                <Card className="border-zinc-800">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-xs sm:text-sm font-medium text-zinc-400">Estimated Monthly Income</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-emerald-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-xl sm:text-2xl font-bold text-emerald-500">{formatCurrency(totalMonthlyIncome)}</div>
-                        <p className="text-[11px] text-zinc-400 mt-1">Normalized active recurring inflows</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-zinc-800">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-xs sm:text-sm font-medium text-zinc-400">Auto-Created Rules</CardTitle>
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className="text-xl sm:text-2xl font-bold text-emerald-500">
-                            {recurringList.filter(i => i.auto_create).length}
-                        </div>
-                        <p className="text-[11px] text-zinc-400 mt-1">Managed via background scheduler</p>
-                    </CardContent>
-                </Card>
-            </div>
-
-            <Card className="border-zinc-800">
-                <CardHeader className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3">
-                    <div>
-                        <CardTitle className="text-sm sm:text-base text-zinc-200">Scheduled Rules</CardTitle>
-                        <CardDescription className="text-xs text-zinc-400">
-                            Overview of repeat processing schedules across accounts.
-                        </CardDescription>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-2">
-                        <div className="flex gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
-                            {['all', 'expense', 'income'].map((type) => (
-                                <button
-                                    key={type}
-                                    onClick={() => setFilterType(type)}
-                                    className={`px-2.5 py-1 rounded-md text-[11px] capitalize transition-all ${
-                                        filterType === type 
-                                            ? 'bg-zinc-800 text-zinc-100 font-medium' 
-                                            : 'text-zinc-400 hover:text-zinc-200'
-                                    }`}
-                                >
-                                    {type}
-                                </button>
-                            ))}
-                        </div>
-
-                        <div className="flex gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
-                            {['all', 'active', 'paused', 'expired'].map((status) => (
-                                <button
-                                    key={status}
-                                    onClick={() => setFilterStatus(status)}
-                                    className={`px-2.5 py-1 rounded-md text-[11px] capitalize transition-all ${
-                                        filterStatus === status 
-                                            ? 'bg-zinc-800 text-zinc-100 font-medium' 
-                                            : 'text-zinc-400 hover:text-zinc-200'
-                                    }`}
-                                >
-                                    {status}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-                </CardHeader>
-
-                <CardContent className="p-0 sm:p-6">
-                    <div className="block sm:hidden divide-y divide-zinc-800/80 px-4">
-                        {filteredItems.length === 0 ? (
-                            <div className="text-center py-8 text-zinc-500 text-xs">
-                                No recurring schedules found.
+                    <Card className="border-zinc-800">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                            <CardTitle className="text-xs sm:text-sm font-medium text-zinc-400">Auto-Created Rules</CardTitle>
+                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        </CardHeader>
+                        <CardContent>
+                            <div className="text-xl sm:text-2xl font-bold text-emerald-500">
+                                {recurringList.filter(i => i.auto_create).length}
                             </div>
-                        ) : (
-                            filteredItems.map((item) => {
-                                const expired = isExpired(item.end_date);
-                                const effectiveActive = item.is_active && !expired;
+                            <p className="text-[11px] text-zinc-400 mt-1">Managed via background scheduler</p>
+                        </CardContent>
+                    </Card>
+                </div>
 
-                                return (
-                                    <div 
-                                        key={item.id} 
-                                        className={`py-3.5 flex items-center justify-between gap-2 transition-opacity ${
-                                            !effectiveActive ? 'opacity-40 bg-zinc-950/40' : ''
+                {/* Rules Container Card */}
+                <Card className="border-zinc-800">
+                    <CardHeader className="p-4 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3">
+                        <div>
+                            <CardTitle className="text-sm sm:text-base text-zinc-200">Scheduled Rules</CardTitle>
+                            <CardDescription className="text-xs text-zinc-400">
+                                Overview of repeat processing schedules across accounts.
+                            </CardDescription>
+                        </div>
+
+                        {/* Segmented Pill Grids for Mobile */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
+                            {/* Type Filter Segmented Grid */}
+                            <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 w-full sm:w-auto">
+                                {['all', 'expense', 'income'].map((type) => (
+                                    <button
+                                        key={type}
+                                        onClick={() => setFilterType(type)}
+                                        className={`py-1.5 px-3 rounded-md text-[11px] font-medium capitalize text-center transition-all ${
+                                            filterType === type 
+                                                ? 'bg-zinc-800 text-zinc-100 shadow-sm' 
+                                                : 'text-zinc-400 hover:text-zinc-200'
                                         }`}
                                     >
-                                        <div className="min-w-0 flex-1 space-y-1">
-                                            <div className="flex items-center gap-2 flex-wrap">
-                                                <span className="relative flex h-2 w-2 items-center justify-center shrink-0">
-                                                    {effectiveActive && (
-                                                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                                                    )}
-                                                    <span className={`relative inline-flex h-2 w-2 rounded-full ${
-                                                        effectiveActive ? 'bg-emerald-500' : (expired ? 'bg-zinc-500' : 'bg-rose-500')
-                                                    }`} />
-                                                </span>
+                                        {type}
+                                    </button>
+                                ))}
+                            </div>
 
-                                                <span className={`text-xs font-semibold truncate ${
-                                                    !effectiveActive ? 'line-through text-zinc-400' : 'text-zinc-200'
-                                                }`}>
-                                                    {item.title}
-                                                </span>
+                            {/* Status Filter Segmented Grid */}
+                            <div className="grid grid-cols-4 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 w-full sm:w-auto">
+                                {['all', 'active', 'paused', 'expired'].map((status) => (
+                                    <button
+                                        key={status}
+                                        onClick={() => setFilterStatus(status)}
+                                        className={`py-1.5 px-2.5 rounded-md text-[11px] font-medium capitalize text-center transition-all ${
+                                            filterStatus === status 
+                                                ? 'bg-zinc-800 text-zinc-100 shadow-sm' 
+                                                : 'text-zinc-400 hover:text-zinc-200'
+                                        }`}
+                                    >
+                                        {status}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </CardHeader>
 
-                                                {expired ? (
-                                                    <span className="text-[9px] text-zinc-400 font-medium uppercase tracking-wider border border-zinc-700 px-1 rounded">
-                                                        Expired
+                    <CardContent className="p-0 sm:p-6 sm:pt-0">
+                        {/* Mobile List View (Visible on screens smaller than `sm`) */}
+                        <div className="block sm:hidden divide-y divide-zinc-800/80 px-4">
+                            {filteredItems.length === 0 ? (
+                                <div className="text-center py-8 text-zinc-500 text-xs">
+                                    No recurring schedules found.
+                                </div>
+                            ) : (
+                                filteredItems.map((item) => {
+                                    const expired = isExpired(item.end_date);
+                                    const effectiveActive = item.is_active && !expired;
+
+                                    return (
+                                        <div 
+                                            key={item.id} 
+                                            className={`py-3.5 flex items-center justify-between gap-2 transition-opacity ${
+                                                !effectiveActive ? 'opacity-40 bg-zinc-950/40' : ''
+                                            }`}
+                                        >
+                                            <div className="min-w-0 flex-1 space-y-1">
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="relative flex h-2 w-2 items-center justify-center shrink-0">
+                                                        {effectiveActive && (
+                                                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                                                        )}
+                                                        <span className={`relative inline-flex h-2 w-2 rounded-full ${
+                                                            effectiveActive ? 'bg-emerald-500' : (expired ? 'bg-zinc-500' : 'bg-rose-500')
+                                                        }`} />
                                                     </span>
-                                                ) : !item.is_active && (
-                                                    <span className="text-[9px] text-rose-400 font-medium uppercase tracking-wider">
-                                                        Paused
+
+                                                    <span className={`text-xs font-semibold truncate ${
+                                                        !effectiveActive ? 'line-through text-zinc-400' : 'text-zinc-200'
+                                                    }`}>
+                                                        {item.title}
                                                     </span>
-                                                )}
 
-                                                <Badge variant="outline" className="text-[9px] px-1 py-0 uppercase border-zinc-800 text-zinc-400">
-                                                    {item.frequency}
-                                                </Badge>
-
-                                                {item.auto_create && effectiveActive && (
-                                                    <span className="inline-flex items-center text-[9px] text-emerald-400 font-medium">
-                                                        <Zap className="h-2.5 w-2.5 mr-0.5" /> Auto
-                                                    </span>
-                                                )}
-                                            </div>
-
-                                            <div className="flex items-center gap-2 text-[11px] text-zinc-400 pl-4">
-                                                <span className="truncate">{item.account?.name || 'No account'}</span>
-                                                <span>•</span>
-                                                <span>Due {item.next_due_date ? String(item.next_due_date).split('T')[0] : '—'}</span>
-                                            </div>
-                                        </div>
-
-                                        <div className="flex items-center gap-2 shrink-0">
-                                            <span className={`text-xs font-bold ${
-                                                !effectiveActive 
-                                                    ? 'text-zinc-500' 
-                                                    : item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'
-                                            }`}>
-                                                {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
-                                            </span>
-
-                                            <Button 
-                                                size="sm" 
-                                                variant="outline" 
-                                                disabled={processingId === item.id || !effectiveActive}
-                                                className="h-7 text-[11px] px-2 border-zinc-800 text-zinc-200 hover:bg-zinc-800 disabled:opacity-40"
-                                                onClick={() => handleProcess(item)}
-                                            >
-                                                {processingId === item.id ? (
-                                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                                ) : (
-                                                    'Pay'
-                                                )}
-                                            </Button>
-
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-400">
-                                                        <MoreHorizontal className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                                                    <DropdownMenuLabel className="text-xs">Rule Actions</DropdownMenuLabel>
-                                                    <DropdownMenuSeparator className="bg-zinc-800" />
-                                                    <DropdownMenuItem onClick={() => openEditModal(item)} className="cursor-pointer text-xs">
-                                                        <Pencil className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Edit
-                                                    </DropdownMenuItem>
-                                                    {!expired && (
-                                                        <>
-                                                            <DropdownMenuItem onClick={() => handleSkip(item)} disabled={!item.is_active} className="cursor-pointer text-xs">
-                                                                <FastForward className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Skip Next Payment
-                                                            </DropdownMenuItem>
-                                                            <DropdownMenuItem onClick={() => handleToggleActive(item)} className="cursor-pointer text-xs">
-                                                                <Power className="mr-2 h-3.5 w-3.5 text-zinc-400" />
-                                                                {item.is_active ? 'Pause' : 'Activate'}
-                                                            </DropdownMenuItem>
-                                                        </>
-                                                    )}
-                                                    <DropdownMenuSeparator className="bg-zinc-800" />
-                                                    <DropdownMenuItem 
-                                                        onClick={() => setDeletingItem(item)} 
-                                                        className="cursor-pointer text-xs text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30"
-                                                    >
-                                                        <Trash2 className="mr-2 h-3.5 w-3.5 text-rose-400" /> Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
-
-                    <div className="hidden sm:block">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="border-b border-zinc-800">
-                                    <TableHead className="text-zinc-400">Title</TableHead>
-                                    <TableHead className="text-zinc-400">Frequency</TableHead>
-                                    <TableHead className="text-zinc-400">Account</TableHead>
-                                    <TableHead className="text-zinc-400">Next Due Date</TableHead>
-                                    <TableHead className="text-zinc-400">End Date</TableHead>
-                                    <TableHead className="text-zinc-400 text-center">Auto-Post</TableHead>
-                                    <TableHead className="text-right text-zinc-400">Amount</TableHead>
-                                    <TableHead className="text-right text-zinc-400">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {filteredItems.length > 0 ? (
-                                    filteredItems.map((item) => {
-                                        const expired = isExpired(item.end_date);
-                                        const effectiveActive = item.is_active && !expired;
-
-                                        return (
-                                            <TableRow 
-                                                key={item.id} 
-                                                className={`border-b border-zinc-800 transition-colors ${
-                                                    !effectiveActive ? 'opacity-40 bg-zinc-950/65' : 'hover:bg-muted/50'
-                                                }`}
-                                            >
-                                                <TableCell className="font-medium text-zinc-300 text-sm">
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="relative flex h-2.5 w-2.5 items-center justify-center">
-                                                            {effectiveActive && (
-                                                                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                                                            )}
-                                                            <span className={`relative inline-flex h-2 w-2 rounded-full ${
-                                                                effectiveActive ? 'bg-emerald-500' : (expired ? 'bg-zinc-500' : 'bg-rose-500')
-                                                            }`} />
+                                                    {expired ? (
+                                                        <span className="text-[9px] text-zinc-400 font-medium uppercase tracking-wider border border-zinc-700 px-1 rounded">
+                                                            Expired
                                                         </span>
+                                                    ) : !item.is_active && (
+                                                        <span className="text-[9px] text-rose-400 font-medium uppercase tracking-wider">
+                                                            Paused
+                                                        </span>
+                                                    )}
 
-                                                        <div>
-                                                            <div className="flex items-center gap-2">
-                                                                <p className={`font-semibold ${!effectiveActive ? 'line-through text-zinc-500' : 'text-zinc-200'}`}>
-                                                                    {item.title}
-                                                                </p>
-                                                                {expired ? (
-                                                                    <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider border border-zinc-700 px-1 rounded">
-                                                                        Expired
-                                                                    </span>
-                                                                ) : !item.is_active && (
-                                                                    <span className="text-[10px] text-rose-400 font-medium uppercase tracking-wider">
-                                                                        Paused
-                                                                    </span>
-                                                                )}
-                                                            </div>
-                                                            <p className="text-xs text-zinc-500 capitalize">{item.type}</p>
-                                                        </div>
-                                                    </div>
-                                                </TableCell>
-
-                                                <TableCell className="text-xs text-zinc-400">
-                                                    <Badge variant="outline" className="text-xs capitalize border-zinc-800 text-zinc-300">
+                                                    <Badge variant="outline" className="text-[9px] px-1 py-0 uppercase border-zinc-800 text-zinc-400">
                                                         {item.frequency}
                                                     </Badge>
-                                                </TableCell>
 
-                                                <TableCell className="text-xs text-zinc-400">
-                                                    <div className="space-y-0.5">
-                                                        <div className="flex items-center gap-1.5 text-zinc-300">
-                                                            <Wallet className="h-3.5 w-3.5 text-zinc-500" />
-                                                            <span>{item.account?.name || '—'}</span>
-                                                        </div>
-                                                        {item.category && (
-                                                            <div className="flex items-center gap-1.5 text-zinc-500 text-xs">
-                                                                <Tag className="h-3 w-3" />
-                                                                <span>{item.category.name}</span>
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                </TableCell>
-
-                                                <TableCell className="font-medium whitespace-nowrap text-zinc-300 text-xs">
-                                                    {item.next_due_date ? String(item.next_due_date).split('T')[0] : '—'}
-                                                </TableCell>
-
-                                                <TableCell className="whitespace-nowrap text-zinc-400 text-xs">
-                                                    {item.end_date ? String(item.end_date).split('T')[0] : 'Indefinite'}
-                                                </TableCell>
-
-                                                <TableCell className="text-center">
-                                                    {item.auto_create ? (
-                                                        <Badge className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 gap-1">
-                                                            <Zap className="h-3 w-3" /> Auto
-                                                        </Badge>
-                                                    ) : (
-                                                        <Badge variant="outline" className="text-xs border-zinc-800 text-zinc-400">
-                                                            Manual
-                                                        </Badge>
+                                                    {item.auto_create && effectiveActive && (
+                                                        <span className="inline-flex items-center text-[9px] text-emerald-400 font-medium">
+                                                            <Zap className="h-2.5 w-2.5 mr-0.5" /> Auto
+                                                        </span>
                                                     )}
-                                                </TableCell>
+                                                </div>
 
-                                                <TableCell className={`text-right font-semibold text-sm whitespace-nowrap ${
+                                                <div className="flex items-center gap-2 text-[11px] text-zinc-400 pl-4">
+                                                    <span className="truncate">{item.account?.name || 'No account'}</span>
+                                                    <span>•</span>
+                                                    <span>Due {item.next_due_date ? String(item.next_due_date).split('T')[0] : '—'}</span>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-2 shrink-0">
+                                                <span className={`text-xs font-bold ${
                                                     !effectiveActive 
                                                         ? 'text-zinc-500' 
                                                         : item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'
                                                 }`}>
-                                                    {item.type === 'income' ? '+' : '-'}
-                                                    {formatCurrency(item.amount)}
-                                                </TableCell>
+                                                    {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
+                                                </span>
 
-                                                <TableCell className="text-right">
-                                                    <div className="flex items-center justify-end gap-2">
-                                                        <Button 
-                                                            size="sm" 
-                                                            variant="outline" 
-                                                            disabled={processingId === item.id || !effectiveActive}
-                                                            className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs disabled:opacity-40"
-                                                            onClick={() => handleProcess(item)}
-                                                        >
-                                                            {processingId === item.id ? (
-                                                                <>
-                                                                    <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin text-zinc-400" />
-                                                                    Posting...
-                                                                </>
-                                                            ) : (
-                                                                'Pay Now'
-                                                            )}
+                                                <Button 
+                                                    size="sm" 
+                                                    variant="outline" 
+                                                    disabled={processingId === item.id || !effectiveActive}
+                                                    className="h-7 text-[11px] px-2 border-zinc-800 text-zinc-200 hover:bg-zinc-800 disabled:opacity-40"
+                                                    onClick={() => handleProcess(item)}
+                                                >
+                                                    {processingId === item.id ? (
+                                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                                    ) : (
+                                                        'Pay'
+                                                    )}
+                                                </Button>
+
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-400">
+                                                            <MoreHorizontal className="h-3.5 w-3.5" />
                                                         </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-900 text-zinc-200">
+                                                        <DropdownMenuLabel className="text-xs">Rule Actions</DropdownMenuLabel>
+                                                        <DropdownMenuSeparator className="bg-zinc-800" />
+                                                        <DropdownMenuItem onClick={() => openEditModal(item)} className="cursor-pointer text-xs">
+                                                            <Pencil className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Edit
+                                                        </DropdownMenuItem>
+                                                        {!expired && (
+                                                            <>
+                                                                <DropdownMenuItem onClick={() => handleSkip(item)} disabled={!item.is_active} className="cursor-pointer text-xs">
+                                                                    <FastForward className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Skip Next Payment
+                                                                </DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleToggleActive(item)} className="cursor-pointer text-xs">
+                                                                    <Power className="mr-2 h-3.5 w-3.5 text-zinc-400" />
+                                                                    {item.is_active ? 'Pause' : 'Activate'}
+                                                                </DropdownMenuItem>
+                                                            </>
+                                                        )}
+                                                        <DropdownMenuSeparator className="bg-zinc-800" />
+                                                        <DropdownMenuItem 
+                                                            onClick={() => setDeletingItem(item)} 
+                                                            className="cursor-pointer text-xs text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30"
+                                                        >
+                                                            <Trash2 className="mr-2 h-3.5 w-3.5 text-rose-400" /> Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                            )}
+                        </div>
 
-                                                        <DropdownMenu>
-                                                            <DropdownMenuTrigger asChild>
-                                                                <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-400 hover:text-zinc-200">
-                                                                    <MoreHorizontal className="h-4 w-4" />
-                                                                </Button>
-                                                            </DropdownMenuTrigger>
-                                                            <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                                                                <DropdownMenuLabel className="text-xs">Rule Actions</DropdownMenuLabel>
-                                                                <DropdownMenuSeparator className="bg-zinc-800" />
-                                                                <DropdownMenuItem onClick={() => openEditModal(item)} className="cursor-pointer text-xs">
-                                                                    <Pencil className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Edit
-                                                                </DropdownMenuItem>
-                                                                {!expired && (
-                                                                    <>
-                                                                        <DropdownMenuItem onClick={() => handleSkip(item)} disabled={!item.is_active} className="cursor-pointer text-xs">
-                                                                            <FastForward className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Skip Next Payment
-                                                                        </DropdownMenuItem>
-                                                                        <DropdownMenuItem onClick={() => handleToggleActive(item)} className="cursor-pointer text-xs">
-                                                                            <Power className="mr-2 h-3.5 w-3.5 text-zinc-400" />
-                                                                            {item.is_active ? 'Pause' : 'Activate'}
-                                                                        </DropdownMenuItem>
-                                                                    </>
-                                                                )}
-                                                                <DropdownMenuSeparator className="bg-zinc-800" />
-                                                                <DropdownMenuItem
-                                                                    onClick={() => setDeletingItem(item)}
-                                                                    className="cursor-pointer text-xs text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30"
-                                                                >
-                                                                    <Trash2 className="mr-2 h-3.5 w-3.5 text-rose-400" /> Delete
-                                                                </DropdownMenuItem>
-                                                            </DropdownMenuContent>
-                                                        </DropdownMenu>
-                                                    </div>
-                                                </TableCell>
-                                            </TableRow>
-                                        );
-                                    })
-                                ) : (
-                                    <TableRow>
-                                        <TableCell colSpan={8} className="py-8 text-center text-xs text-zinc-500">
-                                            No recurring schedules found.
-                                        </TableCell>
+                        {/* Desktop Table View (Visible on `sm` and larger screens) */}
+                        <div className="hidden sm:block">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="border-b border-zinc-800">
+                                        <TableHead className="text-zinc-400">Title</TableHead>
+                                        <TableHead className="text-zinc-400">Frequency</TableHead>
+                                        <TableHead className="text-zinc-400">Account</TableHead>
+                                        <TableHead className="text-zinc-400">Next Due Date</TableHead>
+                                        <TableHead className="text-zinc-400">End Date</TableHead>
+                                        <TableHead className="text-zinc-400 text-center">Auto-Post</TableHead>
+                                        <TableHead className="text-right text-zinc-400">Amount</TableHead>
+                                        <TableHead className="text-right text-zinc-400">Actions</TableHead>
                                     </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
-                    </div>
-                </CardContent>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredItems.length > 0 ? (
+                                        filteredItems.map((item) => {
+                                            const expired = isExpired(item.end_date);
+                                            const effectiveActive = item.is_active && !expired;
 
-                {totalRecords > 0 && (
-                    <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-zinc-800 px-4 sm:px-6 py-4 text-xs text-zinc-400">
-                        <div>
-                            Showing <span className="font-medium text-zinc-200">{fromRecord}</span> to{' '}
-                            <span className="font-medium text-zinc-200">{toRecord}</span> of{' '}
-                            <span className="font-medium text-zinc-200">{totalRecords}</span> records
+                                            return (
+                                                <TableRow 
+                                                    key={item.id} 
+                                                    className={`border-b border-zinc-800 transition-colors ${
+                                                        !effectiveActive ? 'opacity-40 bg-zinc-950/65' : 'hover:bg-muted/50'
+                                                    }`}
+                                                >
+                                                    <TableCell className="font-medium text-zinc-300 text-sm">
+                                                        <div className="flex items-center gap-3">
+                                                            <span className="relative flex h-2.5 w-2.5 items-center justify-center">
+                                                                {effectiveActive && (
+                                                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                                                                )}
+                                                                <span className={`relative inline-flex h-2 w-2 rounded-full ${
+                                                                    effectiveActive ? 'bg-emerald-500' : (expired ? 'bg-zinc-500' : 'bg-rose-500')
+                                                                }`} />
+                                                            </span>
+
+                                                            <div>
+                                                                <div className="flex items-center gap-2">
+                                                                    <p className={`font-semibold ${!effectiveActive ? 'line-through text-zinc-500' : 'text-zinc-200'}`}>
+                                                                        {item.title}
+                                                                    </p>
+                                                                    {expired ? (
+                                                                        <span className="text-[10px] text-zinc-400 font-medium uppercase tracking-wider border border-zinc-700 px-1 rounded">
+                                                                            Expired
+                                                                        </span>
+                                                                    ) : !item.is_active && (
+                                                                        <span className="text-[10px] text-rose-400 font-medium uppercase tracking-wider">
+                                                                            Paused
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                                <p className="text-xs text-zinc-500 capitalize">{item.type}</p>
+                                                            </div>
+                                                        </div>
+                                                    </TableCell>
+
+                                                    <TableCell className="text-xs text-zinc-400">
+                                                        <Badge variant="outline" className="text-xs capitalize border-zinc-800 text-zinc-300">
+                                                            {item.frequency}
+                                                        </Badge>
+                                                    </TableCell>
+
+                                                    <TableCell className="text-xs text-zinc-400">
+                                                        <div className="space-y-0.5">
+                                                            <div className="flex items-center gap-1.5 text-zinc-300">
+                                                                <Wallet className="h-3.5 w-3.5 text-zinc-500" />
+                                                                <span>{item.account?.name || '—'}</span>
+                                                            </div>
+                                                            {item.category && (
+                                                                <div className="flex items-center gap-1.5 text-zinc-500 text-xs">
+                                                                    <Tag className="h-3 w-3" />
+                                                                    <span>{item.category.name}</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </TableCell>
+
+                                                    <TableCell className="font-medium whitespace-nowrap text-zinc-300 text-xs">
+                                                        {item.next_due_date ? String(item.next_due_date).split('T')[0] : '—'}
+                                                    </TableCell>
+
+                                                    <TableCell className="whitespace-nowrap text-zinc-400 text-xs">
+                                                        {item.end_date ? String(item.end_date).split('T')[0] : 'Indefinite'}
+                                                    </TableCell>
+
+                                                    <TableCell className="text-center">
+                                                        {item.auto_create ? (
+                                                            <Badge className="text-xs bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 gap-1">
+                                                                <Zap className="h-3 w-3" /> Auto
+                                                            </Badge>
+                                                        ) : (
+                                                            <Badge variant="outline" className="text-xs border-zinc-800 text-zinc-400">
+                                                                Manual
+                                                            </Badge>
+                                                        )}
+                                                    </TableCell>
+
+                                                    <TableCell className={`text-right font-semibold text-sm whitespace-nowrap ${
+                                                        !effectiveActive 
+                                                            ? 'text-zinc-500' 
+                                                            : item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'
+                                                    }`}>
+                                                        {item.type === 'income' ? '+' : '-'}
+                                                        {formatCurrency(item.amount)}
+                                                    </TableCell>
+
+                                                    <TableCell className="text-right">
+                                                        <div className="flex items-center justify-end gap-2">
+                                                            <Button 
+                                                                size="sm" 
+                                                                variant="outline" 
+                                                                disabled={processingId === item.id || !effectiveActive}
+                                                                className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs disabled:opacity-40"
+                                                                onClick={() => handleProcess(item)}
+                                                            >
+                                                                {processingId === item.id ? (
+                                                                    <>
+                                                                        <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin text-zinc-400" />
+                                                                        Posting...
+                                                                    </>
+                                                                ) : (
+                                                                    'Pay Now'
+                                                                )}
+                                                            </Button>
+
+                                                            <DropdownMenu>
+                                                                <DropdownMenuTrigger asChild>
+                                                                    <Button size="icon" variant="ghost" className="h-8 w-8 text-zinc-400 hover:text-zinc-200">
+                                                                        <MoreHorizontal className="h-4 w-4" />
+                                                                    </Button>
+                                                                </DropdownMenuTrigger>
+                                                                <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-900 text-zinc-200">
+                                                                    <DropdownMenuLabel className="text-xs">Rule Actions</DropdownMenuLabel>
+                                                                    <DropdownMenuSeparator className="bg-zinc-800" />
+                                                                    <DropdownMenuItem onClick={() => openEditModal(item)} className="cursor-pointer text-xs">
+                                                                        <Pencil className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Edit
+                                                                    </DropdownMenuItem>
+                                                                    {!expired && (
+                                                                        <>
+                                                                            <DropdownMenuItem onClick={() => handleSkip(item)} disabled={!item.is_active} className="cursor-pointer text-xs">
+                                                                                <FastForward className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Skip Next Payment
+                                                                            </DropdownMenuItem>
+                                                                            <DropdownMenuItem onClick={() => handleToggleActive(item)} className="cursor-pointer text-xs">
+                                                                                <Power className="mr-2 h-3.5 w-3.5 text-zinc-400" />
+                                                                                {item.is_active ? 'Pause' : 'Activate'}
+                                                                            </DropdownMenuItem>
+                                                                        </>
+                                                                    )}
+                                                                    <DropdownMenuSeparator className="bg-zinc-800" />
+                                                                    <DropdownMenuItem
+                                                                        onClick={() => setDeletingItem(item)}
+                                                                        className="cursor-pointer text-xs text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30"
+                                                                    >
+                                                                        <Trash2 className="mr-2 h-3.5 w-3.5 text-rose-400" /> Delete
+                                                                    </DropdownMenuItem>
+                                                                </DropdownMenuContent>
+                                                            </DropdownMenu>
+                                                        </div>
+                                                    </TableCell>
+                                                </TableRow>
+                                            );
+                                        })
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell colSpan={8} className="py-8 text-center text-xs text-zinc-500">
+                                                No recurring schedules found.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
                         </div>
+                    </CardContent>
 
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={!prevLink}
-                                onClick={() => prevLink && router.visit(prevLink, { preserveState: true, preserveScroll: true })}
-                                className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
-                            >
-                                <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
-                            </Button>
+                    {totalRecords > 0 && (
+                        <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-zinc-800 px-4 sm:px-6 py-4 text-xs text-zinc-400">
+                            <div>
+                                Showing <span className="font-medium text-zinc-200">{fromRecord}</span> to{' '}
+                                <span className="font-medium text-zinc-200">{toRecord}</span> of{' '}
+                                <span className="font-medium text-zinc-200">{totalRecords}</span> records
+                            </div>
 
-                            <span className="text-xs font-medium text-zinc-300 px-1">
-                                {currentPage} / {lastPage}
-                            </span>
+                            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={!prevLink}
+                                    onClick={() => prevLink && router.visit(prevLink, { preserveState: true, preserveScroll: true })}
+                                    className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
+                                >
+                                    <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
+                                </Button>
 
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={!nextLink}
-                                onClick={() => nextLink && router.visit(nextLink, { preserveState: true, preserveScroll: true })}
-                                className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
-                            >
-                                Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                            </Button>
-                        </div>
-                    </CardFooter>
-                )}
-            </Card>
+                                <span className="text-xs font-medium text-zinc-300 px-1">
+                                    {currentPage} / {lastPage}
+                                </span>
+
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={!nextLink}
+                                    onClick={() => nextLink && router.visit(nextLink, { preserveState: true, preserveScroll: true })}
+                                    className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
+                                >
+                                    Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                                </Button>
+                            </div>
+                        </CardFooter>
+                    )}
+                </Card>
+            </div>
 
             <CreateRecurringDialog
                 open={isCreateOpen}
@@ -627,11 +637,11 @@ export default function SubscriptionsView({
                             This will stop future automated processing for this rule. Existing logged transactions will remain untouched.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel className="border-zinc-800 text-zinc-300 hover:bg-zinc-900 h-9 text-xs">
+                    <AlertDialogFooter className="flex flex-col-reverse sm:flex-row gap-2">
+                        <AlertDialogCancel className="border-zinc-800 text-zinc-300 hover:bg-zinc-900 h-9 text-xs w-full sm:w-auto">
                             Cancel
                         </AlertDialogCancel>
-                        <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700 text-white h-9 text-xs">
+                        <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700 text-white h-9 text-xs w-full sm:w-auto">
                             Delete
                         </AlertDialogAction>
                     </AlertDialogFooter>
