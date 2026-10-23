@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
     DropdownMenu, 
     DropdownMenuContent, 
@@ -155,41 +156,32 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                             </CardDescription>
                         </div>
 
-                        {/* Filter Controls Row */}
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
-                            {/* Status Filter Tabs (Active / Inactive / All) */}
-                            <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs shrink-0">
-                                {['active', 'inactive', 'all'].map((status) => (
-                                    <button
-                                        key={status}
-                                        onClick={() => setStatusFilter(status)}
-                                        className={`py-1.5 px-3 rounded-md font-medium capitalize text-center transition-all ${
-                                            statusFilter === status 
-                                                ? 'bg-zinc-800 text-zinc-100 shadow-sm' 
-                                                : 'text-zinc-400 hover:text-zinc-200'
-                                        }`}
-                                    >
-                                        {status}
-                                    </button>
-                                ))}
-                            </div>
+                        {/* Filter Select Controls Row */}
+                        <div className="grid grid-cols-2 gap-2.5 w-full md:w-auto md:flex md:items-center">
+                            {/* Status Select */}
+                            <Select value={statusFilter} onValueChange={setStatusFilter}>
+                                <SelectTrigger className="h-9 w-full md:w-[130px] border-zinc-800 text-zinc-300 bg-zinc-900">
+                                    <SelectValue placeholder="Status" />
+                                </SelectTrigger>
+                                <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-300">
+                                    <SelectItem value="active">Active</SelectItem>
+                                    <SelectItem value="inactive">Inactive</SelectItem>
+                                    <SelectItem value="all">All Status</SelectItem>
+                                </SelectContent>
+                            </Select>
 
-                            {/* Type Filter Tabs */}
-                            <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-1 rounded-lg text-xs overflow-x-auto no-scrollbar">
-                                {['all', 'expense', 'income', 'transfer'].map((tab) => (
-                                    <button
-                                        key={tab}
-                                        onClick={() => setSelectedTab(tab)}
-                                        className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md font-medium capitalize transition-colors whitespace-nowrap ${
-                                            selectedTab === tab
-                                                ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                                                : 'text-zinc-400 hover:text-zinc-200'
-                                        }`}
-                                    >
-                                        {tab}
-                                    </button>
-                                ))}
-                            </div>
+                            {/* Type Select */}
+                            <Select value={selectedTab} onValueChange={setSelectedTab}>
+                                <SelectTrigger className="h-9 w-full md:w-[140px] border-zinc-800 text-zinc-300 bg-zinc-900">
+                                    <SelectValue placeholder="Type" />
+                                </SelectTrigger>
+                                <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-300">
+                                    <SelectItem value="all">All Types</SelectItem>
+                                    <SelectItem value="expense">Expense</SelectItem>
+                                    <SelectItem value="income">Income</SelectItem>
+                                    <SelectItem value="transfer">Transfer</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
                     </CardHeader>
 
