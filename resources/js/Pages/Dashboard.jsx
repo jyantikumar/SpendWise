@@ -44,7 +44,7 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
 
     if (total === 0 || data.length === 0) {
         return (
-            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground min-h-[360px]">
+            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground min-h-[300px]">
                 <PieChartIcon className="h-10 w-10 stroke-1 text-muted-foreground/50 mb-2" />
                 <p className="text-sm text-zinc-400">No expense records for this period.</p>
             </div>
@@ -131,8 +131,8 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
                 </div>
             </div>
 
-            {/* Scrollable Category List Capped to 10-Row Height */}
-            <div className="w-full space-y-1.5 overflow-y-auto max-h-[300px] pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            {/* Scrollable Category List */}
+            <div className="w-full space-y-1.5 overflow-y-auto max-h-[220px] sm:max-h-[300px] pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {slices.map((slice, index) => (
                     <div
                         key={slice.id || index}
@@ -296,17 +296,17 @@ export default function Dashboard({
                                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
                                         <div className="grid grid-cols-2 gap-2">
                                             <Select value={currentFilter} onValueChange={handleFilterChange}>
-                                                <SelectTrigger className="w-full sm:w-[150px] h-10 border-zinc-800 text-zinc-300">
+                                                <SelectTrigger className="w-full sm:w-[150px] h-10 border-zinc-800 text-zinc-300 text-center sm:text-left [&>span]:w-full [&>span]:text-center sm:[&>span]:text-left">
                                                     <SlidersHorizontal className="mr-2 h-4 w-4 shrink-0" />
                                                     <SelectValue placeholder="Range" />
                                                 </SelectTrigger>
                                                 <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                                    <SelectItem value="this_day">This Day</SelectItem>
-                                                    <SelectItem value="this_week">This Week</SelectItem>
-                                                    <SelectItem value="this_month">This Month</SelectItem>
-                                                    <SelectItem value="last_30_days">Last 30 Days</SelectItem>
-                                                    <SelectItem value="this_year">This Year</SelectItem>
-                                                    <SelectItem value="custom">Custom</SelectItem>
+                                                    <SelectItem value="this_day" className="justify-center sm:justify-start">This Day</SelectItem>
+                                                    <SelectItem value="this_week" className="justify-center sm:justify-start">This Week</SelectItem>
+                                                    <SelectItem value="this_month" className="justify-center sm:justify-start">This Month</SelectItem>
+                                                    <SelectItem value="last_30_days" className="justify-center sm:justify-start">Last 30 Days</SelectItem>
+                                                    <SelectItem value="this_year" className="justify-center sm:justify-start">This Year</SelectItem>
+                                                    <SelectItem value="custom" className="justify-center sm:justify-start">Custom</SelectItem>
                                                 </SelectContent>
                                             </Select>
 
@@ -315,21 +315,21 @@ export default function Dashboard({
                                             </Button>
                                         </div>
 
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                                             <Input 
                                                 type="date" 
                                                 value={startDateInput} 
                                                 onChange={(e) => setStartDateInput(e.target.value)}
-                                                className="w-full sm:w-[130px] h-10 border-zinc-800 text-zinc-300 text-xs bg-transparent"
+                                                className="w-full sm:w-[130px] h-10 border-zinc-800 text-zinc-300 text-xs text-center sm:text-left bg-transparent"
                                             />
-                                            <span className="text-xs text-zinc-400 shrink-0">to</span>
+                                            <span className="text-xs text-zinc-400 shrink-0 text-center sm:text-left">to</span>
                                             <Input 
                                                 type="date" 
                                                 value={endDateInput} 
                                                 onChange={(e) => setEndDateInput(e.target.value)}
-                                                className="w-full sm:w-[130px] h-10 border-zinc-800 text-zinc-300 text-xs bg-transparent"
+                                                className="w-full sm:w-[130px] h-10 border-zinc-800 text-zinc-300 text-xs text-center sm:text-left bg-transparent"
                                             />
-                                            <Button size="sm" variant="secondary" onClick={handleApplyCustomDates} className="h-10 px-3 shrink-0">
+                                            <Button size="sm" variant="secondary" onClick={handleApplyCustomDates} className="h-10 px-3 shrink-0 w-full sm:w-auto">
                                                 Apply
                                             </Button>
                                         </div>
@@ -341,17 +341,17 @@ export default function Dashboard({
                                 ) : (
                                     <div className="grid grid-cols-2 sm:flex items-center gap-2.5 w-full sm:w-auto">
                                         <Select value={currentFilter} onValueChange={handleFilterChange}>
-                                            <SelectTrigger className="w-full sm:w-[160px] h-10 border-zinc-800 text-zinc-300">
+                                            <SelectTrigger className="w-full sm:w-[160px] h-10 border-zinc-800 text-zinc-300 text-center sm:text-left [&>span]:w-full [&>span]:text-center sm:[&>span]:text-left">
                                                 <SlidersHorizontal className="mr-2 h-4 w-4 shrink-0" />
                                                 <SelectValue placeholder="Range" />
                                             </SelectTrigger>
                                             <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                                <SelectItem value="this_day">This Day</SelectItem>
-                                                <SelectItem value="this_week">This Week</SelectItem>
-                                                <SelectItem value="this_month">This Month</SelectItem>
-                                                <SelectItem value="last_30_days">Last 30 Days</SelectItem>
-                                                <SelectItem value="this_year">This Year</SelectItem>
-                                                <SelectItem value="custom">Custom</SelectItem>
+                                                <SelectItem value="this_day" className="justify-center sm:justify-start">This Day</SelectItem>
+                                                <SelectItem value="this_week" className="justify-center sm:justify-start">This Week</SelectItem>
+                                                <SelectItem value="this_month" className="justify-center sm:justify-start">This Month</SelectItem>
+                                                <SelectItem value="last_30_days" className="justify-center sm:justify-start">Last 30 Days</SelectItem>
+                                                <SelectItem value="this_year" className="justify-center sm:justify-start">This Year</SelectItem>
+                                                <SelectItem value="custom" className="justify-center sm:justify-start">Custom</SelectItem>
                                             </SelectContent>
                                         </Select>
 
@@ -365,8 +365,8 @@ export default function Dashboard({
                             </div>
                         </div>
 
-                        {/* KPI Cards */}
-                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        {/* KPI Cards Grid */}
+                        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
                             <Card className="border-zinc-800">
                                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                                     <CardTitle className="text-sm font-medium text-zinc-400">Total Balance</CardTitle>
@@ -416,60 +416,56 @@ export default function Dashboard({
 
                         {/* Main Table & Chart Layout */}
                         <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 items-start">
-                            <Card className="xl:col-span-2 border-zinc-800 flex flex-col max-h-[520px]">
-                                <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap shrink-0">
-                                    <div className="flex items-center gap-3">
+                            <Card className="xl:col-span-2 border-zinc-800 flex flex-col min-h-[400px] max-h-[520px]">
+                                <CardHeader className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
+                                    <div className="flex items-center gap-2.5 w-full sm:w-auto">
                                         <Select value={activeView} onValueChange={setActiveView}>
-                                            <SelectTrigger className="w-[200px] h-9 font-semibold border-zinc-800 text-zinc-300">
+                                            <SelectTrigger className="flex-1 sm:w-[180px] h-9 font-semibold border-zinc-800 text-zinc-300 text-center sm:text-left [&>span]:w-full [&>span]:text-center sm:[&>span]:text-left">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                                <SelectItem value="transactions">Transactions</SelectItem>
-                                                <SelectItem value="accounts">Accounts</SelectItem>
+                                                <SelectItem value="transactions" className="justify-center sm:justify-start">Transactions</SelectItem>
+                                                <SelectItem value="accounts" className="justify-center sm:justify-start">Accounts</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <CardDescription className="hidden sm:inline text-zinc-400">
-                                            {activeView === 'transactions' 
-                                                ? "Recent transaction history. Click a row to view details." 
-                                                : 'Active financial accounts. Click a row to view transactions.'}
-                                        </CardDescription>
+
+                                        <Button asChild size="sm" variant="outline" className="gap-1 border-zinc-800 text-zinc-300 shrink-0 h-9">
+                                            <Link href={activeView === 'transactions' ? '/transactions' : '/accounts'}>
+                                                View All
+                                                <ArrowUpRight className="h-4 w-4" />
+                                            </Link>
+                                        </Button>
                                     </div>
 
-                                    <Button asChild size="sm" variant="outline" className="gap-1 border-zinc-800 text-zinc-300">
-                                        <Link href={activeView === 'transactions' ? '/transactions' : '/accounts'}>
-                                            View All
-                                            <ArrowUpRight className="h-4 w-4" />
-                                        </Link>
-                                    </Button>
+                                    <CardDescription className="hidden sm:inline text-zinc-400">
+                                        {activeView === 'transactions' 
+                                            ? "Recent transaction history. Tap a row to view details." 
+                                            : 'Active financial accounts. Tap a row to view transactions.'}
+                                    </CardDescription>
                                 </CardHeader>
 
-                                <CardContent className="flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                                <CardContent className="p-0 sm:p-6 sm:pt-0 flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                                     {activeView === 'transactions' ? (
-                                        <Table>
-                                            <TableHeader className="sticky top-0 z-10">
-                                                <TableRow className="border-b border-zinc-800">
-                                                    <TableHead className="text-zinc-400">Date</TableHead>
-                                                    <TableHead className="text-zinc-400">Description</TableHead>
-                                                    <TableHead className="text-right text-zinc-400">Amount</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
+                                        <>
+                                            {/* Mobile Cards View (Visible on screens smaller than `md`) */}
+                                            <div className="divide-y divide-zinc-800 md:hidden">
                                                 {latestTransactions && latestTransactions.length > 0 ? (
                                                     latestTransactions.map((tx) => (
-                                                        <TableRow 
-                                                            key={tx.id} 
-                                                            className="border-b border-zinc-800 cursor-pointer hover:bg-muted/50 transition-colors"
+                                                        <div 
+                                                            key={tx.id}
+                                                            className="p-4 flex items-center justify-between gap-3 active:bg-zinc-800/50 transition-colors cursor-pointer"
                                                             onClick={() => setSelectedDetailTransaction(tx)}
                                                         >
-                                                            <TableCell className="font-medium whitespace-nowrap text-xs text-zinc-300">
-                                                                {formatDateOnly(tx.transaction_date)}
-                                                            </TableCell>
-                                                            <TableCell className="max-w-[180px] truncate">
-                                                                <span className="font-medium text-sm block truncate text-zinc-300">
+                                                            <div className="min-w-0 flex-1">
+                                                                <div className="text-xs text-zinc-400 mb-1">
+                                                                    {formatDateOnly(tx.transaction_date)}
+                                                                </div>
+                                                                <div className="font-medium text-sm text-zinc-200 truncate">
                                                                     {tx.description || 'No description'}
-                                                                </span>
-                                                            </TableCell>
-                                                            <TableCell className={`text-right font-semibold text-sm ${
+                                                                </div>
+                                                            </div>
+
+                                                            <div className={`text-right font-semibold text-sm whitespace-nowrap shrink-0 ${
                                                                 tx.type === 'income' 
                                                                     ? 'text-emerald-500' 
                                                                     : tx.type === 'expense' 
@@ -478,61 +474,133 @@ export default function Dashboard({
                                                             }`}>
                                                                 {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
                                                                 {formatCurrency(tx.amount)}
-                                                            </TableCell>
-                                                        </TableRow>
+                                                            </div>
+                                                        </div>
                                                     ))
                                                 ) : (
-                                                    <TableRow className="border-b border-zinc-800">
-                                                        <TableCell colSpan={3} className="text-center text-zinc-400 py-6">
-                                                            No transactions logged for this period.
-                                                        </TableCell>
-                                                    </TableRow>
+                                                    <div className="text-center py-8 px-4 text-zinc-400 text-sm">
+                                                        No transactions logged for this period.
+                                                    </div>
                                                 )}
-                                            </TableBody>
-                                        </Table>
+                                            </div>
+
+                                            {/* Desktop Table View (Visible on `md` and larger screens) */}
+                                            <div className="hidden md:block">
+                                                <Table>
+                                                    <TableHeader className="sticky top-0 z-10">
+                                                        <TableRow className="border-b border-zinc-800">
+                                                            <TableHead className="text-zinc-400">Date</TableHead>
+                                                            <TableHead className="text-zinc-400">Description</TableHead>
+                                                            <TableHead className="text-right text-zinc-400">Amount</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {latestTransactions && latestTransactions.length > 0 ? (
+                                                            latestTransactions.map((tx) => (
+                                                                <TableRow 
+                                                                    key={tx.id} 
+                                                                    className="border-b border-zinc-800 cursor-pointer hover:bg-muted/50 transition-colors"
+                                                                    onClick={() => setSelectedDetailTransaction(tx)}
+                                                                >
+                                                                    <TableCell className="font-medium whitespace-nowrap text-xs text-zinc-300">
+                                                                        {formatDateOnly(tx.transaction_date)}
+                                                                    </TableCell>
+                                                                    <TableCell className="max-w-[180px] truncate">
+                                                                        <span className="font-medium text-sm block truncate text-zinc-300">
+                                                                            {tx.description || 'No description'}
+                                                                        </span>
+                                                                    </TableCell>
+                                                                    <TableCell className={`text-right font-semibold text-sm ${
+                                                                        tx.type === 'income' 
+                                                                            ? 'text-emerald-500' 
+                                                                            : tx.type === 'expense' 
+                                                                                ? 'text-rose-500' 
+                                                                                : 'text-blue-400'
+                                                                    }`}>
+                                                                        {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
+                                                                        {formatCurrency(tx.amount)}
+                                                                    </TableCell>
+                                                                </TableRow>
+                                                            ))
+                                                        ) : (
+                                                            <TableRow className="border-b border-zinc-800">
+                                                                <TableCell colSpan={3} className="text-center text-zinc-400 py-6">
+                                                                    No transactions logged for this period.
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        </>
                                     ) : (
-                                        <Table>
-                                            <TableHeader className="sticky top-0 z-10">
-                                                <TableRow className="border-b border-zinc-800">
-                                                    <TableHead className="text-zinc-400">Account Name</TableHead>
-                                                    <TableHead className="text-right text-zinc-400">Balance</TableHead>
-                                                </TableRow>
-                                            </TableHeader>
-                                            <TableBody>
+                                        <>
+                                            {/* Mobile Cards View for Accounts */}
+                                            <div className="divide-y divide-zinc-800 md:hidden">
                                                 {accounts && accounts.length > 0 ? (
                                                     accounts.map((acc) => (
-                                                        <TableRow 
-                                                            key={acc.id} 
-                                                            className="border-b border-zinc-800 cursor-pointer hover:bg-muted/50 transition-colors"
+                                                        <div 
+                                                            key={acc.id}
+                                                            className="p-4 flex items-center justify-between gap-3 active:bg-zinc-800/50 transition-colors cursor-pointer"
                                                             onClick={() => handleAccountClick(acc)}
                                                         >
-                                                            <TableCell className="font-medium text-zinc-300">{acc.name}</TableCell>
-                                                            <TableCell className="text-right font-semibold text-zinc-300">{formatCurrency(acc.balance, acc.currency)}</TableCell>
-                                                        </TableRow>
+                                                            <span className="font-medium text-sm text-zinc-200 truncate">{acc.name}</span>
+                                                            <span className="font-semibold text-sm text-zinc-200 shrink-0">{formatCurrency(acc.balance, acc.currency)}</span>
+                                                        </div>
                                                     ))
                                                 ) : (
-                                                    <TableRow className="border-b border-zinc-800">
-                                                        <TableCell colSpan={2} className="text-center text-zinc-400 py-6">
-                                                            No accounts created yet.
-                                                        </TableCell>
-                                                    </TableRow>
+                                                    <div className="text-center py-8 px-4 text-zinc-400 text-sm">
+                                                        No accounts created yet.
+                                                    </div>
                                                 )}
-                                            </TableBody>
-                                        </Table>
+                                            </div>
+
+                                            {/* Desktop Table View for Accounts */}
+                                            <div className="hidden md:block">
+                                                <Table>
+                                                    <TableHeader className="sticky top-0 z-10">
+                                                        <TableRow className="border-b border-zinc-800">
+                                                            <TableHead className="text-zinc-400">Account Name</TableHead>
+                                                            <TableHead className="text-right text-zinc-400">Balance</TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {accounts && accounts.length > 0 ? (
+                                                            accounts.map((acc) => (
+                                                                <TableRow 
+                                                                    key={acc.id} 
+                                                                    className="border-b border-zinc-800 cursor-pointer hover:bg-muted/50 transition-colors"
+                                                                    onClick={() => handleAccountClick(acc)}
+                                                                >
+                                                                    <TableCell className="font-medium text-zinc-300">{acc.name}</TableCell>
+                                                                    <TableCell className="text-right font-semibold text-zinc-300">{formatCurrency(acc.balance, acc.currency)}</TableCell>
+                                                                </TableRow>
+                                                            ))
+                                                        ) : (
+                                                            <TableRow className="border-b border-zinc-800">
+                                                                <TableCell colSpan={2} className="text-center text-zinc-400 py-6">
+                                                                    No accounts created yet.
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        )}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        </>
                                     )}
                                 </CardContent>
                             </Card>
 
-                            {/* Expense Chart Card - Capped to 10-Row Table Height */}
-                            <Card className="border-zinc-800 flex flex-col justify-between h-[520px]">
-                                <CardHeader className="shrink-0">
+                            {/* Expense Chart Card */}
+                            <Card className="border-zinc-800 flex flex-col justify-between min-h-[420px] lg:h-[520px]">
+                                <CardHeader className="p-4 sm:p-6 shrink-0">
                                     <CardTitle className="flex items-center gap-2 text-zinc-200">
                                         <PieChartIcon className="h-5 w-5 text-zinc-400" />
                                         Expense Categories
                                     </CardTitle>
-                                    <CardDescription className="text-zinc-400">Click a category to view transactions.</CardDescription>
+                                    <CardDescription className="text-zinc-400">Tap or click a category to view transactions.</CardDescription>
                                 </CardHeader>
-                                <CardContent className="flex-1 flex flex-col min-h-0 overflow-hidden">
+                                <CardContent className="p-4 sm:p-6 sm:pt-0 flex-1 flex flex-col min-h-0 overflow-hidden">
                                     <ExpensePieChart 
                                         data={categoryBreakdown?.expense || []} 
                                         formatCurrency={formatCurrency} 
