@@ -6,7 +6,6 @@ import {
     RefreshCw, 
     Wallet, 
     CheckCircle2, 
-    Clock, 
     Power,
     Tag,
     MoreHorizontal,
@@ -17,7 +16,9 @@ import {
     Pencil,
     Trash2,
     TrendingUp,
-    FastForward
+    FastForward,
+    Filter,
+    X
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -44,6 +45,16 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+    SheetFooter,
+    SheetClose,
+} from '@/components/ui/sheet';
 import { CreateRecurringDialog } from '@/components/CreateRecurringDialog';
 
 export default function SubscriptionsView({ 
@@ -53,6 +64,7 @@ export default function SubscriptionsView({
 }) {
     const [filterType, setFilterType] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
+    const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [deletingItem, setDeletingItem] = useState(null);
@@ -131,6 +143,11 @@ export default function SubscriptionsView({
         });
     };
 
+    const handleResetFilters = () => {
+        setFilterType('all');
+        setFilterStatus('all');
+    };
+
     const filteredItems = recurringList.filter((item) => {
         const expired = isExpired(item.end_date);
         
@@ -143,6 +160,16 @@ export default function SubscriptionsView({
 
         return true;
     });
+
+    const hasActiveFilters = Boolean(
+        filterType !== 'all' || 
+        filterStatus !== 'all'
+    );
+
+    const activeFilterCount = [
+        filterType !== 'all',
+        filterStatus !== 'all'
+    ].filter(Boolean).length;
 
     const totalMonthlyExpenses = recurringList
         .filter((item) => item.is_active && !isExpired(item.end_date) && item.type === 'expense')
@@ -188,9 +215,101 @@ export default function SubscriptionsView({
                         </p>
                     </div>
 
-                    <Button onClick={openCreateModal} className="w-full sm:w-auto gap-2 text-xs h-9">
-                        <Plus className="h-4 w-4" /> Add Recurring Rule
-                    </Button>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        {/* Filter Sheet Trigger */}
+                        <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
+                            <SheetTrigger asChild>
+                                <Button variant="outline" className="relative flex-1 sm:flex-initial gap-2 border-zinc-800 text-zinc-300 h-9 text-xs">
+                                    <Filter className="h-4 w-4" />
+                                    <span>Filter</span>
+                                    {activeFilterCount > 0 && (
+                                        <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20">
+                                            {activeFilterCount}
+                                        </span>
+                                    )}
+                                </Button>
+                            </SheetTrigger>
+
+                            <SheetContent side="right" className="w-full sm:max-w-md border-zinc-800 bg-zinc-950 text-zinc-100 flex flex-col justify-between">
+                                <div>
+                                    <SheetHeader className="pb-4 border-b border-zinc-800">
+                                        <SheetTitle className="text-zinc-100 flex items-center gap-2">
+                                            <Filter className="h-4 w-4 text-zinc-400" /> Filter Recurring Rules
+                                        </SheetTitle>
+                                        <SheetDescription className="text-zinc-400 text-xs">
+                                            Filter your subscription and payment rules by type and schedule status.
+                                        </SheetDescription>
+                                    </SheetHeader>
+
+                                    <div className="py-6 space-y-5">
+                                        {/* Type Filter */}
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-medium text-zinc-400">Rule Type</label>
+                                            <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs">
+                                                {['all', 'expense', 'income'].map((type) => (
+                                                    <button
+                                                        key={type}
+                                                        type="button"
+                                                        onClick={() => setFilterType(type)}
+                                                        className={`py-1.5 px-3 rounded-md text-[11px] font-medium capitalize text-center transition-all ${
+                                                            filterType === type 
+                                                                ? 'bg-zinc-800 text-zinc-100 shadow-sm' 
+                                                                : 'text-zinc-400 hover:text-zinc-200'
+                                                        }`}
+                                                    >
+                                                        {type}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+
+                                        {/* Status Filter */}
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-medium text-zinc-400">Status</label>
+                                            <div className="grid grid-cols-4 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs">
+                                                {['all', 'active', 'paused', 'expired'].map((status) => (
+                                                    <button
+                                                        key={status}
+                                                        type="button"
+                                                        onClick={() => setFilterStatus(status)}
+                                                        className={`py-1.5 px-2 rounded-md text-[11px] font-medium capitalize text-center transition-all ${
+                                                            filterStatus === status 
+                                                                ? 'bg-zinc-800 text-zinc-100 shadow-sm' 
+                                                                : 'text-zinc-400 hover:text-zinc-200'
+                                                        }`}
+                                                    >
+                                                        {status}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <SheetFooter className="pt-4 border-t border-zinc-800 flex flex-row items-center justify-between gap-2">
+                                    {hasActiveFilters ? (
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            onClick={handleResetFilters}
+                                            className="text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 gap-1 h-9"
+                                        >
+                                            <X className="h-3.5 w-3.5" /> Reset Filters
+                                        </Button>
+                                    ) : <div />}
+
+                                    <SheetClose asChild>
+                                        <Button className="h-9 px-6">Done</Button>
+                                    </SheetClose>
+                                </SheetFooter>
+                            </SheetContent>
+                        </Sheet>
+
+                        {/* Add Rule Button */}
+                        <Button onClick={openCreateModal} className="flex-1 sm:flex-initial gap-2 text-xs h-9">
+                            <Plus className="h-4 w-4" /> Add Recurring Rule
+                        </Button>
+                    </div>
                 </div>
 
                 {/* KPI Summary Grid */}
@@ -231,52 +350,48 @@ export default function SubscriptionsView({
                     </Card>
                 </div>
 
+                {/* Active Filter Bar with Sub-Header */}
+                {hasActiveFilters && (
+                    <div className="space-y-1.5 bg-zinc-900/60 p-2.5 rounded-lg border border-zinc-800/80">
+                        <div className="flex items-center justify-between text-[11px] sm:text-xs">
+                            <span className="text-zinc-400 font-medium">
+                                Active Filters ({activeFilterCount})
+                            </span>
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={handleResetFilters}
+                                className="text-[11px] sm:text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/20 h-5 px-1.5 -mr-1"
+                            >
+                                Clear All
+                            </Button>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pt-0.5">
+                            {filterType !== 'all' && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/80 text-[11px] sm:text-xs capitalize shrink-0">
+                                    <span>Type: {filterType}</span>
+                                    <X className="h-3 w-3 shrink-0 cursor-pointer hover:text-rose-400" onClick={() => setFilterType('all')} />
+                                </span>
+                            )}
+
+                            {filterStatus !== 'all' && (
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/80 text-[11px] sm:text-xs capitalize shrink-0">
+                                    <span>Status: {filterStatus}</span>
+                                    <X className="h-3 w-3 shrink-0 cursor-pointer hover:text-rose-400" onClick={() => setFilterStatus('all')} />
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                )}
+
                 {/* Rules Container Card */}
                 <Card className="border-zinc-800">
-                    <CardHeader className="p-4 sm:p-6 flex flex-col lg:flex-row lg:items-center justify-between gap-3 pb-3">
-                        <div>
-                            <CardTitle className="text-sm sm:text-base text-zinc-200">Scheduled Rules</CardTitle>
-                            <CardDescription className="text-xs text-zinc-400">
-                                Overview of repeat processing schedules across accounts.
-                            </CardDescription>
-                        </div>
-
-                        {/* Segmented Pill Grids for Mobile */}
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full lg:w-auto">
-                            {/* Type Filter Segmented Grid */}
-                            <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 w-full sm:w-auto">
-                                {['all', 'expense', 'income'].map((type) => (
-                                    <button
-                                        key={type}
-                                        onClick={() => setFilterType(type)}
-                                        className={`py-1.5 px-3 rounded-md text-[11px] font-medium capitalize text-center transition-all ${
-                                            filterType === type 
-                                                ? 'bg-zinc-800 text-zinc-100 shadow-sm' 
-                                                : 'text-zinc-400 hover:text-zinc-200'
-                                        }`}
-                                    >
-                                        {type}
-                                    </button>
-                                ))}
-                            </div>
-
-                            {/* Status Filter Segmented Grid */}
-                            <div className="grid grid-cols-4 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 w-full sm:w-auto">
-                                {['all', 'active', 'paused', 'expired'].map((status) => (
-                                    <button
-                                        key={status}
-                                        onClick={() => setFilterStatus(status)}
-                                        className={`py-1.5 px-2.5 rounded-md text-[11px] font-medium capitalize text-center transition-all ${
-                                            filterStatus === status 
-                                                ? 'bg-zinc-800 text-zinc-100 shadow-sm' 
-                                                : 'text-zinc-400 hover:text-zinc-200'
-                                        }`}
-                                    >
-                                        {status}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
+                    <CardHeader className="p-4 sm:p-6 pb-3">
+                        <CardTitle className="text-sm sm:text-base text-zinc-200">Scheduled Rules</CardTitle>
+                        <CardDescription className="text-xs text-zinc-400">
+                            Overview of repeat processing schedules across accounts.
+                        </CardDescription>
                     </CardHeader>
 
                     <CardContent className="p-0 sm:p-6 sm:pt-0">

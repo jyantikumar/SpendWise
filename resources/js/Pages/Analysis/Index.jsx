@@ -28,7 +28,9 @@ import {
     ChevronRight,
     Columns3,
     CalendarDays,
-    ArrowLeft
+    ArrowLeft,
+    Filter,
+    X
 } from 'lucide-react';
 
 import { AppSidebar } from '@/components/app-sidebar';
@@ -39,6 +41,16 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+    SheetFooter,
+    SheetClose,
+} from '@/components/ui/sheet';
 
 import { DateTransactionsDialog } from '@/components/DateTransactionsDialog';
 import { ExpenseCategoryCard } from '@/components/ExpenseCategoryCard';
@@ -100,13 +112,22 @@ export default function AnalysisIndex({
     filters = {}, 
     categories = [] 
 }) {
-    const [range, setRange] = useState(filters.range || 'monthly');
+    // Active applied filters
     const [type, setType] = useState(filters.type || 'expense');
     const [accountId, setAccountId] = useState(filters.account_id || 'all');
+    const [range, setRange] = useState(filters.range || 'monthly');
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
     const [calendarMonth, setCalendarMonth] = useState(filters.calendar_month || new Date().toISOString().slice(0, 7));
 
+    // Temporary pending state inside the drawer sheet
+    const [tempType, setTempType] = useState(type);
+    const [tempAccountId, setTempAccountId] = useState(accountId);
+    const [tempRange, setTempRange] = useState(range);
+    const [tempStartDate, setTempStartDate] = useState(startDate);
+    const [tempEndDate, setTempEndDate] = useState(endDate);
+
+    const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
     const [selectedDayObj, setSelectedDayObj] = useState(null);
     const [isChartLoading, setIsChartLoading] = useState(false);
 
@@ -136,6 +157,18 @@ export default function AnalysisIndex({
         return `₱${Math.round(val)}`;
     };
 
+    // Sync temp states whenever the sheet opens
+    const handleSheetOpenChange = (open) => {
+        if (open) {
+            setTempType(type);
+            setTempAccountId(accountId);
+            setTempRange(range);
+            setTempStartDate(startDate);
+            setTempEndDate(endDate);
+        }
+        setIsFilterSheetOpen(open);
+    };
+
     const applyFilters = (overrides = {}) => {
         setIsChartLoading(true);
 
@@ -149,12 +182,69 @@ export default function AnalysisIndex({
         };
 
         router.get(route('analysis.index'), query, {
-            preserveState: false,
+            preserveState: true,
             preserveScroll: true,
             replace: true,
             onFinish: () => setIsChartLoading(false),
         });
     };
+
+    const handleApplyAllFilters = () => {
+        setIsChartLoading(true);
+
+        setType(tempType);
+        setAccountId(tempAccountId);
+        setRange(tempRange);
+        setStartDate(tempStartDate);
+        setEndDate(tempEndDate);
+
+        const query = {
+            type: tempType,
+            account_id: tempAccountId,
+            range: tempRange,
+            start_date: tempStartDate,
+            end_date: tempEndDate,
+            calendar_month: calendarMonth,
+        };
+
+        router.get(route('analysis.index'), query, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true,
+            onFinish: () => {
+                setIsChartLoading(false);
+                setIsFilterSheetOpen(false);
+            },
+        });
+    };
+
+    const handleResetFilters = () => {
+        setTempType('expense');
+        setTempAccountId('all');
+        setTempRange('monthly');
+        setTempStartDate('');
+        setTempEndDate('');
+
+        setType('expense');
+        setAccountId('all');
+        setRange('monthly');
+        setStartDate('');
+        setEndDate('');
+
+        router.get(route('analysis.index'), {}, { preserveState: true, preserveScroll: true, replace: true });
+    };
+
+    const hasActiveFilters = Boolean(
+        type !== 'expense' || 
+        accountId !== 'all' || 
+        range !== 'monthly'
+    );
+
+    const activeFilterCount = [
+        type !== 'expense',
+        accountId !== 'all',
+        range !== 'monthly'
+    ].filter(Boolean).length;
 
     // Drill down from Monthly view to Daily view
     const handleMonthBarClick = (data) => {
@@ -168,7 +258,7 @@ export default function AnalysisIndex({
                 type: type,
                 account_id: accountId,
             }, {
-                preserveState: false,
+                preserveState: true,
                 preserveScroll: true,
                 replace: true,
                 onFinish: () => setIsChartLoading(false),
@@ -188,7 +278,7 @@ export default function AnalysisIndex({
                 type: type,
                 account_id: accountId,
             }, {
-                preserveState: false,
+                preserveState: true,
                 preserveScroll: true,
                 replace: true,
                 onFinish: () => setIsChartLoading(false),
@@ -249,133 +339,217 @@ export default function AnalysisIndex({
                     </header>
 
                     <main className="flex flex-1 flex-col gap-4 p-3 sm:p-6 md:gap-8 md:p-8">
-                        <div>
-                            <h2 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2 text-zinc-100">
-                                <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> Visual Analytics
-                            </h2>
-                            <p className="text-xs sm:text-sm text-zinc-400">
-                                Track cash velocity, daily spending activity, and category distribution.
-                            </p>
-                        </div>
-
-                        {/* Controls Bar Grid */}
-                        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-center">
-                            {/* Left Side: Pilled Segmented Type Filter */}
-                            <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs w-full lg:col-span-1">
-                                {[
-                                    { label: 'All Flow', value: 'all' },
-                                    { label: 'Expenses', value: 'expense' },
-                                    { label: 'Income', value: 'income' },
-                                ].map((pill) => (
-                                    <button
-                                        key={pill.value}
-                                        type="button"
-                                        onClick={() => {
-                                            setType(pill.value);
-                                            applyFilters({ type: pill.value });
-                                        }}
-                                        className={`w-full py-1.5 rounded-md font-medium text-xs text-center transition-all whitespace-nowrap ${
-                                            type === pill.value
-                                                ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                                                : 'text-zinc-400 hover:text-zinc-200'
-                                        }`}
-                                    >
-                                        {pill.label}
-                                    </button>
-                                ))}
+                        {/* Header Actions */}
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                            <div>
+                                <h2 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2 text-zinc-100">
+                                    <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> Visual Analytics
+                                </h2>
+                                <p className="text-xs sm:text-sm text-zinc-400">
+                                    Track cash velocity, daily spending activity, and category distribution.
+                                </p>
                             </div>
 
-                            {/* Spacer Column */}
-                            <div className="hidden lg:block lg:col-span-1" />
+                            {/* Filter Sheet Trigger */}
+                            <Sheet open={isFilterSheetOpen} onOpenChange={handleSheetOpenChange}>
+                                <SheetTrigger asChild>
+                                    <Button variant="outline" className="relative w-full sm:w-auto gap-2 border-zinc-800 text-zinc-300">
+                                        <Filter className="h-4 w-4" />
+                                        <span>Filter</span>
+                                        {activeFilterCount > 0 && (
+                                            <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20">
+                                                {activeFilterCount}
+                                            </span>
+                                        )}
+                                    </Button>
+                                </SheetTrigger>
 
-                            {/* Right Side: Account & Time Horizon Filters */}
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:col-span-2 lg:col-span-2 justify-end">
-                                <Select 
-                                    value={accountId} 
-                                    onValueChange={(val) => {
-                                        setAccountId(val);
-                                        applyFilters({ account_id: val });
-                                    }}
-                                >
-                                    <SelectTrigger className="w-full sm:w-1/2 h-9 border-zinc-800 text-zinc-300">
-                                        <Wallet className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                                        <SelectValue placeholder="All Accounts" />
-                                    </SelectTrigger>
-                                    <SelectContent className="border-zinc-800">
-                                        <SelectItem value="all">All Accounts</SelectItem>
-                                        {accounts.map((acc) => (
-                                            <SelectItem key={acc.id} value={String(acc.id)}>
-                                                {acc.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                <SheetContent side="right" className="w-full sm:max-w-md border-zinc-800 bg-zinc-950 text-zinc-100 flex flex-col justify-between">
+                                    <div>
+                                        <SheetHeader className="pb-4 border-b border-zinc-800">
+                                            <SheetTitle className="text-zinc-100 flex items-center gap-2">
+                                                <Filter className="h-4 w-4 text-zinc-400" /> Filter Analysis
+                                            </SheetTitle>
+                                            <SheetDescription className="text-zinc-400 text-xs">
+                                                Adjust flow type, selected account, and time horizons.
+                                            </SheetDescription>
+                                        </SheetHeader>
 
-                                <Select 
-                                    value={range} 
-                                    onValueChange={(val) => {
-                                        setRange(val);
-                                        applyFilters({ range: val });
-                                    }}
-                                >
-                                    <SelectTrigger className="w-full sm:w-1/2 h-9 border-zinc-800 text-zinc-300">
-                                        <SlidersHorizontal className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                                        <SelectValue>
-                                            {filters.range_label || (range === 'this_month' ? 'This Month' : range)}
-                                        </SelectValue>
-                                    </SelectTrigger>
-                                    <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                                        <SelectGroup>
-                                            <SelectLabel className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 px-2 py-1">
-                                                Aggregated Comparisons
-                                            </SelectLabel>
-                                            <SelectItem value="monthly">Monthly</SelectItem>
-                                            <SelectItem value="yearly">Yearly</SelectItem>
-                                        </SelectGroup>
+                                        <div className="py-6 space-y-5">
+                                            {/* Flow Type Filter */}
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-medium text-zinc-400">Flow Type</label>
+                                                <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs">
+                                                    {[
+                                                        { label: 'All Flow', value: 'all' },
+                                                        { label: 'Expenses', value: 'expense' },
+                                                        { label: 'Income', value: 'income' },
+                                                    ].map((pill) => (
+                                                        <button
+                                                            key={pill.value}
+                                                            type="button"
+                                                            onClick={() => setTempType(pill.value)}
+                                                            className={`w-full py-1.5 rounded-md font-medium text-xs text-center transition-all whitespace-nowrap ${
+                                                                tempType === pill.value
+                                                                    ? 'bg-zinc-800 text-zinc-100 shadow-sm'
+                                                                    : 'text-zinc-400 hover:text-zinc-200'
+                                                            }`}
+                                                        >
+                                                            {pill.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
 
-                                        <SelectSeparator className="bg-zinc-800 my-1" />
+                                            {/* Account Selector */}
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-medium text-zinc-400">Account</label>
+                                                <Select value={tempAccountId} onValueChange={setTempAccountId}>
+                                                    <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900">
+                                                        <Wallet className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                                                        <SelectValue placeholder="All Accounts" />
+                                                    </SelectTrigger>
+                                                    <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-300 max-h-60">
+                                                        <SelectItem value="all">All Accounts</SelectItem>
+                                                        {accounts.map((acc) => (
+                                                            <SelectItem key={acc.id} value={String(acc.id)}>
+                                                                {acc.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
 
-                                        <SelectGroup>
-                                            <SelectLabel className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 px-2 py-1">
-                                                Time Horizons
-                                            </SelectLabel>
-                                            <SelectItem value="this_month">
-                                                {range === 'this_month' && filters.range_label ? filters.range_label : 'This Month'}
-                                            </SelectItem>
-                                            <SelectItem value="1_week">1 Week</SelectItem>
-                                            <SelectItem value="6_months">6 Months</SelectItem>
-                                            <SelectItem value="this_year">This Year</SelectItem>
-                                            <SelectItem value="custom">Custom Range</SelectItem>
-                                        </SelectGroup>
-                                    </SelectContent>
-                                </Select>
+                                            {/* Time Horizon Selector */}
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-medium text-zinc-400">Time Horizon</label>
+                                                <Select value={tempRange} onValueChange={setTempRange}>
+                                                    <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900">
+                                                        <SlidersHorizontal className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                                                        <SelectValue />
+                                                    </SelectTrigger>
+                                                    <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-200">
+                                                        <SelectGroup>
+                                                            <SelectLabel className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 px-2 py-1">
+                                                                Aggregated Comparisons
+                                                            </SelectLabel>
+                                                            <SelectItem value="monthly">Monthly</SelectItem>
+                                                            <SelectItem value="yearly">Yearly</SelectItem>
+                                                        </SelectGroup>
 
-                                {range === 'custom' && (
-                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                                        <Input
-                                            type="date"
-                                            value={startDate}
-                                            onChange={(e) => setStartDate(e.target.value)}
-                                            className="h-9 w-full sm:w-[130px] text-xs border-zinc-800 text-zinc-300 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-200 cursor-pointer"
-                                        />
-                                        <span className="text-xs text-zinc-400 text-center sm:text-left">to</span>
-                                        <Input
-                                            type="date"
-                                            value={endDate}
-                                            onChange={(e) => setEndDate(e.target.value)}
-                                            className="h-9 w-full sm:w-[130px] text-xs border-zinc-800 text-zinc-300 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-200 cursor-pointer"
-                                        />
-                                        <Button 
-                                            size="sm" 
-                                            onClick={() => applyFilters({ range: 'custom' })}
-                                            className="h-9 w-full sm:w-auto px-3 text-xs"
-                                        >
-                                            Apply
-                                        </Button>
+                                                        <SelectSeparator className="bg-zinc-800 my-1" />
+
+                                                        <SelectGroup>
+                                                            <SelectLabel className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 px-2 py-1">
+                                                                Time Horizons
+                                                            </SelectLabel>
+                                                            <SelectItem value="this_month">This Month</SelectItem>
+                                                            <SelectItem value="1_week">1 Week</SelectItem>
+                                                            <SelectItem value="6_months">6 Months</SelectItem>
+                                                            <SelectItem value="this_year">This Year</SelectItem>
+                                                            <SelectItem value="custom">Custom Range</SelectItem>
+                                                        </SelectGroup>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {/* Custom Date Range */}
+                                            {tempRange === 'custom' && (
+                                                <div className="space-y-2 pt-2 border-t border-zinc-800/80">
+                                                    <label className="text-xs font-medium text-zinc-400">Custom Date Range</label>
+                                                    <div className="flex items-center gap-2">
+                                                        <Input
+                                                            type="date"
+                                                            value={tempStartDate}
+                                                            onChange={(e) => setTempStartDate(e.target.value)}
+                                                            className="h-9 border-zinc-800 text-zinc-300 text-xs bg-zinc-900"
+                                                        />
+                                                        <span className="text-xs text-zinc-400">to</span>
+                                                        <Input
+                                                            type="date"
+                                                            value={tempEndDate}
+                                                            onChange={(e) => setTempEndDate(e.target.value)}
+                                                            className="h-9 border-zinc-800 text-zinc-300 text-xs bg-zinc-900"
+                                                        />
+                                                    </div>
+                                                </div>
+                                            )}
+                                        </div>
                                     </div>
-                                )}
-                            </div>
+
+                                    <SheetFooter className="pt-4 border-t border-zinc-800 flex flex-row items-center justify-between gap-2">
+                                        {hasActiveFilters ? (
+                                            <Button 
+                                                variant="ghost" 
+                                                size="sm" 
+                                                onClick={handleResetFilters}
+                                                className="text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 gap-1 h-9"
+                                            >
+                                                <X className="h-3.5 w-3.5" /> Reset Filters
+                                            </Button>
+                                        ) : <div />}
+
+                                        <Button onClick={handleApplyAllFilters} className="h-9 px-6">
+                                            Apply Filters
+                                        </Button>
+                                    </SheetFooter>
+                                </SheetContent>
+                            </Sheet>
                         </div>
+
+                        {/* Active Filter Bar with Sub-Header */}
+                        {hasActiveFilters && (
+                            <div className="space-y-1.5 bg-zinc-900/60 p-2.5 rounded-lg border border-zinc-800/80">
+                                <div className="flex items-center justify-between text-[11px] sm:text-xs">
+                                    <span className="text-zinc-400 font-medium">
+                                        Active Filters ({activeFilterCount})
+                                    </span>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={handleResetFilters}
+                                        className="text-[11px] sm:text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/20 h-5 px-1.5 -mr-1"
+                                    >
+                                        Clear All
+                                    </Button>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pt-0.5">
+                                    {type !== 'expense' && (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/80 text-[11px] sm:text-xs capitalize shrink-0">
+                                            <span>Type: {type}</span>
+                                            <X className="h-3 w-3 shrink-0 cursor-pointer hover:text-rose-400" onClick={() => { setType('expense'); applyFilters({ type: 'expense' }); }} />
+                                        </span>
+                                    )}
+
+                                    {accountId !== 'all' && (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/80 text-[11px] sm:text-xs shrink-0 max-w-[130px]">
+                                            <span className="truncate">{accounts.find(a => String(a.id) === String(accountId))?.name || 'Account'}</span>
+                                            <X className="h-3 w-3 shrink-0 cursor-pointer hover:text-rose-400" onClick={() => { setAccountId('all'); applyFilters({ account_id: 'all' }); }} />
+                                        </span>
+                                    )}
+
+                                    {range !== 'monthly' && (
+                                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/80 text-[11px] sm:text-xs shrink-0">
+                                            <span>
+                                                {range === 'custom' && startDate && endDate
+                                                    ? `${new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })} - ${new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}`
+                                                    : range.replace(/_/g, ' ')}
+                                            </span>
+                                            <X 
+                                                className="h-3 w-3 shrink-0 cursor-pointer hover:text-rose-400" 
+                                                onClick={() => { 
+                                                    setRange('monthly'); 
+                                                    setStartDate(''); 
+                                                    setEndDate(''); 
+                                                    applyFilters({ range: 'monthly', start_date: '', end_date: '' }); 
+                                                }} 
+                                            />
+                                        </span>
+                                    )}
+                                </div>
+                            </div>
+                        )}
 
                         {/* KPI Summary Tiles */}
                         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
@@ -675,90 +849,90 @@ export default function AnalysisIndex({
                                     </Card>
 
                                     <Card className="border-zinc-800 flex flex-col justify-between">
-    <CardHeader className="pb-3 px-3 sm:px-6">
-        <div className="flex flex-row items-center justify-between gap-2">
-            <CardTitle className="text-sm sm:text-base font-semibold text-zinc-200">
-                Daily Activity
-            </CardTitle>
+                                        <CardHeader className="pb-3 px-3 sm:px-6">
+                                            <div className="flex flex-row items-center justify-between gap-2">
+                                                <CardTitle className="text-sm sm:text-base font-semibold text-zinc-200">
+                                                    Daily Activity
+                                                </CardTitle>
 
-            <div className="flex items-center gap-1 shrink-0">
-                <Button 
-                    variant="outline" 
-                    size="icon-sm" 
-                    className="h-7 w-7 border-zinc-800 text-zinc-300" 
-                    onClick={handlePrevMonth}
-                    title="Previous Month"
-                >
-                    <ChevronLeft className="h-3.5 w-3.5" />
-                </Button>
+                                                <div className="flex items-center gap-1 shrink-0">
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="icon-sm" 
+                                                        className="h-7 w-7 border-zinc-800 text-zinc-300" 
+                                                        onClick={handlePrevMonth}
+                                                        title="Previous Month"
+                                                    >
+                                                        <ChevronLeft className="h-3.5 w-3.5" />
+                                                    </Button>
 
-                <Input 
-                    type="month"
-                    value={calendar.month || calendarMonth}
-                    onChange={handleMonthSelect}
-                    className="h-7 text-xs w-[110px] sm:w-[120px] px-1.5 border-zinc-800 text-zinc-300 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-200 cursor-pointer"
-                />
+                                                    <Input 
+                                                        type="month"
+                                                        value={calendar.month || calendarMonth}
+                                                        onChange={handleMonthSelect}
+                                                        className="h-7 text-xs w-[110px] sm:w-[120px] px-1.5 border-zinc-800 text-zinc-300 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-200 cursor-pointer"
+                                                    />
 
-                <Button 
-                    variant="outline" 
-                    size="icon-sm" 
-                    className="h-7 w-7 border-zinc-800 text-zinc-300" 
-                    onClick={handleNextMonth}
-                    title="Next Month"
-                >
-                    <ChevronRight className="h-3.5 w-3.5" />
-                </Button>
-            </div>
-        </div>
-        <CardDescription className="text-xs text-zinc-400">
-            Tap any day to view transactions.
-        </CardDescription>
-    </CardHeader>
-    <CardContent className="px-2 sm:px-6">
-        <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center">
-            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-                <div key={day} className="text-[10px] sm:text-[11px] font-medium text-zinc-400 py-1">
-                    {day}
-                </div>
-            ))}
-            {calendar.days?.map((dayObj, idx) => (
-                <div key={idx} className="aspect-square flex items-center justify-center p-0.5">
-                    {dayObj ? (
-                        <button
-                            type="button"
-                            onClick={() => setSelectedDayObj(dayObj)}
-                            title={`${dayObj.date} | Income: ${formatCurrency(dayObj.income)} | Expense: ${formatCurrency(dayObj.expense)}`}
-                            className={`w-full h-full rounded-md flex flex-col items-center justify-between p-0.5 sm:p-1 transition-all border border-zinc-800/60 cursor-pointer ${
-                                dayObj.isToday 
-                                    ? 'ring-1 sm:ring-2 ring-primary ring-offset-1 border-primary bg-primary/5' 
-                                    : 'bg-card hover:bg-muted/80'
-                            }`}
-                        >
-                            <span className="text-[9px] sm:text-[10px] font-semibold text-zinc-400 self-start leading-none">
-                                {dayObj.dayNumber}
-                            </span>
+                                                    <Button 
+                                                        variant="outline" 
+                                                        size="icon-sm" 
+                                                        className="h-7 w-7 border-zinc-800 text-zinc-300" 
+                                                        onClick={handleNextMonth}
+                                                        title="Next Month"
+                                                    >
+                                                        <ChevronRight className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                            <CardDescription className="text-xs text-zinc-400">
+                                                Tap any day to view transactions.
+                                            </CardDescription>
+                                        </CardHeader>
+                                        <CardContent className="px-2 sm:px-6">
+                                            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center">
+                                                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+                                                    <div key={day} className="text-[10px] sm:text-[11px] font-medium text-zinc-400 py-1">
+                                                        {day}
+                                                    </div>
+                                                ))}
+                                                {calendar.days?.map((dayObj, idx) => (
+                                                    <div key={idx} className="aspect-square flex items-center justify-center p-0.5">
+                                                        {dayObj ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => setSelectedDayObj(dayObj)}
+                                                                title={`${dayObj.date} | Income: ${formatCurrency(dayObj.income)} | Expense: ${formatCurrency(dayObj.expense)}`}
+                                                                className={`w-full h-full rounded-md flex flex-col items-center justify-between p-0.5 sm:p-1 transition-all border border-zinc-800/60 cursor-pointer ${
+                                                                    dayObj.isToday 
+                                                                        ? 'ring-1 sm:ring-2 ring-primary ring-offset-1 border-primary bg-primary/5' 
+                                                                        : 'bg-card hover:bg-muted/80'
+                                                                }`}
+                                                            >
+                                                                <span className="text-[9px] sm:text-[10px] font-semibold text-zinc-400 self-start leading-none">
+                                                                    {dayObj.dayNumber}
+                                                                </span>
 
-                            <div className="flex flex-col w-full text-[8px] sm:text-[9px] leading-tight font-medium overflow-hidden">
-                                {dayObj.income > 0 && (
-                                    <span className="text-emerald-500 truncate font-semibold">
-                                        +{formatCompactCurrency(dayObj.income)}
-                                    </span>
-                                )}
-                                {dayObj.expense > 0 && (
-                                    <span className="text-rose-500 truncate font-semibold">
-                                        -{formatCompactCurrency(dayObj.expense)}
-                                    </span>
-                                )}
-                            </div>
-                        </button>
-                    ) : (
-                        <div className="w-full h-full rounded-md bg-transparent" />
-                    )}
-                </div>
-            ))}
-        </div>
-    </CardContent>
-</Card>
+                                                                <div className="flex flex-col w-full text-[8px] sm:text-[9px] leading-tight font-medium overflow-hidden">
+                                                                    {dayObj.income > 0 && (
+                                                                        <span className="text-emerald-500 truncate font-semibold">
+                                                                            +{formatCompactCurrency(dayObj.income)}
+                                                                        </span>
+                                                                    )}
+                                                                    {dayObj.expense > 0 && (
+                                                                        <span className="text-rose-500 truncate font-semibold">
+                                                                            -{formatCompactCurrency(dayObj.expense)}
+                                                                        </span>
+                                                                    )}
+                                                                </div>
+                                                            </button>
+                                                        ) : (
+                                                            <div className="w-full h-full rounded-md bg-transparent" />
+                                                        )}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </CardContent>
+                                    </Card>
                                 </div>
                             )}
                         </div>
