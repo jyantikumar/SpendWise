@@ -110,6 +110,16 @@ export default function AnalysisIndex({
     const [selectedDayObj, setSelectedDayObj] = useState(null);
     const [isChartLoading, setIsChartLoading] = useState(false);
 
+    // Dynamic Mobile Detection State
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 640);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     useEffect(() => {
         if (filters.range) setRange(filters.range);
         if (filters.calendar_month) setCalendarMonth(filters.calendar_month);
@@ -248,9 +258,9 @@ export default function AnalysisIndex({
                             </p>
                         </div>
 
-                        {/* Controls Bar Grid (Aligned with KPI tiles) */}
+                        {/* Controls Bar Grid */}
                         <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-center">
-                            {/* Left Side: Pilled Segmented Type Filter (Matches Income vs Expense card width) */}
+                            {/* Left Side: Pilled Segmented Type Filter */}
                             <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs w-full lg:col-span-1">
                                 {[
                                     { label: 'All Flow', value: 'all' },
@@ -275,10 +285,10 @@ export default function AnalysisIndex({
                                 ))}
                             </div>
 
-                            {/* Spacer for column 2 on desktop */}
+                            {/* Spacer Column */}
                             <div className="hidden lg:block lg:col-span-1" />
 
-                            {/* Right Side: Account & Time Horizon Filters (Matches Peak Activity & Net Cash Flow cards width) */}
+                            {/* Right Side: Account & Time Horizon Filters */}
                             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:col-span-2 lg:col-span-2 justify-end">
                                 <Select 
                                     value={accountId} 
@@ -509,10 +519,12 @@ export default function AnalysisIndex({
                                                     <Tooltip content={<BarComparisonTooltip formatCurrency={formatCurrency} subtext="Click bar to view daily breakdown & calendar" />} />
                                                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
                                                     
+                                                    {/* Dynamically stacked on mobile, side-by-side on desktop */}
                                                     <Bar 
                                                         dataKey="Income" 
+                                                        stackId={isMobile ? "a" : undefined}
                                                         fill="#10b981" 
-                                                        radius={[4, 4, 0, 0]} 
+                                                        radius={isMobile ? [0, 0, 4, 4] : [4, 4, 0, 0]} 
                                                         onClick={(data) => handleMonthBarClick(data)}
                                                         className="cursor-pointer hover:opacity-80 transition-opacity"
                                                     >
@@ -522,6 +534,7 @@ export default function AnalysisIndex({
                                                     </Bar>
                                                     <Bar 
                                                         dataKey="Expense" 
+                                                        stackId={isMobile ? "a" : undefined}
                                                         fill="#f43f5e" 
                                                         radius={[4, 4, 0, 0]} 
                                                         onClick={(data) => handleMonthBarClick(data)}
@@ -568,10 +581,12 @@ export default function AnalysisIndex({
                                                     <Tooltip content={<BarComparisonTooltip formatCurrency={formatCurrency} subtext="Click bar to drill down into monthly comparison" />} />
                                                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
                                                     
+                                                    {/* Dynamically stacked on mobile, side-by-side on desktop */}
                                                     <Bar 
                                                         dataKey="Income" 
+                                                        stackId={isMobile ? "a" : undefined}
                                                         fill="#10b981" 
-                                                        radius={[4, 4, 0, 0]} 
+                                                        radius={isMobile ? [0, 0, 4, 4] : [4, 4, 0, 0]} 
                                                         onClick={(data) => handleYearBarClick(data)}
                                                         className="cursor-pointer hover:opacity-80 transition-opacity"
                                                     >
@@ -581,6 +596,7 @@ export default function AnalysisIndex({
                                                     </Bar>
                                                     <Bar 
                                                         dataKey="Expense" 
+                                                        stackId={isMobile ? "a" : undefined}
                                                         fill="#f43f5e" 
                                                         radius={[4, 4, 0, 0]} 
                                                         onClick={(data) => handleYearBarClick(data)}
@@ -659,90 +675,90 @@ export default function AnalysisIndex({
                                     </Card>
 
                                     <Card className="border-zinc-800 flex flex-col justify-between">
-                                        <CardHeader className="pb-3 px-3 sm:px-6">
-                                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                                <CardTitle className="text-sm sm:text-base font-semibold text-zinc-200">
-                                                     Daily Activity
-                                                </CardTitle>
+    <CardHeader className="pb-3 px-3 sm:px-6">
+        <div className="flex flex-row items-center justify-between gap-2">
+            <CardTitle className="text-sm sm:text-base font-semibold text-zinc-200">
+                Daily Activity
+            </CardTitle>
 
-                                                <div className="flex items-center gap-1 self-start sm:self-auto">
-                                                    <Button 
-                                                        variant="outline" 
-                                                        size="icon-sm" 
-                                                        className="h-7 w-7 border-zinc-800 text-zinc-300" 
-                                                        onClick={handlePrevMonth}
-                                                        title="Previous Month"
-                                                    >
-                                                        <ChevronLeft className="h-3.5 w-3.5" />
-                                                    </Button>
+            <div className="flex items-center gap-1 shrink-0">
+                <Button 
+                    variant="outline" 
+                    size="icon-sm" 
+                    className="h-7 w-7 border-zinc-800 text-zinc-300" 
+                    onClick={handlePrevMonth}
+                    title="Previous Month"
+                >
+                    <ChevronLeft className="h-3.5 w-3.5" />
+                </Button>
 
-                                                    <Input 
-                                                        type="month"
-                                                        value={calendar.month || calendarMonth}
-                                                        onChange={handleMonthSelect}
-                                                        className="h-7 text-xs w-[120px] px-1.5 border-zinc-800 text-zinc-300 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-200 cursor-pointer"
-                                                    />
+                <Input 
+                    type="month"
+                    value={calendar.month || calendarMonth}
+                    onChange={handleMonthSelect}
+                    className="h-7 text-xs w-[110px] sm:w-[120px] px-1.5 border-zinc-800 text-zinc-300 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-200 cursor-pointer"
+                />
 
-                                                    <Button 
-                                                        variant="outline" 
-                                                        size="icon-sm" 
-                                                        className="h-7 w-7 border-zinc-800 text-zinc-300" 
-                                                        onClick={handleNextMonth}
-                                                        title="Next Month"
-                                                    >
-                                                        <ChevronRight className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                            <CardDescription className="text-xs text-zinc-400">
-                                                Tap any day to view transactions.
-                                            </CardDescription>
-                                        </CardHeader>
-                                        <CardContent className="px-2 sm:px-6">
-                                            <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center">
-                                                {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
-                                                    <div key={day} className="text-[10px] sm:text-[11px] font-medium text-zinc-400 py-1">
-                                                        {day}
-                                                    </div>
-                                                ))}
-                                                {calendar.days?.map((dayObj, idx) => (
-                                                    <div key={idx} className="aspect-square flex items-center justify-center p-0.5">
-                                                        {dayObj ? (
-                                                            <button
-                                                                type="button"
-                                                                onClick={() => setSelectedDayObj(dayObj)}
-                                                                title={`${dayObj.date} | Income: ${formatCurrency(dayObj.income)} | Expense: ${formatCurrency(dayObj.expense)}`}
-                                                                className={`w-full h-full rounded-md flex flex-col items-center justify-between p-0.5 sm:p-1 transition-all border border-zinc-800/60 cursor-pointer ${
-                                                                    dayObj.isToday 
-                                                                        ? 'ring-1 sm:ring-2 ring-primary ring-offset-1 border-primary bg-primary/5' 
-                                                                        : 'bg-card hover:bg-muted/80'
-                                                                }`}
-                                                            >
-                                                                <span className="text-[9px] sm:text-[10px] font-semibold text-zinc-400 self-start leading-none">
-                                                                    {dayObj.dayNumber}
-                                                                </span>
+                <Button 
+                    variant="outline" 
+                    size="icon-sm" 
+                    className="h-7 w-7 border-zinc-800 text-zinc-300" 
+                    onClick={handleNextMonth}
+                    title="Next Month"
+                >
+                    <ChevronRight className="h-3.5 w-3.5" />
+                </Button>
+            </div>
+        </div>
+        <CardDescription className="text-xs text-zinc-400">
+            Tap any day to view transactions.
+        </CardDescription>
+    </CardHeader>
+    <CardContent className="px-2 sm:px-6">
+        <div className="grid grid-cols-7 gap-0.5 sm:gap-1 text-center">
+            {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+                <div key={day} className="text-[10px] sm:text-[11px] font-medium text-zinc-400 py-1">
+                    {day}
+                </div>
+            ))}
+            {calendar.days?.map((dayObj, idx) => (
+                <div key={idx} className="aspect-square flex items-center justify-center p-0.5">
+                    {dayObj ? (
+                        <button
+                            type="button"
+                            onClick={() => setSelectedDayObj(dayObj)}
+                            title={`${dayObj.date} | Income: ${formatCurrency(dayObj.income)} | Expense: ${formatCurrency(dayObj.expense)}`}
+                            className={`w-full h-full rounded-md flex flex-col items-center justify-between p-0.5 sm:p-1 transition-all border border-zinc-800/60 cursor-pointer ${
+                                dayObj.isToday 
+                                    ? 'ring-1 sm:ring-2 ring-primary ring-offset-1 border-primary bg-primary/5' 
+                                    : 'bg-card hover:bg-muted/80'
+                            }`}
+                        >
+                            <span className="text-[9px] sm:text-[10px] font-semibold text-zinc-400 self-start leading-none">
+                                {dayObj.dayNumber}
+                            </span>
 
-                                                                <div className="flex flex-col w-full text-[8px] sm:text-[9px] leading-tight font-medium overflow-hidden">
-                                                                    {dayObj.income > 0 && (
-                                                                        <span className="text-emerald-500 truncate font-semibold">
-                                                                            +{formatCompactCurrency(dayObj.income)}
-                                                                        </span>
-                                                                    )}
-                                                                    {dayObj.expense > 0 && (
-                                                                        <span className="text-rose-500 truncate font-semibold">
-                                                                            -{formatCompactCurrency(dayObj.expense)}
-                                                                        </span>
-                                                                    )}
-                                                                </div>
-                                                            </button>
-                                                        ) : (
-                                                            <div className="w-full h-full rounded-md bg-transparent" />
-                                                        )}
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </CardContent>
-                                    </Card>
+                            <div className="flex flex-col w-full text-[8px] sm:text-[9px] leading-tight font-medium overflow-hidden">
+                                {dayObj.income > 0 && (
+                                    <span className="text-emerald-500 truncate font-semibold">
+                                        +{formatCompactCurrency(dayObj.income)}
+                                    </span>
+                                )}
+                                {dayObj.expense > 0 && (
+                                    <span className="text-rose-500 truncate font-semibold">
+                                        -{formatCompactCurrency(dayObj.expense)}
+                                    </span>
+                                )}
+                            </div>
+                        </button>
+                    ) : (
+                        <div className="w-full h-full rounded-md bg-transparent" />
+                    )}
+                </div>
+            ))}
+        </div>
+    </CardContent>
+</Card>
                                 </div>
                             )}
                         </div>
