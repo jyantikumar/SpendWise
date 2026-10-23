@@ -217,112 +217,119 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="p-4 sm:p-6 pt-0 space-y-3">
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
-                            <div className="relative col-span-1 sm:col-span-2 md:col-span-1">
-                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
-                                <Input
-                                    placeholder="Search description..."
-                                    value={search}
-                                    onChange={(e) => setSearch(e.target.value)}
-                                    className="pl-8 h-9 w-full border-zinc-800 text-zinc-300"
-                                />
-                            </div>
+    {/* Grid wrapper */}
+    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        {/* Search input (full width on mobile) */}
+        <div className="relative col-span-1 md:col-span-1">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
+            <Input
+                placeholder="Search description..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="pl-8 h-9 w-full border-zinc-800 text-zinc-300"
+            />
+        </div>
 
-                            <div className="w-full">
-                                <Select 
-                                    value={selectedType} 
-                                    onValueChange={(val) => {
-                                        setSelectedType(val);
-                                        applyFilters({ type: val });
-                                    }}
-                                >
-                                    <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
-                                        <SelectValue placeholder="All Types" />
-                                    </SelectTrigger>
-                                    <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                        <SelectItem value="all">All Types</SelectItem>
-                                        <SelectItem value="expense">Expense</SelectItem>
-                                        <SelectItem value="income">Income</SelectItem>
-                                        <SelectItem value="transfer">Transfer</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
+        {/* Types & Accounts side-by-side on mobile */}
+        <div className="grid grid-cols-2 gap-3 col-span-1 md:col-span-2">
+            <div className="w-full">
+                <Select 
+                    value={selectedType} 
+                    onValueChange={(val) => {
+                        setSelectedType(val);
+                        applyFilters({ type: val });
+                    }}
+                >
+                    <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
+                        <SelectValue placeholder="All Types" />
+                    </SelectTrigger>
+                    <SelectContent className="border-zinc-800 bg-background text-zinc-300">
+                        <SelectItem value="all">All Types</SelectItem>
+                        <SelectItem value="expense">Expense</SelectItem>
+                        <SelectItem value="income">Income</SelectItem>
+                        <SelectItem value="transfer">Transfer</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
 
-                            <div className="w-full">
-                                <Select 
-                                    value={selectedAccount} 
-                                    onValueChange={(val) => {
-                                        setSelectedAccount(val);
-                                        applyFilters({ account_id: val });
-                                    }}
-                                >
-                                    <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
-                                        <SelectValue placeholder="All Accounts" />
-                                    </SelectTrigger>
-                                    <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                        <SelectItem value="all">All Accounts</SelectItem>
-                                        {accounts.map((acc) => (
-                                            <SelectItem key={acc.id} value={String(acc.id)}>
-                                                {acc.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
+            <div className="w-full">
+                <Select 
+                    value={selectedAccount} 
+                    onValueChange={(val) => {
+                        setSelectedAccount(val);
+                        applyFilters({ account_id: val });
+                    }}
+                >
+                    <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
+                        <SelectValue placeholder="All Accounts" />
+                    </SelectTrigger>
+                    <SelectContent className="border-zinc-800 bg-background text-zinc-300">
+                        <SelectItem value="all">All Accounts</SelectItem>
+                        {accounts.map((acc) => (
+                            <SelectItem key={acc.id} value={String(acc.id)}>
+                                {acc.name}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
+        </div>
 
-                            <div className="w-full">
-                                <Select value={selectedRange} onValueChange={handleRangeChange}>
-                                    <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
-                                        <SlidersHorizontal className="mr-2 h-4 w-4" />
-                                        <SelectValue placeholder="Range" />
-                                    </SelectTrigger>
-                                    <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                        <SelectItem value="this_day">This Day</SelectItem>
-                                        <SelectItem value="this_week">This Week</SelectItem>
-                                        <SelectItem value="this_month">This Month</SelectItem>
-                                        <SelectItem value="last_30_days">Last 30 Days</SelectItem>
-                                        <SelectItem value="this_year">This Year</SelectItem>
-                                        <SelectItem value="custom">Custom</SelectItem>
-                                        <SelectItem value="all">All Time</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
+        {/* Range select (full width on mobile, 1 col on desktop) */}
+        <div className="w-full col-span-1 md:col-span-1">
+            <Select value={selectedRange} onValueChange={handleRangeChange}>
+                <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
+                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                    <SelectValue placeholder="Range" />
+                </SelectTrigger>
+                <SelectContent className="border-zinc-800 bg-background text-zinc-300">
+                    <SelectItem value="this_day">This Day</SelectItem>
+                    <SelectItem value="this_week">This Week</SelectItem>
+                    <SelectItem value="this_month">This Month</SelectItem>
+                    <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                    <SelectItem value="this_year">This Year</SelectItem>
+                    <SelectItem value="custom">Custom</SelectItem>
+                    <SelectItem value="all">All Time</SelectItem>
+                </SelectContent>
+            </Select>
+        </div>
+    </div>
+    
+    {/* Custom dates range inputs */}
+    {selectedRange === 'custom' && (
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2">
+            <Input 
+                type="date" 
+                value={startDate} 
+                onChange={(e) => setStartDate(e.target.value)}
+                className="h-9 border-zinc-800 text-zinc-300 text-xs w-full sm:w-auto"
+            />
+            <span className="text-xs text-zinc-400 text-center sm:text-left">to</span>
+            <Input 
+                type="date" 
+                value={endDate} 
+                onChange={(e) => setEndDate(e.target.value)}
+                className="h-9 border-zinc-800 text-zinc-300 text-xs w-full sm:w-auto"
+            />
+            <Button size="sm" variant="secondary" onClick={handleApplyCustomDates} className="h-9 px-3 w-full sm:w-auto">
+                Apply
+            </Button>
+        </div>
+    )}
 
-                        {selectedRange === 'custom' && (
-                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2">
-                                <Input 
-                                    type="date" 
-                                    value={startDate} 
-                                    onChange={(e) => setStartDate(e.target.value)}
-                                    className="h-9 border-zinc-800 text-zinc-300 text-xs w-full sm:w-auto"
-                                />
-                                <span className="text-xs text-zinc-400 text-center sm:text-left">to</span>
-                                <Input 
-                                    type="date" 
-                                    value={endDate} 
-                                    onChange={(e) => setEndDate(e.target.value)}
-                                    className="h-9 border-zinc-800 text-zinc-300 text-xs w-full sm:w-auto"
-                                />
-                                <Button size="sm" variant="secondary" onClick={handleApplyCustomDates} className="h-9 px-3 w-full sm:w-auto">
-                                    Apply
-                                </Button>
-                            </div>
-                        )}
-
-                        {hasActiveFilters && (
-                            <div className="flex justify-end pt-1">
-                                <Button 
-                                    variant="ghost" 
-                                    size="sm" 
-                                    onClick={handleResetFilters}
-                                    className="text-xs text-zinc-400 hover:text-zinc-200 gap-1 h-8"
-                                >
-                                    <X className="h-3.5 w-3.5" /> Clear Filters
-                                </Button>
-                            </div>
-                        )}
-                    </CardContent>
+    {hasActiveFilters && (
+        <div className="flex justify-end pt-1">
+            <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={handleResetFilters}
+                className="text-xs text-zinc-400 hover:text-zinc-200 gap-1 h-8"
+            >
+                <X className="h-3.5 w-3.5" /> Clear Filters
+            </Button>
+        </div>
+    )}
+</CardContent>
                 </Card>
 
                 {/* Transaction History Container */}
