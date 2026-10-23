@@ -61,6 +61,7 @@ Route::get('/accounts/{account}/transactions', [AccountController::class, 'accou
     Route::delete('/recurring/{recurringTransaction}', [RecurringTransactionController::class, 'destroy'])->name('recurring.destroy');
     Route::post('/recurring/{recurringTransaction}/process', [RecurringTransactionController::class, 'process'])->name('recurring.process');
     Route::patch('/recurring/{recurringTransaction}/toggle', [RecurringTransactionController::class, 'toggle'])->name('recurring.toggle');
+    Route::post('/recurring/{recurringTransaction}/skip', [RecurringTransactionController::class, 'skip'])->name('recurring.skip');
 });
 
 require __DIR__.'/auth.php';

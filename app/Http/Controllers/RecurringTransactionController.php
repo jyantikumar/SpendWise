@@ -41,6 +41,7 @@ class RecurringTransactionController extends Controller
             'account_id'  => 'required|exists:accounts,id',
             'category_id' => 'nullable|exists:categories,id',
             'start_date'  => 'required|date',
+            'end_date'    => 'required|date|after_or_equal:start_date',
             'auto_create' => 'boolean',
         ]);
 
@@ -67,10 +68,11 @@ class RecurringTransactionController extends Controller
             'account_id'  => 'required|exists:accounts,id',
             'category_id' => 'nullable|exists:categories,id',
             'start_date'  => 'required|date',
+            'end_date'    => 'required|date|after_or_equal:start_date',
             'auto_create' => 'boolean',
         ]);
 
-        // Keep next_due_date updated if start_date is modified
+        // Keep next_due_date updated if start_date is modified and no transactions have been posted yet
         if ($recurringTransaction->start_date !== $validated['start_date'] && !$recurringTransaction->last_generated_at) {
             $validated['next_due_date'] = $validated['start_date'];
         }
@@ -78,6 +80,33 @@ class RecurringTransactionController extends Controller
         $recurringTransaction->update($validated);
 
         return redirect()->back()->with('success', 'Recurring transaction updated successfully.');
+    }
+
+    // Skip the current payment due date without logging a transaction
+    public function skip(Request $request, RecurringTransaction $recurringTransaction)
+    {
+        if ($recurringTransaction->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $nextDate = Carbon::parse($recurringTransaction->next_due_date);
+
+        switch ($recurringTransaction->frequency) {
+            case 'daily':   $nextDate->addDay(); break;
+            case 'weekly':  $nextDate->addWeek(); break;
+            case 'monthly': $nextDate->addMonth(); break;
+            case 'yearly':  $nextDate->addYear(); break;
+        }
+
+        // Auto-pause rule if skipping pushes the next due date beyond the end_date
+        $isFinished = $recurringTransaction->end_date && $nextDate->greaterThan(Carbon::parse($recurringTransaction->end_date));
+
+        $recurringTransaction->update([
+            'next_due_date' => $nextDate,
+            'is_active'     => $isFinished ? false : $recurringTransaction->is_active,
+        ]);
+
+        return redirect()->back()->with('success', 'Payment skipped for this period.');
     }
 
     // Delete recurring transaction rule
@@ -107,7 +136,7 @@ class RecurringTransactionController extends Controller
                 'category_id'      => $recurringTransaction->category_id,
                 'amount'           => $recurringTransaction->amount,
                 'type'             => $recurringTransaction->type,
-                'description'      => $recurringTransaction->title . ' (Recurring)',
+                'description'      => $recurringTransaction->title . ' (Rec.)',
                 'transaction_date' => Carbon::now()->format('Y-m-d'),
             ]);
 
@@ -128,9 +157,13 @@ class RecurringTransactionController extends Controller
                 case 'yearly':  $nextDate->addYear(); break;
             }
 
+            // Auto-pause rule if advancing exceeds the required end_date
+            $isFinished = $recurringTransaction->end_date && $nextDate->greaterThan(Carbon::parse($recurringTransaction->end_date));
+
             $recurringTransaction->update([
                 'last_generated_at' => Carbon::now(),
                 'next_due_date'     => $nextDate,
+                'is_active'         => $isFinished ? false : $recurringTransaction->is_active,
             ]);
         });
 
@@ -138,10 +171,18 @@ class RecurringTransactionController extends Controller
     }
 
     // Toggle rule active status
+ // Toggle rule active status
     public function toggle(Request $request, RecurringTransaction $recurringTransaction)
     {
         if ($recurringTransaction->user_id !== $request->user()->id) {
             abort(403);
+        }
+
+        // Prevent activation if the end date has already passed
+        $isExpired = $recurringTransaction->end_date && Carbon::parse($recurringTransaction->end_date)->isPast();
+
+        if (!$recurringTransaction->is_active && $isExpired) {
+            return redirect()->back()->with('error', 'Cannot activate a recurring rule whose end date has passed.');
         }
 
         $recurringTransaction->update([

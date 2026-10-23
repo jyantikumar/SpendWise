@@ -31,10 +31,10 @@ export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, 
         account_id: accounts[0]?.id ? String(accounts[0].id) : '',
         category_id: '',
         start_date: new Date().toISOString().slice(0, 10),
+        end_date: '',
         auto_create: true,
     });
 
-    // Populate or reset form fields when editingItem or open state changes
     useEffect(() => {
         if (editingItem) {
             setData({
@@ -45,6 +45,7 @@ export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, 
                 account_id: editingItem.account_id ? String(editingItem.account_id) : (accounts[0]?.id ? String(accounts[0].id) : ''),
                 category_id: editingItem.category_id ? String(editingItem.category_id) : '',
                 start_date: editingItem.next_due_date ? String(editingItem.next_due_date).split('T')[0] : (editingItem.start_date ? String(editingItem.start_date).split('T')[0] : new Date().toISOString().slice(0, 10)),
+                end_date: editingItem.end_date ? String(editingItem.end_date).split('T')[0] : '',
                 auto_create: Boolean(editingItem.auto_create),
             });
         } else {
@@ -57,12 +58,12 @@ export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, 
                 account_id: accounts[0]?.id ? String(accounts[0].id) : '',
                 category_id: '',
                 start_date: new Date().toISOString().slice(0, 10),
+                end_date: '',
                 auto_create: true,
             });
         }
     }, [editingItem, open]);
 
-    // Filter categories dynamically according to selected transaction type
     const filteredCategories = categories.filter(
         (cat) => !cat.type || cat.type === data.type
     );
@@ -71,7 +72,7 @@ export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, 
         setData((prevData) => ({
             ...prevData,
             type: newType,
-            category_id: '', // Reset category selection when switching transaction type
+            category_id: '',
         }));
     };
 
@@ -160,8 +161,8 @@ export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, 
                         </div>
                     </div>
 
-                    {/* Frequency & Start Date Grid */}
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* Frequency & Dates Grid */}
+                    <div className="grid grid-cols-3 gap-3">
                         <div className="space-y-1.5">
                             <Label className="text-xs text-zinc-300">Frequency</Label>
                             <Select value={data.frequency} onValueChange={(val) => setData('frequency', val)}>
@@ -180,7 +181,7 @@ export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, 
 
                         <div className="space-y-1.5">
                             <Label htmlFor="start_date" className="text-xs text-zinc-300">
-                                {isEditing ? 'Next Due Date' : 'Start Date'}
+                                {isEditing ? 'Next Due' : 'Start Date'}
                             </Label>
                             <Input
                                 id="start_date"
@@ -190,6 +191,20 @@ export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, 
                                 className="h-9 w-full border-zinc-800 bg-zinc-900 text-xs text-zinc-200"
                             />
                             {errors.start_date && <p className="text-[11px] text-rose-500">{errors.start_date}</p>}
+                        </div>
+
+                        <div className="space-y-1.5">
+                            <Label htmlFor="end_date" className="text-xs text-zinc-300">
+                                End Date
+                            </Label>
+                            <Input
+                                id="end_date"
+                                type="date"
+                                value={data.end_date}
+                                onChange={(e) => setData('end_date', e.target.value)}
+                                className="h-9 w-full border-zinc-800 bg-zinc-900 text-xs text-zinc-200"
+                            />
+                            {errors.end_date && <p className="text-[11px] text-rose-500">{errors.end_date}</p>}
                         </div>
                     </div>
 

@@ -19,6 +19,7 @@ class RecurringTransaction extends Model
         'type',
         'frequency',
         'start_date',
+        'end_date',
         'next_due_date',
         'last_generated_at',
         'is_active',
@@ -28,6 +29,7 @@ class RecurringTransaction extends Model
     protected $casts = [
         'amount' => 'decimal:2',
         'start_date' => 'date',
+        'end_date',
         'next_due_date' => 'date',
         'last_generated_at' => 'date',
         'is_active' => 'boolean',
