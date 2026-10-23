@@ -32,6 +32,17 @@ import {
     AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
 
+import {
+    Sheet,
+    SheetContent,
+    SheetDescription,
+    SheetHeader,
+    SheetTitle,
+    SheetTrigger,
+    SheetFooter,
+    SheetClose,
+} from '@/components/ui/sheet';
+
 import { TransactionDetailSheet } from '@/components/TransactionDetailSheet';
 import TransactionFormModal from '@/components/TransactionFormModal';
 
@@ -40,6 +51,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [deletingTransaction, setDeletingTransaction] = useState(null);
     const [selectedDetailTransaction, setSelectedDetailTransaction] = useState(null);
+    const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
     const [search, setSearch] = useState(filters.search || '');
     const [selectedType, setSelectedType] = useState(filters.type || 'all');
@@ -114,7 +126,19 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
         router.get(route('transactions.index'), {}, { preserveState: true, replace: true });
     };
 
-    const hasActiveFilters = search || selectedType !== 'all' || selectedAccount !== 'all' || selectedRange !== 'this_month';
+    const hasActiveFilters = Boolean(
+        search || 
+        selectedType !== 'all' || 
+        selectedAccount !== 'all' || 
+        selectedRange !== 'this_month'
+    );
+
+    const activeFilterCount = [
+        Boolean(search),
+        selectedType !== 'all',
+        selectedAccount !== 'all',
+        selectedRange !== 'this_month'
+    ].filter(Boolean).length;
 
     const formatCurrency = (val) => 
         new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
@@ -155,9 +179,165 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                         </p>
                     </div>
 
-                    <Button onClick={openCreateModal} className="w-full sm:w-auto gap-2">
-                        <Plus className="h-4 w-4" /> Add Transaction
-                    </Button>
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                        {/* Filter Sheet Trigger */}
+                        <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
+                            <SheetTrigger asChild>
+                                <Button variant="outline" className="relative flex-1 sm:flex-initial gap-2 border-zinc-800 text-zinc-300">
+                                    <Filter className="h-4 w-4" />
+                                    <span>Filter</span>
+                                    {activeFilterCount > 0 && (
+                                        <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20">
+                                            {activeFilterCount}
+                                        </span>
+                                    )}
+                                </Button>
+                            </SheetTrigger>
+
+                            <SheetContent side="right" className="w-full sm:max-w-md border-zinc-800 bg-zinc-950 text-zinc-100 flex flex-col justify-between">
+                                <div>
+                                    <SheetHeader className="pb-4 border-b border-zinc-800">
+                                        <SheetTitle className="text-zinc-100 flex items-center gap-2">
+                                            <Filter className="h-4 w-4 text-zinc-400" /> Filter Transactions
+                                        </SheetTitle>
+                                        <SheetDescription className="text-zinc-400 text-xs">
+                                            Refine your transaction list by description, type, account, or date range.
+                                        </SheetDescription>
+                                    </SheetHeader>
+
+                                    <div className="py-6 space-y-5">
+                                        {/* Search Filter */}
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-medium text-zinc-400">Search</label>
+                                            <div className="relative">
+                                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
+                                                <Input
+                                                    placeholder="Search description..."
+                                                    value={search}
+                                                    onChange={(e) => setSearch(e.target.value)}
+                                                    className="pl-8 h-9 border-zinc-800 text-zinc-300 bg-zinc-900"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        {/* Type & Account Grid */}
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-medium text-zinc-400">Type</label>
+                                                <Select 
+                                                    value={selectedType} 
+                                                    onValueChange={(val) => {
+                                                        setSelectedType(val);
+                                                        applyFilters({ type: val });
+                                                    }}
+                                                >
+                                                    <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900">
+                                                        <SelectValue placeholder="All Types" />
+                                                    </SelectTrigger>
+                                                    <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-300">
+                                                        <SelectItem value="all">All Types</SelectItem>
+                                                        <SelectItem value="expense">Expense</SelectItem>
+                                                        <SelectItem value="income">Income</SelectItem>
+                                                        <SelectItem value="transfer">Transfer</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <label className="text-xs font-medium text-zinc-400">Account</label>
+                                                <Select 
+                                                    value={selectedAccount} 
+                                                    onValueChange={(val) => {
+                                                        setSelectedAccount(val);
+                                                        applyFilters({ account_id: val });
+                                                    }}
+                                                >
+                                                    <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900">
+                                                        <SelectValue placeholder="All Accounts" />
+                                                    </SelectTrigger>
+                                                    <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-300 max-h-60">
+                                                        <SelectItem value="all">All Accounts</SelectItem>
+                                                        {accounts.map((acc) => (
+                                                            <SelectItem key={acc.id} value={String(acc.id)}>
+                                                                {acc.name}
+                                                            </SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                        </div>
+
+                                        {/* Date Range Filter */}
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-medium text-zinc-400">Date Range</label>
+                                            <Select value={selectedRange} onValueChange={handleRangeChange}>
+                                                <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900">
+                                                    <SlidersHorizontal className="mr-2 h-4 w-4" />
+                                                    <SelectValue placeholder="Range" />
+                                                </SelectTrigger>
+                                                <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-300">
+                                                    <SelectItem value="this_day">This Day</SelectItem>
+                                                    <SelectItem value="this_week">This Week</SelectItem>
+                                                    <SelectItem value="this_month">This Month</SelectItem>
+                                                    <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                                                    <SelectItem value="this_year">This Year</SelectItem>
+                                                    <SelectItem value="custom">Custom Range</SelectItem>
+                                                    <SelectItem value="all">All Time</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        {/* Custom Range Inputs */}
+                                        {selectedRange === 'custom' && (
+                                            <div className="space-y-2 pt-2 border-t border-zinc-800/80">
+                                                <label className="text-xs font-medium text-zinc-400">Custom Date Range</label>
+                                                <div className="flex items-center gap-2">
+                                                    <Input 
+                                                        type="date" 
+                                                        value={startDate} 
+                                                        onChange={(e) => setStartDate(e.target.value)}
+                                                        className="h-9 border-zinc-800 text-zinc-300 text-xs bg-zinc-900"
+                                                    />
+                                                    <span className="text-xs text-zinc-400">to</span>
+                                                    <Input 
+                                                        type="date" 
+                                                        value={endDate} 
+                                                        onChange={(e) => setEndDate(e.target.value)}
+                                                        className="h-9 border-zinc-800 text-zinc-300 text-xs bg-zinc-900"
+                                                    />
+                                                </div>
+                                                <Button size="sm" variant="secondary" onClick={handleApplyCustomDates} className="w-full h-9 mt-2">
+                                                    Apply Custom Range
+                                                </Button>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <SheetFooter className="pt-4 border-t border-zinc-800 flex flex-row items-center justify-between gap-2">
+                                    {hasActiveFilters ? (
+                                        <Button 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            onClick={handleResetFilters}
+                                            className="text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 gap-1 h-9"
+                                        >
+                                            <X className="h-3.5 w-3.5" /> Reset Filters
+                                        </Button>
+                                    ) : <div />}
+
+                                    <SheetClose asChild>
+                                        <Button className="h-9 px-6">Done</Button>
+                                    </SheetClose>
+                                </SheetFooter>
+                            </SheetContent>
+                        </Sheet>
+
+                        {/* Add Transaction Modal Trigger */}
+                        <Button onClick={openCreateModal} className="flex-1 sm:flex-initial gap-2">
+                            <Plus className="h-4 w-4" /> Add Transaction
+                        </Button>
+                    </div>
                 </div>
 
                 {/* KPI Cards Grid */}
@@ -209,128 +389,70 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                     </Card>
                 </div>
 
-                {/* Filters Card */}
-                <Card className="border-zinc-800">
-                    <CardHeader className="pb-3 p-4 sm:p-6">
-                        <CardTitle className="text-base font-medium flex items-center gap-2 text-zinc-200">
-                            <Filter className="h-4 w-4 text-zinc-400" /> Filter Transactions
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="p-4 sm:p-6 pt-0 space-y-3">
-    {/* Grid wrapper */}
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-        {/* Search input (full width on mobile) */}
-        <div className="relative col-span-1 md:col-span-1">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
-            <Input
-                placeholder="Search description..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-8 h-9 w-full border-zinc-800 text-zinc-300"
-            />
-        </div>
-
-        {/* Types & Accounts side-by-side on mobile */}
-        <div className="grid grid-cols-2 gap-3 col-span-1 md:col-span-2">
-            <div className="w-full">
-                <Select 
-                    value={selectedType} 
-                    onValueChange={(val) => {
-                        setSelectedType(val);
-                        applyFilters({ type: val });
-                    }}
-                >
-                    <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
-                        <SelectValue placeholder="All Types" />
-                    </SelectTrigger>
-                    <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="expense">Expense</SelectItem>
-                        <SelectItem value="income">Income</SelectItem>
-                        <SelectItem value="transfer">Transfer</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-
-            <div className="w-full">
-                <Select 
-                    value={selectedAccount} 
-                    onValueChange={(val) => {
-                        setSelectedAccount(val);
-                        applyFilters({ account_id: val });
-                    }}
-                >
-                    <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
-                        <SelectValue placeholder="All Accounts" />
-                    </SelectTrigger>
-                    <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                        <SelectItem value="all">All Accounts</SelectItem>
-                        {accounts.map((acc) => (
-                            <SelectItem key={acc.id} value={String(acc.id)}>
-                                {acc.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-        </div>
-
-        {/* Range select (full width on mobile, 1 col on desktop) */}
-        <div className="w-full col-span-1 md:col-span-1">
-            <Select value={selectedRange} onValueChange={handleRangeChange}>
-                <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300">
-                    <SlidersHorizontal className="mr-2 h-4 w-4" />
-                    <SelectValue placeholder="Range" />
-                </SelectTrigger>
-                <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                    <SelectItem value="this_day">This Day</SelectItem>
-                    <SelectItem value="this_week">This Week</SelectItem>
-                    <SelectItem value="this_month">This Month</SelectItem>
-                    <SelectItem value="last_30_days">Last 30 Days</SelectItem>
-                    <SelectItem value="this_year">This Year</SelectItem>
-                    <SelectItem value="custom">Custom</SelectItem>
-                    <SelectItem value="all">All Time</SelectItem>
-                </SelectContent>
-            </Select>
-        </div>
-    </div>
-    
-    {/* Custom dates range inputs */}
-    {selectedRange === 'custom' && (
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-2">
-            <Input 
-                type="date" 
-                value={startDate} 
-                onChange={(e) => setStartDate(e.target.value)}
-                className="h-9 border-zinc-800 text-zinc-300 text-xs w-full sm:w-auto"
-            />
-            <span className="text-xs text-zinc-400 text-center sm:text-left">to</span>
-            <Input 
-                type="date" 
-                value={endDate} 
-                onChange={(e) => setEndDate(e.target.value)}
-                className="h-9 border-zinc-800 text-zinc-300 text-xs w-full sm:w-auto"
-            />
-            <Button size="sm" variant="secondary" onClick={handleApplyCustomDates} className="h-9 px-3 w-full sm:w-auto">
-                Apply
-            </Button>
-        </div>
-    )}
-
-    {hasActiveFilters && (
-        <div className="flex justify-end pt-1">
+   {/* Active Filter Bar with Fixed Sub-Header */}
+{hasActiveFilters && (
+    <div className="space-y-1.5 bg-zinc-900/60 p-2.5 rounded-lg border border-zinc-800/80">
+        <div className="flex items-center justify-between text-[11px] sm:text-xs">
+            <span className="text-zinc-400 font-medium">
+                Active Filters ({activeFilterCount})
+            </span>
             <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={handleResetFilters}
-                className="text-xs text-zinc-400 hover:text-zinc-200 gap-1 h-8"
+                className="text-[11px] sm:text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/20 h-5 px-1.5 -mr-1"
             >
-                <X className="h-3.5 w-3.5" /> Clear Filters
+                Clear All
             </Button>
         </div>
-    )}
-</CardContent>
-                </Card>
+
+        {/* Scrollable Filter Chips Row */}
+        <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pt-0.5">
+            {search && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/80 text-[11px] sm:text-xs shrink-0 max-w-[120px]">
+                    <span className="truncate">"{search}"</span>
+                    <X className="h-3 w-3 shrink-0 cursor-pointer hover:text-rose-400" onClick={() => { setSearch(''); applyFilters({ search: '' }); }} />
+                </span>
+            )}
+
+            {selectedType !== 'all' && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/80 text-[11px] sm:text-xs capitalize shrink-0">
+                    <span>{selectedType}</span>
+                    <X className="h-3 w-3 shrink-0 cursor-pointer hover:text-rose-400" onClick={() => { setSelectedType('all'); applyFilters({ type: 'all' }); }} />
+                </span>
+            )}
+
+            {selectedAccount !== 'all' && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/80 text-[11px] sm:text-xs shrink-0 max-w-[120px]">
+                    <span className="truncate">{accounts.find(a => String(a.id) === String(selectedAccount))?.name || 'Account'}</span>
+                    <X className="h-3 w-3 shrink-0 cursor-pointer hover:text-rose-400" onClick={() => { setSelectedAccount('all'); applyFilters({ account_id: 'all' }); }} />
+                </span>
+            )}
+
+            {selectedRange !== 'this_month' && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/80 text-[11px] sm:text-xs shrink-0">
+                    <span>
+                        {selectedRange === 'custom' && startDate && endDate
+                            ? `${new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })} - ${new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}`
+                            : selectedRange.replace(/_/g, ' ')}
+                    </span>
+                    <X 
+                        className="h-3 w-3 shrink-0 cursor-pointer hover:text-rose-400" 
+                        onClick={() => { 
+                            setSelectedRange('this_month'); 
+                            setStartDate(''); 
+                            setEndDate(''); 
+                            applyFilters({ range: 'this_month', start_date: '', end_date: '' }); 
+                        }} 
+                    />
+                </span>
+            )}
+        </div>
+    </div>
+)}
+                {/* Active Filter Chips Bar (Compact Mobile Layout) */}
+{/* Active Filter Chips Bar (Single-Row Horizontal Scroll) */}
+
 
                 {/* Transaction History Container */}
                 <Card className="border-zinc-800">
@@ -341,7 +463,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                         </CardDescription>
                     </CardHeader>
                     <CardContent className="p-0 sm:p-6 sm:pt-0">
-                        {/* Mobile Cards View (Visible on screens smaller than `md`) */}
+                        {/* Mobile Cards View */}
                         <div className="divide-y divide-zinc-800 md:hidden">
                             {transactionList.length > 0 ? (
                                 transactionList.map((tx) => (
@@ -392,7 +514,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                             )}
                         </div>
 
-                        {/* Desktop Table View (Visible on `md` and larger screens) */}
+                        {/* Desktop Table View */}
                         <div className="hidden md:block">
                             <Table>
                                 <TableHeader>
