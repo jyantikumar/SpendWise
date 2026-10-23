@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Transaction extends Model
 {
@@ -15,6 +16,7 @@ class Transaction extends Model
         'account_id',
         'destination_account_id',
         'category_id',
+        'recurring_transaction_id', // 👈 Added
         'type',
         'amount',
         'description',
@@ -27,23 +29,29 @@ class Transaction extends Model
         'transaction_date' => 'datetime',
     ];
 
-    public function user()
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function account()
+    public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    public function destinationAccount()
+    public function destinationAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'destination_account_id');
     }
 
-    public function category()
+    public function category(): BelongsTo
     {
         return $this->belongsTo(Category::class);
+    }
+
+    // 👈 Added relationship
+    public function recurringTransaction(): BelongsTo
+    {
+        return $this->belongsTo(RecurringTransaction::class);
     }
 }

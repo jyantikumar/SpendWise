@@ -22,18 +22,20 @@ class RecurringTransaction extends Model
         'end_date',
         'next_due_date',
         'last_generated_at',
+        'skipped_dates',
         'is_active',
         'auto_create',
     ];
 
     protected $casts = [
-        'amount' => 'decimal:2',
-        'start_date' => 'date',
-        'end_date',
-        'next_due_date' => 'date',
+        'amount'            => 'decimal:2',
+        'start_date'        => 'date',
+        'end_date'          => 'date',
+        'next_due_date'     => 'date',
         'last_generated_at' => 'date',
-        'is_active' => 'boolean',
-        'auto_create' => 'boolean',
+        'skipped_dates'     => 'array',
+        'is_active'         => 'boolean',
+        'auto_create'       => 'boolean',
     ];
 
     public function user(): BelongsTo

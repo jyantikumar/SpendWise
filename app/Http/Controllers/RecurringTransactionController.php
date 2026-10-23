@@ -16,18 +16,77 @@ class RecurringTransactionController extends Controller
     {
         $user = $request->user();
 
-        $recurringTransactions = RecurringTransaction::where('user_id', $user->id)
+        $recurringRules = RecurringTransaction::where('user_id', $user->id)
             ->with(['account', 'category'])
             ->orderBy('next_due_date', 'asc')
             ->get();
 
-        $accounts = $user->accounts()->orderBy('name')->get();
-        $categories = $user->categories()->orderBy('name')->get();
+        $today = Carbon::today();
+        $lookaheadDate = $today->copy()->addDays(30);
+
+        // Fetch paid transactions linked to recurring rules
+        $paidTransactions = Transaction::where('user_id', $user->id)
+            ->whereNotNull('recurring_transaction_id')
+            ->get(['recurring_transaction_id', 'transaction_date'])
+            ->groupBy('recurring_transaction_id');
+
+        $pendingInstances = [];
+
+        foreach ($recurringRules as $rule) {
+            if (!$rule->is_active) {
+                continue;
+            }
+
+            $currentDueDate = Carbon::parse($rule->start_date);
+            $endDate = $rule->end_date ? Carbon::parse($rule->end_date) : null;
+            $skippedDates = $rule->skipped_dates ?? [];
+
+            $rulePaidDates = $paidTransactions->get($rule->id, collect())
+                ->pluck('transaction_date')
+                ->map(fn($d) => Carbon::parse($d)->format('Y-m-d'))
+                ->toArray();
+
+            // Iterate instances up to lookahead window (30 days ahead)
+            while ($currentDueDate->lte($lookaheadDate) && (!$endDate || $currentDueDate->lte($endDate))) {
+                $formattedDate = $currentDueDate->format('Y-m-d');
+
+                $isPaid = in_array($formattedDate, $rulePaidDates);
+                $isSkipped = in_array($formattedDate, $skippedDates);
+
+                if (!$isPaid && !$isSkipped) {
+                    $pendingInstances[] = [
+                        'rule_id'     => $rule->id,
+                        'title'       => $rule->title,
+                        'amount'      => $rule->amount,
+                        'type'        => $rule->type,
+                        'frequency'   => $rule->frequency,
+                        'due_date'    => $formattedDate,
+                        'account_id'  => $rule->account_id,
+                        'category_id' => $rule->category_id,
+                        'account'     => $rule->account,
+                        'category'    => $rule->category,
+                        'is_overdue'  => $currentDueDate->lt($today),
+                    ];
+                }
+
+                // Advance iteration based on frequency
+                switch ($rule->frequency) {
+                    case 'daily':   $currentDueDate->addDay(); break;
+                    case 'weekly':  $currentDueDate->addWeek(); break;
+                    case 'monthly': $currentDueDate->addMonth(); break;
+                    case 'yearly':  $currentDueDate->addYear(); break;
+                }
+            }
+        }
+
+        // Sort instances by due date ascending
+        usort($pendingInstances, fn($a, $b) => strcmp($a['due_date'], $b['due_date']));
 
         return Inertia::render('Subscriptions/SubscriptionsView', [
-            'recurringTransactions' => $recurringTransactions,
-            'accounts'              => $accounts,
-            'categories'            => $categories,
+            'recurringTransactions' => $recurringRules,
+            'pendingInstances'      => $pendingInstances,
+            'accounts'              => $user->accounts()->where('is_active', true)->orderBy('name')->get(),
+            'categories'            => $user->categories()->orderBy('name')->get(),
         ]);
     }
 
@@ -41,19 +100,18 @@ class RecurringTransactionController extends Controller
             'account_id'  => 'required|exists:accounts,id',
             'category_id' => 'nullable|exists:categories,id',
             'start_date'  => 'required|date',
-            'end_date'    => 'required|date|after_or_equal:start_date',
+            'end_date'    => 'nullable|date|after_or_equal:start_date',
             'auto_create' => 'boolean',
         ]);
 
-        $validated['user_id']       = $request->user()->id;
+        $validated['user_id'] = $request->user()->id;
         $validated['next_due_date'] = $validated['start_date'];
 
         RecurringTransaction::create($validated);
 
-        return redirect()->back()->with('success', 'Recurring transaction created successfully.');
+        return back()->with('success', 'Recurring rule created successfully.');
     }
 
-    // Update existing recurring transaction rule
     public function update(Request $request, RecurringTransaction $recurringTransaction)
     {
         if ($recurringTransaction->user_id !== $request->user()->id) {
@@ -68,48 +126,109 @@ class RecurringTransactionController extends Controller
             'account_id'  => 'required|exists:accounts,id',
             'category_id' => 'nullable|exists:categories,id',
             'start_date'  => 'required|date',
-            'end_date'    => 'required|date|after_or_equal:start_date',
+            'end_date'    => 'nullable|date|after_or_equal:start_date',
             'auto_create' => 'boolean',
         ]);
 
-        // Keep next_due_date updated if start_date is modified and no transactions have been posted yet
-        if ($recurringTransaction->start_date !== $validated['start_date'] && !$recurringTransaction->last_generated_at) {
-            $validated['next_due_date'] = $validated['start_date'];
-        }
-
         $recurringTransaction->update($validated);
 
-        return redirect()->back()->with('success', 'Recurring transaction updated successfully.');
+        return back()->with('success', 'Recurring rule updated successfully.');
     }
 
-    // Skip the current payment due date without logging a transaction
+    public function process(Request $request, RecurringTransaction $recurringTransaction)
+    {
+        if ($recurringTransaction->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'due_date'     => 'required|date',
+            'account_id'   => 'required|exists:accounts,id',
+            'amount'       => 'required|numeric|min:0.01',
+            'payment_date' => 'required|date',
+        ]);
+
+        DB::transaction(function () use ($recurringTransaction, $validated) {
+            // 1. Post transaction record
+            Transaction::create([
+                'user_id'                  => $recurringTransaction->user_id,
+                'account_id'               => $validated['account_id'],
+                'category_id'              => $recurringTransaction->category_id,
+                'recurring_transaction_id' => $recurringTransaction->id,
+                'amount'                   => $validated['amount'],
+                'type'                     => $recurringTransaction->type,
+                'description'              => $recurringTransaction->title . ' (Rec.)',
+                'transaction_date'         => $validated['payment_date'],
+            ]);
+
+            // 2. Balance update
+            $account = Account::findOrFail($validated['account_id']);
+            if ($recurringTransaction->type === 'income') {
+                $account->increment('balance', $validated['amount']);
+            } else {
+                $account->decrement('balance', $validated['amount']);
+            }
+
+            // 3. Update next_due_date to next future cycle if paid date matches current next_due_date
+            $assignedDue = Carbon::parse($validated['due_date'])->format('Y-m-d');
+            $currentNextDue = Carbon::parse($recurringTransaction->next_due_date)->format('Y-m-d');
+
+            if ($assignedDue === $currentNextDue) {
+                $nextDate = Carbon::parse($recurringTransaction->next_due_date);
+                switch ($recurringTransaction->frequency) {
+                    case 'daily':   $nextDate->addDay(); break;
+                    case 'weekly':  $nextDate->addWeek(); break;
+                    case 'monthly': $nextDate->addMonth(); break;
+                    case 'yearly':  $nextDate->addYear(); break;
+                }
+
+                $isFinished = $recurringTransaction->end_date && $nextDate->greaterThan(Carbon::parse($recurringTransaction->end_date));
+
+                $recurringTransaction->update([
+                    'last_generated_at' => Carbon::now(),
+                    'next_due_date'     => $nextDate->format('Y-m-d'),
+                    'is_active'         => $isFinished ? false : $recurringTransaction->is_active,
+                ]);
+            }
+        });
+
+        return back()->with('success', "Payment logged for {$validated['due_date']}.");
+    }
+
     public function skip(Request $request, RecurringTransaction $recurringTransaction)
     {
         if ($recurringTransaction->user_id !== $request->user()->id) {
             abort(403);
         }
 
-        $nextDate = Carbon::parse($recurringTransaction->next_due_date);
-
-        switch ($recurringTransaction->frequency) {
-            case 'daily':   $nextDate->addDay(); break;
-            case 'weekly':  $nextDate->addWeek(); break;
-            case 'monthly': $nextDate->addMonth(); break;
-            case 'yearly':  $nextDate->addYear(); break;
-        }
-
-        // Auto-pause rule if skipping pushes the next due date beyond the end_date
-        $isFinished = $recurringTransaction->end_date && $nextDate->greaterThan(Carbon::parse($recurringTransaction->end_date));
-
-        $recurringTransaction->update([
-            'next_due_date' => $nextDate,
-            'is_active'     => $isFinished ? false : $recurringTransaction->is_active,
+        $validated = $request->validate([
+            'due_date' => 'required|date',
         ]);
 
-        return redirect()->back()->with('success', 'Payment skipped for this period.');
+        $skippedDate = Carbon::parse($validated['due_date'])->format('Y-m-d');
+        $currentSkipped = $recurringTransaction->skipped_dates ?? [];
+
+        if (!in_array($skippedDate, $currentSkipped)) {
+            $currentSkipped[] = $skippedDate;
+            $recurringTransaction->update(['skipped_dates' => $currentSkipped]);
+        }
+
+        return back()->with('success', "Skipped instance for {$skippedDate}.");
     }
 
-    // Delete recurring transaction rule
+    public function toggle(Request $request, RecurringTransaction $recurringTransaction)
+    {
+        if ($recurringTransaction->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $recurringTransaction->update([
+            'is_active' => !$recurringTransaction->is_active,
+        ]);
+
+        return back()->with('success', 'Recurring status updated.');
+    }
+
     public function destroy(Request $request, RecurringTransaction $recurringTransaction)
     {
         if ($recurringTransaction->user_id !== $request->user()->id) {
@@ -118,77 +237,6 @@ class RecurringTransactionController extends Controller
 
         $recurringTransaction->delete();
 
-        return redirect()->back()->with('success', 'Recurring transaction deleted successfully.');
-    }
-
-    // Manual execution trigger ("Pay Now" button)
-    public function process(Request $request, RecurringTransaction $recurringTransaction)
-    {
-        if ($recurringTransaction->user_id !== $request->user()->id) {
-            abort(403);
-        }
-
-        DB::transaction(function () use ($recurringTransaction) {
-            // 1. Create the Transaction record
-            Transaction::create([
-                'user_id'          => $recurringTransaction->user_id,
-                'account_id'       => $recurringTransaction->account_id,
-                'category_id'      => $recurringTransaction->category_id,
-                'amount'           => $recurringTransaction->amount,
-                'type'             => $recurringTransaction->type,
-                'description'      => $recurringTransaction->title . ' (Rec.)',
-                'transaction_date' => Carbon::now()->format('Y-m-d'),
-            ]);
-
-            // 2. Adjust account balance accordingly
-            $account = Account::findOrFail($recurringTransaction->account_id);
-            if ($recurringTransaction->type === 'income') {
-                $account->increment('balance', $recurringTransaction->amount);
-            } elseif ($recurringTransaction->type === 'expense') {
-                $account->decrement('balance', $recurringTransaction->amount);
-            }
-
-            // 3. Advance next due date based on frequency
-            $nextDate = Carbon::parse($recurringTransaction->next_due_date);
-            switch ($recurringTransaction->frequency) {
-                case 'daily':   $nextDate->addDay(); break;
-                case 'weekly':  $nextDate->addWeek(); break;
-                case 'monthly': $nextDate->addMonth(); break;
-                case 'yearly':  $nextDate->addYear(); break;
-            }
-
-            // Auto-pause rule if advancing exceeds the required end_date
-            $isFinished = $recurringTransaction->end_date && $nextDate->greaterThan(Carbon::parse($recurringTransaction->end_date));
-
-            $recurringTransaction->update([
-                'last_generated_at' => Carbon::now(),
-                'next_due_date'     => $nextDate,
-                'is_active'         => $isFinished ? false : $recurringTransaction->is_active,
-            ]);
-        });
-
-        return redirect()->back()->with('success', 'Transaction processed successfully.');
-    }
-
-    // Toggle rule active status
- // Toggle rule active status
-    public function toggle(Request $request, RecurringTransaction $recurringTransaction)
-    {
-        if ($recurringTransaction->user_id !== $request->user()->id) {
-            abort(403);
-        }
-
-        // Prevent activation if the end date has already passed
-        $isExpired = $recurringTransaction->end_date && Carbon::parse($recurringTransaction->end_date)->isPast();
-
-        if (!$recurringTransaction->is_active && $isExpired) {
-            return redirect()->back()->with('error', 'Cannot activate a recurring rule whose end date has passed.');
-        }
-
-        $recurringTransaction->update([
-            'is_active' => !$recurringTransaction->is_active,
-        ]);
-
-        return redirect()->back()->with('success', 'Schedule status updated.');
+        return back()->with('success', 'Recurring rule deleted.');
     }
 }
