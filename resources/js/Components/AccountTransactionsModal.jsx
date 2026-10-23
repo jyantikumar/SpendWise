@@ -35,7 +35,7 @@ export default function AccountTransactionsModal({
 
     // Filter States
     const [search, setSearch] = useState('');
-    const [selectedType, setSelectedType] = useState('all');
+    const [selectedType, setSelectedType] = useState('all'); // Default: 'all'
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [startDate, setStartDate] = useState(initialStartDate);
     const [endDate, setEndDate] = useState(initialEndDate);
@@ -125,45 +125,42 @@ export default function AccountTransactionsModal({
     }, [isOpen, account?.id, search, selectedType, selectedCategory, startDate, endDate, currentPage]);
 
     // Dynamic Summary Badge Logic
-// AccountTransactionsModal.jsx
-const renderSummaryBadge = () => {
-    const curr = account?.currency || 'PHP';
+    const renderSummaryBadge = () => {
+        const curr = account?.currency || 'PHP';
 
-    if (selectedType === 'expense') {
+        if (selectedType === 'expense') {
+            return (
+                <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-xs font-semibold px-2.5 py-1 whitespace-nowrap">
+                    Total Expense: {formatCurrency(summaryAmount, curr)}
+                </Badge>
+            );
+        }
+
+        if (selectedType === 'income') {
+            return (
+                <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs font-semibold px-2.5 py-1 whitespace-nowrap">
+                    Total Income: {formatCurrency(summaryAmount, curr)}
+                </Badge>
+            );
+        }
+
+        const displayBalance = (selectedCategory !== 'all') 
+            ? summaryAmount 
+            : (account?.balance ?? summaryAmount);
+
         return (
-            <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-xs font-semibold px-2.5 py-1 whitespace-nowrap">
-                Total Expense: {formatCurrency(summaryAmount, curr)}
+            <Badge 
+                variant="outline" 
+                className={`text-xs font-semibold px-2.5 py-1 whitespace-nowrap ${
+                    displayBalance >= 0 
+                        ? 'bg-zinc-800 text-zinc-200 border-zinc-700' 
+                        : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
+                }`}
+            >
+                Balance: {formatCurrency(displayBalance, curr)}
             </Badge>
         );
-    }
-
-    if (selectedType === 'income') {
-        return (
-            <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs font-semibold px-2.5 py-1 whitespace-nowrap">
-                Total Income: {formatCurrency(summaryAmount, curr)}
-            </Badge>
-        );
-    }
-
-    // Always use actual account balance when viewing overall account balance (All Types),
-    // unless a specific category filter is applied.
-    const displayBalance = (selectedCategory !== 'all') 
-        ? summaryAmount 
-        : (account?.balance ?? summaryAmount);
-
-    return (
-        <Badge 
-            variant="outline" 
-            className={`text-xs font-semibold px-2.5 py-1 whitespace-nowrap ${
-                displayBalance >= 0 
-                    ? 'bg-zinc-800 text-zinc-200 border-zinc-700' 
-                    : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-            }`}
-        >
-            Balance: {formatCurrency(displayBalance, curr)}
-        </Badge>
-    );
-};
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -182,7 +179,7 @@ const renderSummaryBadge = () => {
                             </div>
                         </div>
 
-                        {/* Total Badge inline near Close (X) button */}
+                        {/* Total Badge */}
                         <div className="shrink-0">
                             {renderSummaryBadge()}
                         </div>
@@ -190,72 +187,78 @@ const renderSummaryBadge = () => {
                 </DialogHeader>
 
                 {/* Filter Controls Bar */}
-                <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 py-3 border-b border-zinc-800 bg-zinc-900/40 -mx-4 px-4 sm:-mx-6 sm:px-6 shrink-0">
-                    {/* Search Input */}
-                    <div className="relative col-span-2 sm:col-span-1">
-                        <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
-                        <Input
-                            placeholder="Search description..."
-                            value={search}
-                            onChange={(e) => handleFilterChange(setSearch, e.target.value)}
-                            className="pl-8 h-8 text-xs w-full border-zinc-800 text-zinc-300"
-                        />
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 py-3 border-b border-zinc-800 bg-zinc-900/40 -mx-4 px-4 sm:-mx-6 sm:px-6 shrink-0">
+                    {/* Left Group: Pilled Segmented Filter */}
+                    <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs w-full sm:w-64 shrink-0">
+                        {[
+                            { label: 'All', value: 'all' },
+                            { label: 'Expenses', value: 'expense' },
+                            { label: 'Income', value: 'income' },
+                        ].map((pill) => (
+                            <button
+                                key={pill.value}
+                                type="button"
+                                onClick={() => handleFilterChange(setSelectedType, pill.value)}
+                                className={`w-full py-1 rounded-md font-medium text-xs text-center transition-all whitespace-nowrap ${
+                                    selectedType === pill.value
+                                        ? 'bg-zinc-800 text-zinc-100 shadow-sm'
+                                        : 'text-zinc-400 hover:text-zinc-200'
+                                }`}
+                            >
+                                {pill.label}
+                            </button>
+                        ))}
                     </div>
 
-                    {/* Transaction Type Filter */}
-                    <div className="w-full col-span-1">
-                        <Select value={selectedType} onValueChange={(val) => handleFilterChange(setSelectedType, val)}>
-                            <SelectTrigger className="h-8 text-xs w-full border-zinc-800 text-zinc-300">
-                                <SelectValue placeholder="All Types" />
-                            </SelectTrigger>
-                            <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                <SelectItem value="all">All Types</SelectItem>
-                                <SelectItem value="expense">Expense</SelectItem>
-                                <SelectItem value="income">Income</SelectItem>
-                                <SelectItem value="transfer">Transfer</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
+                    {/* Right Group: Search, Full-Row Category, and Side-by-Side Dates */}
+                    <div className="flex flex-col sm:flex-row gap-2 flex-1 items-stretch sm:items-center">
+                        {/* Search Input */}
+                        <div className="relative flex-1">
+                            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
+                            <Input
+                                placeholder="Search description..."
+                                value={search}
+                                onChange={(e) => handleFilterChange(setSearch, e.target.value)}
+                                className="pl-8 h-8 text-xs w-full border-zinc-800 text-zinc-300"
+                            />
+                        </div>
 
-                    {/* Category Filter */}
-                    <div className="w-full col-span-1">
-                        <Select value={selectedCategory} onValueChange={(val) => handleFilterChange(setSelectedCategory, val)}>
-                            <SelectTrigger className="h-8 text-xs w-full border-zinc-800 text-zinc-300">
-                                <SelectValue placeholder="All Categories" />
-                            </SelectTrigger>
-                            <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                <SelectItem value="all">All Categories</SelectItem>
-                                {categories.map((cat) => (
-                                    <SelectItem key={cat.id} value={String(cat.id)}>
-                                        {cat.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
+                        {/* Category Filter (Spans available row width) */}
+                        <div className="flex-1">
+                            <Select value={selectedCategory} onValueChange={(val) => handleFilterChange(setSelectedCategory, val)}>
+                                <SelectTrigger className="h-8 text-xs w-full border-zinc-800 text-zinc-300">
+                                    <SelectValue placeholder="All Categories" />
+                                </SelectTrigger>
+                                <SelectContent className="border-zinc-800 bg-background text-zinc-300">
+                                    <SelectItem value="all">All Categories</SelectItem>
+                                    {categories.map((cat) => (
+                                        <SelectItem key={cat.id} value={String(cat.id)}>
+                                            {cat.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
 
-                    {/* Start Date */}
-                    <div className="w-full col-span-1">
-                        <Input
-                            type="date"
-                            value={startDate}
-                            onChange={(e) => handleFilterChange(setStartDate, e.target.value)}
-                            className="h-8 text-xs w-full border-zinc-800 text-zinc-300"
-                        />
-                    </div>
-
-                    {/* End Date */}
-                    <div className="w-full col-span-1">
-                        <Input
-                            type="date"
-                            value={endDate}
-                            onChange={(e) => handleFilterChange(setEndDate, e.target.value)}
-                            className="h-8 text-xs w-full border-zinc-800 text-zinc-300"
-                        />
+                        {/* Side-by-Side Dates */}
+                        <div className="grid grid-cols-2 gap-2 sm:w-auto shrink-0">
+                            <Input
+                                type="date"
+                                value={startDate}
+                                onChange={(e) => handleFilterChange(setStartDate, e.target.value)}
+                                className="h-8 text-xs w-full sm:w-[125px] border-zinc-800 text-zinc-300"
+                            />
+                            <Input
+                                type="date"
+                                value={endDate}
+                                onChange={(e) => handleFilterChange(setEndDate, e.target.value)}
+                                className="h-8 text-xs w-full sm:w-[125px] border-zinc-800 text-zinc-300"
+                            />
+                        </div>
                     </div>
                 </div>
 
-                {/* Transactions Table Container (Hidden Scrollbar) */}
+                {/* Transactions Table Container */}
                 <div className="flex-1 overflow-y-auto min-h-[200px] my-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-48 gap-2 text-zinc-400">
