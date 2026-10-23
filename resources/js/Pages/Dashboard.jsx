@@ -301,14 +301,19 @@ export default function Dashboard({
                                                     <SlidersHorizontal className="mr-2 h-4 w-4 shrink-0" />
                                                     <SelectValue placeholder="Range" />
                                                 </SelectTrigger>
-                                                <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                                    <SelectItem value="this_day">This Day</SelectItem>
-                                                    <SelectItem value="this_week">This Week</SelectItem>
-                                                    <SelectItem value="this_month">This Month</SelectItem>
-                                                    <SelectItem value="last_30_days">Last 30 Days</SelectItem>
-                                                    <SelectItem value="this_year">This Year</SelectItem>
-                                                    <SelectItem value="custom">Custom</SelectItem>
-                                                </SelectContent>
+                                                <SelectContent 
+    align="start" 
+    side="bottom" 
+    sideOffset={4} 
+    className="border-zinc-800 bg-background text-zinc-300 min-w-[var(--radix-select-trigger-width)]"
+>
+    <SelectItem value="this_day">This Day</SelectItem>
+    <SelectItem value="this_week">This Week</SelectItem>
+    <SelectItem value="this_month">This Month</SelectItem>
+    <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+    <SelectItem value="this_year">This Year</SelectItem>
+    <SelectItem value="custom">Custom</SelectItem>
+</SelectContent>
                                             </Select>
 
                                             <Button onClick={openCreateModal} className="gap-2 h-10 sm:hidden">
