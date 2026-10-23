@@ -144,7 +144,7 @@ class TransactionController extends Controller
             }
         });
 
-        return back()->with('success', 'Transaction logged successfully.');
+        return back();
     }
 
     public function update(Request $request, Transaction $transaction)
