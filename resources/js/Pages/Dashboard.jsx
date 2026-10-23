@@ -36,7 +36,6 @@ import AccountTransactionsModal from '@/components/AccountTransactionsModal';
 import TransactionFormModal from '@/components/TransactionFormModal';
 import { TransactionDetailSheet } from '@/components/TransactionDetailSheet';
 
-// Flexible SVG Donut / Pie Chart Component
 function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
     const [hoveredIndex, setHoveredIndex] = useState(null);
 
@@ -96,7 +95,6 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
 
     return (
         <div className="flex flex-col items-center gap-4 h-full min-h-0 flex-1">
-            {/* Donut Chart Display */}
             <div className="relative w-40 h-40 shrink-0 flex items-center justify-center my-1">
                 <svg viewBox="0 0 200 200" className="w-full h-full">
                     {slices.map((slice, index) => (
@@ -131,7 +129,6 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
                 </div>
             </div>
 
-            {/* Scrollable Category List */}
             <div className="w-full space-y-1.5 overflow-y-auto max-h-[220px] sm:max-h-[300px] pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {slices.map((slice, index) => (
                     <div
@@ -294,19 +291,19 @@ export default function Dashboard({
                             <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
                                 {currentFilter === 'custom' ? (
                                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
-                                        <div className="grid grid-cols-2 gap-2">
+                                        <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
                                             <Select value={currentFilter} onValueChange={handleFilterChange}>
-                                                <SelectTrigger className="w-full sm:w-[150px] h-10 border-zinc-800 text-zinc-300 text-center sm:text-left [&>span]:w-full [&>span]:text-center sm:[&>span]:text-left">
+                                                <SelectTrigger className="w-full sm:w-[150px] h-10 border-zinc-800 text-zinc-300">
                                                     <SlidersHorizontal className="mr-2 h-4 w-4 shrink-0" />
                                                     <SelectValue placeholder="Range" />
                                                 </SelectTrigger>
                                                 <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                                    <SelectItem value="this_day" className="justify-center sm:justify-start">This Day</SelectItem>
-                                                    <SelectItem value="this_week" className="justify-center sm:justify-start">This Week</SelectItem>
-                                                    <SelectItem value="this_month" className="justify-center sm:justify-start">This Month</SelectItem>
-                                                    <SelectItem value="last_30_days" className="justify-center sm:justify-start">Last 30 Days</SelectItem>
-                                                    <SelectItem value="this_year" className="justify-center sm:justify-start">This Year</SelectItem>
-                                                    <SelectItem value="custom" className="justify-center sm:justify-start">Custom</SelectItem>
+                                                    <SelectItem value="this_day">This Day</SelectItem>
+                                                    <SelectItem value="this_week">This Week</SelectItem>
+                                                    <SelectItem value="this_month">This Month</SelectItem>
+                                                    <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                                                    <SelectItem value="this_year">This Year</SelectItem>
+                                                    <SelectItem value="custom">Custom</SelectItem>
                                                 </SelectContent>
                                             </Select>
 
@@ -339,19 +336,19 @@ export default function Dashboard({
                                         </Button>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-2 sm:flex items-center gap-2.5 w-full sm:w-auto">
+                                    <div className="grid grid-cols-2 gap-2 sm:flex items-center sm:gap-2.5 w-full sm:w-auto">
                                         <Select value={currentFilter} onValueChange={handleFilterChange}>
-                                            <SelectTrigger className="w-full sm:w-[160px] h-10 border-zinc-800 text-zinc-300 text-center sm:text-left [&>span]:w-full [&>span]:text-center sm:[&>span]:text-left">
+                                            <SelectTrigger className="w-full sm:w-[160px] h-10 border-zinc-800 text-zinc-300">
                                                 <SlidersHorizontal className="mr-2 h-4 w-4 shrink-0" />
                                                 <SelectValue placeholder="Range" />
                                             </SelectTrigger>
                                             <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                                <SelectItem value="this_day" className="justify-center sm:justify-start">This Day</SelectItem>
-                                                <SelectItem value="this_week" className="justify-center sm:justify-start">This Week</SelectItem>
-                                                <SelectItem value="this_month" className="justify-center sm:justify-start">This Month</SelectItem>
-                                                <SelectItem value="last_30_days" className="justify-center sm:justify-start">Last 30 Days</SelectItem>
-                                                <SelectItem value="this_year" className="justify-center sm:justify-start">This Year</SelectItem>
-                                                <SelectItem value="custom" className="justify-center sm:justify-start">Custom</SelectItem>
+                                                <SelectItem value="this_day">This Day</SelectItem>
+                                                <SelectItem value="this_week">This Week</SelectItem>
+                                                <SelectItem value="this_month">This Month</SelectItem>
+                                                <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                                                <SelectItem value="this_year">This Year</SelectItem>
+                                                <SelectItem value="custom">Custom</SelectItem>
                                             </SelectContent>
                                         </Select>
 
@@ -417,27 +414,33 @@ export default function Dashboard({
                         {/* Main Table & Chart Layout */}
                         <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 items-start">
                             <Card className="xl:col-span-2 border-zinc-800 flex flex-col min-h-[400px] max-h-[520px]">
-                                <CardHeader className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shrink-0">
-                                    <div className="flex items-center gap-2.5 w-full sm:w-auto">
+                                <CardHeader className="p-4 sm:p-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
+                                    {/* Distinctive Inline Text-Style Link for View All */}
+                                    <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
                                         <Select value={activeView} onValueChange={setActiveView}>
-                                            <SelectTrigger className="flex-1 sm:w-[180px] h-9 font-semibold border-zinc-800 text-zinc-300 text-center sm:text-left [&>span]:w-full [&>span]:text-center sm:[&>span]:text-left">
+                                            <SelectTrigger className="w-[150px] sm:w-[180px] h-9 font-semibold border-zinc-800 text-zinc-300">
                                                 <SelectValue />
                                             </SelectTrigger>
                                             <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                                <SelectItem value="transactions" className="justify-center sm:justify-start">Transactions</SelectItem>
-                                                <SelectItem value="accounts" className="justify-center sm:justify-start">Accounts</SelectItem>
+                                                <SelectItem value="transactions">Transactions</SelectItem>
+                                                <SelectItem value="accounts">Accounts</SelectItem>
                                             </SelectContent>
                                         </Select>
 
-                                        <Button asChild size="sm" variant="outline" className="gap-1 border-zinc-800 text-zinc-300 shrink-0 h-9">
+                                        <Button 
+                                            asChild 
+                                            variant="ghost" 
+                                            size="sm" 
+                                            className="h-9 px-2 text-xs font-medium text-primary hover:text-primary hover:bg-transparent hover:underline gap-1"
+                                        >
                                             <Link href={activeView === 'transactions' ? '/transactions' : '/accounts'}>
                                                 View All
-                                                <ArrowUpRight className="h-4 w-4" />
+                                                <ArrowUpRight className="h-3.5 w-3.5" />
                                             </Link>
                                         </Button>
                                     </div>
 
-                                    <CardDescription className="hidden sm:inline text-zinc-400">
+                                    <CardDescription className="text-zinc-400 text-xs sm:text-sm">
                                         {activeView === 'transactions' 
                                             ? "Recent transaction history. Tap a row to view details." 
                                             : 'Active financial accounts. Tap a row to view transactions.'}
@@ -447,7 +450,6 @@ export default function Dashboard({
                                 <CardContent className="p-0 sm:p-6 sm:pt-0 flex-1 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                                     {activeView === 'transactions' ? (
                                         <>
-                                            {/* Mobile Cards View (Visible on screens smaller than `md`) */}
                                             <div className="divide-y divide-zinc-800 md:hidden">
                                                 {latestTransactions && latestTransactions.length > 0 ? (
                                                     latestTransactions.map((tx) => (
@@ -484,7 +486,6 @@ export default function Dashboard({
                                                 )}
                                             </div>
 
-                                            {/* Desktop Table View (Visible on `md` and larger screens) */}
                                             <div className="hidden md:block">
                                                 <Table>
                                                     <TableHeader className="sticky top-0 z-10">
@@ -535,7 +536,6 @@ export default function Dashboard({
                                         </>
                                     ) : (
                                         <>
-                                            {/* Mobile Cards View for Accounts */}
                                             <div className="divide-y divide-zinc-800 md:hidden">
                                                 {accounts && accounts.length > 0 ? (
                                                     accounts.map((acc) => (
@@ -555,7 +555,6 @@ export default function Dashboard({
                                                 )}
                                             </div>
 
-                                            {/* Desktop Table View for Accounts */}
                                             <div className="hidden md:block">
                                                 <Table>
                                                     <TableHeader className="sticky top-0 z-10">
@@ -591,7 +590,6 @@ export default function Dashboard({
                                 </CardContent>
                             </Card>
 
-                            {/* Expense Chart Card */}
                             <Card className="border-zinc-800 flex flex-col justify-between min-h-[420px] lg:h-[520px]">
                                 <CardHeader className="p-4 sm:p-6 shrink-0">
                                     <CardTitle className="flex items-center gap-2 text-zinc-200">
