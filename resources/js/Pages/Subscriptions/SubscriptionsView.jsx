@@ -396,129 +396,140 @@ export default function SubscriptionsView({
 
                     <CardContent className="p-0 sm:p-6 sm:pt-0">
                         {/* Mobile List View (Visible on screens smaller than `sm`) */}
-                        <div className="block sm:hidden divide-y divide-zinc-800/80 px-4">
-                            {filteredItems.length === 0 ? (
-                                <div className="text-center py-8 text-zinc-500 text-xs">
-                                    No recurring schedules found.
-                                </div>
-                            ) : (
-                                filteredItems.map((item) => {
-                                    const expired = isExpired(item.end_date);
-                                    const effectiveActive = item.is_active && !expired;
+                        {/* Mobile List View (Clean Stacked Card Layout) */}
+<div className="block sm:hidden divide-y divide-zinc-800/60 px-2">
+    {filteredItems.length === 0 ? (
+        <div className="text-center py-8 text-zinc-500 text-xs">
+            No recurring schedules found.
+        </div>
+    ) : (
+        filteredItems.map((item) => {
+            const expired = isExpired(item.end_date);
+            const effectiveActive = item.is_active && !expired;
 
-                                    return (
-                                        <div 
-                                            key={item.id} 
-                                            className={`py-3.5 flex items-center justify-between gap-2 transition-opacity ${
-                                                !effectiveActive ? 'opacity-40 bg-zinc-950/40' : ''
-                                            }`}
-                                        >
-                                            <div className="min-w-0 flex-1 space-y-1">
-                                                <div className="flex items-center gap-2 flex-wrap">
-                                                    <span className="relative flex h-2 w-2 items-center justify-center shrink-0">
-                                                        {effectiveActive && (
-                                                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                                                        )}
-                                                        <span className={`relative inline-flex h-2 w-2 rounded-full ${
-                                                            effectiveActive ? 'bg-emerald-500' : (expired ? 'bg-zinc-500' : 'bg-rose-500')
-                                                        }`} />
-                                                    </span>
+            return (
+                <div 
+                    key={item.id} 
+                    className={`py-3 px-1 space-y-1.5 transition-opacity ${
+                        !effectiveActive ? 'opacity-40' : ''
+                    }`}
+                >
+                    {/* Top Row: Title & Actions */}
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                            <span className="relative flex h-2 w-2 items-center justify-center shrink-0">
+                                {effectiveActive && (
+                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+                                )}
+                                <span className={`relative inline-flex h-2 w-2 rounded-full ${
+                                    effectiveActive ? 'bg-emerald-500' : (expired ? 'bg-zinc-500' : 'bg-rose-500')
+                                }`} />
+                            </span>
 
-                                                    <span className={`text-xs font-semibold truncate ${
-                                                        !effectiveActive ? 'line-through text-zinc-400' : 'text-zinc-200'
-                                                    }`}>
-                                                        {item.title}
-                                                    </span>
+                            <span className={`text-xs font-semibold truncate ${
+                                !effectiveActive ? 'line-through text-zinc-400' : 'text-zinc-200'
+                            }`}>
+                                {item.title}
+                            </span>
 
-                                                    {expired ? (
-                                                        <span className="text-[9px] text-zinc-400 font-medium uppercase tracking-wider border border-zinc-700 px-1 rounded">
-                                                            Expired
-                                                        </span>
-                                                    ) : !item.is_active && (
-                                                        <span className="text-[9px] text-rose-400 font-medium uppercase tracking-wider">
-                                                            Paused
-                                                        </span>
-                                                    )}
-
-                                                    <Badge variant="outline" className="text-[9px] px-1 py-0 uppercase border-zinc-800 text-zinc-400">
-                                                        {item.frequency}
-                                                    </Badge>
-
-                                                    {item.auto_create && effectiveActive && (
-                                                        <span className="inline-flex items-center text-[9px] text-emerald-400 font-medium">
-                                                            <Zap className="h-2.5 w-2.5 mr-0.5" /> Auto
-                                                        </span>
-                                                    )}
-                                                </div>
-
-                                                <div className="flex items-center gap-2 text-[11px] text-zinc-400 pl-4">
-                                                    <span className="truncate">{item.account?.name || 'No account'}</span>
-                                                    <span>•</span>
-                                                    <span>Due {item.next_due_date ? String(item.next_due_date).split('T')[0] : '—'}</span>
-                                                </div>
-                                            </div>
-
-                                            <div className="flex items-center gap-2 shrink-0">
-                                                <span className={`text-xs font-bold ${
-                                                    !effectiveActive 
-                                                        ? 'text-zinc-500' 
-                                                        : item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'
-                                                }`}>
-                                                    {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
-                                                </span>
-
-                                                <Button 
-                                                    size="sm" 
-                                                    variant="outline" 
-                                                    disabled={processingId === item.id || !effectiveActive}
-                                                    className="h-7 text-[11px] px-2 border-zinc-800 text-zinc-200 hover:bg-zinc-800 disabled:opacity-40"
-                                                    onClick={() => handleProcess(item)}
-                                                >
-                                                    {processingId === item.id ? (
-                                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                                    ) : (
-                                                        'Pay'
-                                                    )}
-                                                </Button>
-
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-400">
-                                                            <MoreHorizontal className="h-3.5 w-3.5" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                                                        <DropdownMenuLabel className="text-xs">Rule Actions</DropdownMenuLabel>
-                                                        <DropdownMenuSeparator className="bg-zinc-800" />
-                                                        <DropdownMenuItem onClick={() => openEditModal(item)} className="cursor-pointer text-xs">
-                                                            <Pencil className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Edit
-                                                        </DropdownMenuItem>
-                                                        {!expired && (
-                                                            <>
-                                                                <DropdownMenuItem onClick={() => handleSkip(item)} disabled={!item.is_active} className="cursor-pointer text-xs">
-                                                                    <FastForward className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Skip Next Payment
-                                                                </DropdownMenuItem>
-                                                                <DropdownMenuItem onClick={() => handleToggleActive(item)} className="cursor-pointer text-xs">
-                                                                    <Power className="mr-2 h-3.5 w-3.5 text-zinc-400" />
-                                                                    {item.is_active ? 'Pause' : 'Activate'}
-                                                                </DropdownMenuItem>
-                                                            </>
-                                                        )}
-                                                        <DropdownMenuSeparator className="bg-zinc-800" />
-                                                        <DropdownMenuItem 
-                                                            onClick={() => setDeletingItem(item)} 
-                                                            className="cursor-pointer text-xs text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30"
-                                                        >
-                                                            <Trash2 className="mr-2 h-3.5 w-3.5 text-rose-400" /> Delete
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
-                                            </div>
-                                        </div>
-                                    );
-                                })
+                            {expired && (
+                                <span className="text-[10px] text-zinc-500 font-medium uppercase shrink-0">
+                                    • Expired
+                                </span>
+                            )}
+                            {!item.is_active && !expired && (
+                                <span className="text-[10px] text-rose-400 font-medium uppercase shrink-0">
+                                    • Paused
+                                </span>
                             )}
                         </div>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            <Button 
+                                size="sm" 
+                                variant="outline" 
+                                disabled={processingId === item.id || !effectiveActive}
+                                className="h-7 text-[11px] px-2.5 border-zinc-800 text-zinc-200 hover:bg-zinc-800 disabled:opacity-40"
+                                onClick={() => handleProcess(item)}
+                            >
+                                {processingId === item.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                    'Pay'
+                                )}
+                            </Button>
+
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-400">
+                                        <MoreHorizontal className="h-3.5 w-3.5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-900 text-zinc-200">
+                                    <DropdownMenuLabel className="text-xs">Rule Actions</DropdownMenuLabel>
+                                    <DropdownMenuSeparator className="bg-zinc-800" />
+                                    <DropdownMenuItem onClick={() => openEditModal(item)} className="cursor-pointer text-xs">
+                                        <Pencil className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Edit
+                                    </DropdownMenuItem>
+                                    {!expired && (
+                                        <>
+                                            <DropdownMenuItem onClick={() => handleSkip(item)} disabled={!item.is_active} className="cursor-pointer text-xs">
+                                                <FastForward className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Skip Next Payment
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem onClick={() => handleToggleActive(item)} className="cursor-pointer text-xs">
+                                                <Power className="mr-2 h-3.5 w-3.5 text-zinc-400" />
+                                                {item.is_active ? 'Pause' : 'Activate'}
+                                            </DropdownMenuItem>
+                                        </>
+                                    )}
+                                    <DropdownMenuSeparator className="bg-zinc-800" />
+                                    <DropdownMenuItem 
+                                        onClick={() => setDeletingItem(item)} 
+                                        className="cursor-pointer text-xs text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30"
+                                    >
+                                        <Trash2 className="mr-2 h-3.5 w-3.5 text-rose-400" /> Delete
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
+
+                    {/* Bottom Row: Amount & Metadata */}
+                    <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-400">
+                        <div className="flex items-center gap-1.5 min-w-0 truncate">
+                            {item.account?.name && (
+                                <>
+                                    <span className="truncate">{item.account.name}</span>
+                                    <span>•</span>
+                                </>
+                            )}
+                            <span className="shrink-0 capitalize">{item.frequency}</span>
+                            <span>•</span>
+                            <span className="shrink-0">Due {item.next_due_date ? String(item.next_due_date).split('T')[0] : '—'}</span>
+                            {item.auto_create && effectiveActive && (
+                                <>
+                                    <span>•</span>
+                                    <span className="inline-flex items-center text-emerald-400 font-medium shrink-0">
+                                        <Zap className="h-2.5 w-2.5 mr-0.5" /> Auto
+                                    </span>
+                                </>
+                            )}
+                        </div>
+
+                        <span className={`text-xs font-bold shrink-0 ${
+                            !effectiveActive 
+                                ? 'text-zinc-500' 
+                                : item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'
+                        }`}>
+                            {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
+                        </span>
+                    </div>
+                </div>
+            );
+        })
+    )}
+</div>
 
                         {/* Desktop Table View (Visible on `sm` and larger screens) */}
                         <div className="hidden sm:block">
