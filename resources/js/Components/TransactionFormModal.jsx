@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
+import { toast } from 'sonner'; // 👈 Import Sonner toast
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -29,10 +30,12 @@ export default function TransactionFormModal({
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
-    // Filter available active accounts (keep currently selected account if editing)
-    const availableAccounts = accounts.filter((acc) => 
-        acc.is_active || (isEditing && String(acc.id) === String(editingTransaction?.account_id))
-    );
+    // Filter available active accounts
+    const availableAccounts = accounts.filter((acc) => {
+        const isActive = Boolean(acc.is_active);
+        const isCurrentlySelected = isEditing && String(acc.id) === String(editingTransaction?.account_id);
+        return isActive || isCurrentlySelected;
+    });
 
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         account_id: '',
@@ -66,8 +69,11 @@ export default function TransactionFormModal({
             });
         } else {
             reset();
+            
+            const defaultAccount = availableAccounts[0];
+
             setData({
-                account_id: availableAccounts[0]?.id ? String(availableAccounts[0].id) : '',
+                account_id: defaultAccount?.id ? String(defaultAccount.id) : '',
                 destination_account_id: '',
                 category_id: '',
                 type: 'expense',
@@ -76,7 +82,7 @@ export default function TransactionFormModal({
                 transaction_date: new Date().toISOString().split('T')[0],
             });
         }
-    }, [isOpen, editingTransaction]);
+    }, [isOpen, editingTransaction, accounts]);
 
     const handleAccountCreated = (page) => {
         const updatedAccounts = page.props.accounts || [];
@@ -100,16 +106,24 @@ export default function TransactionFormModal({
         if (isEditing) {
             put(route('transactions.update', editingTransaction.id), {
                 onSuccess: () => {
+                    toast.success('Transaction updated successfully.'); // 👈 Toast for updates
                     onClose();
                     reset();
                 },
+                onError: () => {
+                    toast.error('Failed to update transaction.');
+                }
             });
         } else {
             post(route('transactions.store'), {
                 onSuccess: () => {
+                    toast.success('Transaction logged successfully.'); // 👈 Toast for creation
                     onClose();
                     reset();
                 },
+                onError: () => {
+                    toast.error('Failed to log transaction.');
+                }
             });
         }
     };
@@ -117,7 +131,7 @@ export default function TransactionFormModal({
     // Filter categories by transaction type AND active status
     const filteredCategories = categories.filter((c) => 
         c.type === data.type && 
-        (c.is_active === undefined || c.is_active || (isEditing && String(c.id) === String(editingTransaction?.category_id)))
+        (c.is_active === undefined || Boolean(c.is_active) || (isEditing && String(c.id) === String(editingTransaction?.category_id)))
     );
 
     return (
@@ -185,7 +199,7 @@ export default function TransactionFormModal({
                                     {availableAccounts && availableAccounts.length > 0 ? (
                                         availableAccounts.map((acc) => (
                                             <SelectItem key={acc.id} value={String(acc.id)}>
-                                                {acc.name} {acc.type ? `(${acc.type})` : ''} {!acc.is_active ? '(Inactive)' : ''}
+                                                {acc.name} {acc.type ? `(${acc.type})` : ''} {!acc.is_active && acc.is_active !== undefined ? '(Inactive)' : ''}
                                             </SelectItem>
                                         ))
                                     ) : (
@@ -226,7 +240,7 @@ export default function TransactionFormModal({
                                                 .filter((acc) => String(acc.id) !== String(data.account_id))
                                                 .map((acc) => (
                                                     <SelectItem key={acc.id} value={String(acc.id)}>
-                                                        {acc.name} {acc.type ? `(${acc.type})` : ''} {!acc.is_active ? '(Inactive)' : ''}
+                                                        {acc.name} {acc.type ? `(${acc.type})` : ''} {!acc.is_active && acc.is_active !== undefined ? '(Inactive)' : ''}
                                                     </SelectItem>
                                                 ))
                                         ) : (

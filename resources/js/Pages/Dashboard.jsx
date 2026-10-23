@@ -196,19 +196,19 @@ export default function Dashboard({
 
     const handleFilterChange = (value) => {
         if (value === 'custom') {
-            router.get(route('dashboard'), { 
+            router.get('/dashboard', { 
                 range: 'custom',
                 start_date: startDateInput,
                 end_date: endDateInput
             }, { preserveState: true });
         } else {
-            router.get(route('dashboard'), { range: value }, { preserveState: true });
+            router.get('/dashboard', { range: value }, { preserveState: true });
         }
     };
 
     const handleApplyCustomDates = () => {
         if (startDateInput && endDateInput) {
-            router.get(route('dashboard'), { 
+            router.get('/dashboard', { 
                 range: 'custom', 
                 start_date: startDateInput, 
                 end_date: endDateInput 
@@ -265,7 +265,7 @@ export default function Dashboard({
 
     const handleDelete = () => {
         if (!deletingTransaction) return;
-        router.delete(route('transactions.destroy', deletingTransaction.id), {
+        router.delete(`/transactions/${deletingTransaction.id}`, {
             onSuccess: () => setDeletingTransaction(null),
         });
     };
@@ -415,7 +415,6 @@ export default function Dashboard({
                         <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 items-start">
                             <Card className="xl:col-span-2 border-zinc-800 flex flex-col min-h-[400px] max-h-[520px]">
                                 <CardHeader className="p-4 sm:p-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
-                                    {/* Distinctive Inline Text-Style Link for View All */}
                                     <div className="flex items-center justify-between sm:justify-start gap-3 w-full sm:w-auto">
                                         <Select value={activeView} onValueChange={setActiveView}>
                                             <SelectTrigger className="w-[150px] sm:w-[180px] h-9 font-semibold border-zinc-800 text-zinc-300">
@@ -609,25 +608,28 @@ export default function Dashboard({
                         </div>
                     </main>
                 </SidebarInset>
+            </SidebarProvider>
 
-                <CategoryTransactionsModal
-                    isOpen={isCategoryModalOpen}
-                    onClose={() => setIsCategoryModalOpen(false)}
-                    category={selectedCategory}
-                    accounts={accounts}
-                    initialStartDate={initialModalStart}
-                    initialEndDate={initialModalEnd}
-                />
+            {/* Modals rendered OUTSIDE SidebarProvider */}
+            <CategoryTransactionsModal
+                isOpen={isCategoryModalOpen}
+                onClose={() => setIsCategoryModalOpen(false)}
+                category={selectedCategory}
+                accounts={accounts}
+                initialStartDate={initialModalStart}
+                initialEndDate={initialModalEnd}
+            />
 
-                <AccountTransactionsModal
-                    isOpen={isAccountModalOpen}
-                    onClose={() => setIsAccountModalOpen(false)}
-                    account={selectedAccount}
-                    categories={categories}
-                    initialStartDate={initialModalStart}
-                    initialEndDate={initialModalEnd}
-                />
+            <AccountTransactionsModal
+                isOpen={isAccountModalOpen}
+                onClose={() => setIsAccountModalOpen(false)}
+                account={selectedAccount}
+                categories={categories}
+                initialStartDate={initialModalStart}
+                initialEndDate={initialModalEnd}
+            />
 
+            {isTransactionModalOpen && (
                 <TransactionFormModal 
                     isOpen={isTransactionModalOpen}
                     onClose={() => setIsTransactionModalOpen(false)}
@@ -635,32 +637,32 @@ export default function Dashboard({
                     accounts={accounts}
                     categories={categories}
                 />
+            )}
 
-                <TransactionDetailSheet 
-                    open={!!selectedDetailTransaction}
-                    onOpenChange={(open) => !open && setSelectedDetailTransaction(null)}
-                    transaction={selectedDetailTransaction}
-                    onEdit={openEditModal}
-                    onDelete={setDeletingTransaction}
-                />
+            <TransactionDetailSheet 
+                open={!!selectedDetailTransaction}
+                onOpenChange={(open) => !open && setSelectedDetailTransaction(null)}
+                transaction={selectedDetailTransaction}
+                onEdit={openEditModal}
+                onDelete={setDeletingTransaction}
+            />
 
-                <AlertDialog open={!!deletingTransaction} onOpenChange={(open) => !open && setDeletingTransaction(null)}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                This action cannot be undone. This will permanently delete the transaction record.
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700">
-                                Delete
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-            </SidebarProvider>
+            <AlertDialog open={!!deletingTransaction} onOpenChange={(open) => !open && setDeletingTransaction(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the transaction record.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </TooltipProvider>
     );
 }

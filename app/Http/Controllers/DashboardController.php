@@ -120,7 +120,9 @@ class DashboardController extends Controller
                 'income'  => $categoryBreakdown->get('income', collect())->values(),
             ],
             'latestTransactions' => $latestTransactions,
-            'accounts' => Account::where('user_id', $userId)->orderBy('name')->get(['id', 'name', 'type', 'balance']),
+            'accounts' => Account::where('user_id', $userId)
+    ->orderBy('name')
+    ->get(['id', 'name', 'type', 'balance', 'is_active']), // 👈 Added is_active
             'categories' => Category::where('user_id', $userId)->orderBy('name')->get(['id', 'name', 'type', 'color', 'icon']),
             'currentFilter' => $filter,
             'customDates' => [
