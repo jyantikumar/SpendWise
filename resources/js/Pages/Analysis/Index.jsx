@@ -217,6 +217,13 @@ export default function AnalysisIndex({
         { name: 'Expense', value: expenseVal, color: '#f43f5e' },
     ];
 
+    // Dynamic Daily Average Color Logic
+    const getDailyAverageColorClass = () => {
+        if (type === 'expense') return 'text-rose-500';
+        if (type === 'income') return 'text-emerald-500';
+        return 'text-zinc-200';
+    };
+
     return (
         <TooltipProvider>
             <SidebarProvider>
@@ -241,109 +248,123 @@ export default function AnalysisIndex({
                             </p>
                         </div>
 
-                        {/* Controls Bar - Mobile Stacked / Desktop Flex */}
-                        <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2.5 sm:gap-3 w-full">
-                            <Select 
-                                value={type} 
-                                onValueChange={(val) => {
-                                    setType(val);
-                                    applyFilters({ type: val });
-                                }}
-                            >
-                                <SelectTrigger className="w-full sm:w-[160px] h-9 border-zinc-800 text-zinc-300">
-                                    <SelectValue placeholder="Type" />
-                                </SelectTrigger>
-                                <SelectContent className="border-zinc-800">
-                                    <SelectItem value="expense">Expenses</SelectItem>
-                                    <SelectItem value="income">Income</SelectItem>
-                                    <SelectItem value="all">All Flow</SelectItem>
-                                </SelectContent>
-                            </Select>
-
-                            <Select 
-                                value={accountId} 
-                                onValueChange={(val) => {
-                                    setAccountId(val);
-                                    applyFilters({ account_id: val });
-                                }}
-                            >
-                                <SelectTrigger className="w-full sm:w-[190px] h-9 border-zinc-800 text-zinc-300">
-                                    <Wallet className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                                    <SelectValue placeholder="All Accounts" />
-                                </SelectTrigger>
-                                <SelectContent className="border-zinc-800">
-                                    <SelectItem value="all">All Accounts</SelectItem>
-                                    {accounts.map((acc) => (
-                                        <SelectItem key={acc.id} value={String(acc.id)}>
-                                            {acc.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-
-                            <Select 
-                                value={range} 
-                                onValueChange={(val) => {
-                                    setRange(val);
-                                    applyFilters({ range: val });
-                                }}
-                            >
-                                <SelectTrigger className="w-full sm:w-[220px] h-9 border-zinc-800 text-zinc-300">
-                                    <SlidersHorizontal className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                                    <SelectValue>
-                                        {filters.range_label || (range === 'this_month' ? 'This Month' : range)}
-                                    </SelectValue>
-                                </SelectTrigger>
-                                <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                                    <SelectGroup>
-                                        <SelectLabel className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 px-2 py-1">
-                                            Aggregated Comparisons
-                                        </SelectLabel>
-                                        <SelectItem value="monthly">Monthly</SelectItem>
-                                        <SelectItem value="yearly">Yearly</SelectItem>
-                                    </SelectGroup>
-
-                                    <SelectSeparator className="bg-zinc-800 my-1" />
-
-                                    <SelectGroup>
-                                        <SelectLabel className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 px-2 py-1">
-                                            Time Horizons
-                                        </SelectLabel>
-                                        <SelectItem value="this_month">
-                                            {range === 'this_month' && filters.range_label ? filters.range_label : 'This Month'}
-                                        </SelectItem>
-                                        <SelectItem value="1_week">1 Week</SelectItem>
-                                        <SelectItem value="6_months">6 Months</SelectItem>
-                                        <SelectItem value="this_year">This Year</SelectItem>
-                                        <SelectItem value="custom">Custom Range</SelectItem>
-                                    </SelectGroup>
-                                </SelectContent>
-                            </Select>
-
-                            {range === 'custom' && (
-                                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                                    <Input
-                                        type="date"
-                                        value={startDate}
-                                        onChange={(e) => setStartDate(e.target.value)}
-                                        className="h-9 w-full sm:w-[130px] text-xs border-zinc-800 text-zinc-300"
-                                    />
-                                    <span className="text-xs text-zinc-400 text-center sm:text-left">to</span>
-                                    <Input
-                                        type="date"
-                                        value={endDate}
-                                        onChange={(e) => setEndDate(e.target.value)}
-                                        className="h-9 w-full sm:w-[130px] text-xs border-zinc-800 text-zinc-300"
-                                    />
-                                    <Button 
-                                        size="sm" 
-                                        onClick={() => applyFilters({ range: 'custom' })}
-                                        className="h-9 w-full sm:w-auto px-3 text-xs"
+                        {/* Controls Bar Grid (Aligned with KPI tiles) */}
+                        <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 items-center">
+                            {/* Left Side: Pilled Segmented Type Filter (Matches Income vs Expense card width) */}
+                            <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs w-full lg:col-span-1">
+                                {[
+                                    { label: 'All Flow', value: 'all' },
+                                    { label: 'Expenses', value: 'expense' },
+                                    { label: 'Income', value: 'income' },
+                                ].map((pill) => (
+                                    <button
+                                        key={pill.value}
+                                        type="button"
+                                        onClick={() => {
+                                            setType(pill.value);
+                                            applyFilters({ type: pill.value });
+                                        }}
+                                        className={`w-full py-1.5 rounded-md font-medium text-xs text-center transition-all whitespace-nowrap ${
+                                            type === pill.value
+                                                ? 'bg-zinc-800 text-zinc-100 shadow-sm'
+                                                : 'text-zinc-400 hover:text-zinc-200'
+                                        }`}
                                     >
-                                        Apply
-                                    </Button>
-                                </div>
-                            )}
+                                        {pill.label}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Spacer for column 2 on desktop */}
+                            <div className="hidden lg:block lg:col-span-1" />
+
+                            {/* Right Side: Account & Time Horizon Filters (Matches Peak Activity & Net Cash Flow cards width) */}
+                            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 sm:gap-3 w-full sm:col-span-2 lg:col-span-2 justify-end">
+                                <Select 
+                                    value={accountId} 
+                                    onValueChange={(val) => {
+                                        setAccountId(val);
+                                        applyFilters({ account_id: val });
+                                    }}
+                                >
+                                    <SelectTrigger className="w-full sm:w-1/2 h-9 border-zinc-800 text-zinc-300">
+                                        <Wallet className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                                        <SelectValue placeholder="All Accounts" />
+                                    </SelectTrigger>
+                                    <SelectContent className="border-zinc-800">
+                                        <SelectItem value="all">All Accounts</SelectItem>
+                                        {accounts.map((acc) => (
+                                            <SelectItem key={acc.id} value={String(acc.id)}>
+                                                {acc.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+
+                                <Select 
+                                    value={range} 
+                                    onValueChange={(val) => {
+                                        setRange(val);
+                                        applyFilters({ range: val });
+                                    }}
+                                >
+                                    <SelectTrigger className="w-full sm:w-1/2 h-9 border-zinc-800 text-zinc-300">
+                                        <SlidersHorizontal className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                                        <SelectValue>
+                                            {filters.range_label || (range === 'this_month' ? 'This Month' : range)}
+                                        </SelectValue>
+                                    </SelectTrigger>
+                                    <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
+                                        <SelectGroup>
+                                            <SelectLabel className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 px-2 py-1">
+                                                Aggregated Comparisons
+                                            </SelectLabel>
+                                            <SelectItem value="monthly">Monthly</SelectItem>
+                                            <SelectItem value="yearly">Yearly</SelectItem>
+                                        </SelectGroup>
+
+                                        <SelectSeparator className="bg-zinc-800 my-1" />
+
+                                        <SelectGroup>
+                                            <SelectLabel className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 px-2 py-1">
+                                                Time Horizons
+                                            </SelectLabel>
+                                            <SelectItem value="this_month">
+                                                {range === 'this_month' && filters.range_label ? filters.range_label : 'This Month'}
+                                            </SelectItem>
+                                            <SelectItem value="1_week">1 Week</SelectItem>
+                                            <SelectItem value="6_months">6 Months</SelectItem>
+                                            <SelectItem value="this_year">This Year</SelectItem>
+                                            <SelectItem value="custom">Custom Range</SelectItem>
+                                        </SelectGroup>
+                                    </SelectContent>
+                                </Select>
+
+                                {range === 'custom' && (
+                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                                        <Input
+                                            type="date"
+                                            value={startDate}
+                                            onChange={(e) => setStartDate(e.target.value)}
+                                            className="h-9 w-full sm:w-[130px] text-xs border-zinc-800 text-zinc-300 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-200 cursor-pointer"
+                                        />
+                                        <span className="text-xs text-zinc-400 text-center sm:text-left">to</span>
+                                        <Input
+                                            type="date"
+                                            value={endDate}
+                                            onChange={(e) => setEndDate(e.target.value)}
+                                            className="h-9 w-full sm:w-[130px] text-xs border-zinc-800 text-zinc-300 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-200 cursor-pointer"
+                                        />
+                                        <Button 
+                                            size="sm" 
+                                            onClick={() => applyFilters({ range: 'custom' })}
+                                            className="h-9 w-full sm:w-auto px-3 text-xs"
+                                        >
+                                            Apply
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* KPI Summary Tiles */}
@@ -411,7 +432,9 @@ export default function AnalysisIndex({
                                     <Zap className="h-4 w-4 text-amber-500" />
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="text-xl sm:text-2xl font-bold text-zinc-200">{formatCurrency(kpis?.dailyAverage)}</div>
+                                    <div className={`text-xl sm:text-2xl font-bold ${getDailyAverageColorClass()}`}>
+                                        {formatCurrency(kpis?.dailyAverage)}
+                                    </div>
                                     <p className="text-[11px] text-zinc-400 mt-1">Across {kpis?.totalDays} days</p>
                                 </CardContent>
                             </Card>
@@ -657,7 +680,7 @@ export default function AnalysisIndex({
                                                         type="month"
                                                         value={calendar.month || calendarMonth}
                                                         onChange={handleMonthSelect}
-                                                        className="h-7 text-xs w-[120px] px-1.5 border-zinc-800 text-zinc-300"
+                                                        className="h-7 text-xs w-[120px] px-1.5 border-zinc-800 text-zinc-300 [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:brightness-200 cursor-pointer"
                                                     />
 
                                                     <Button 
