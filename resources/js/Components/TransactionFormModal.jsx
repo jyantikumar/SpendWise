@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
-import { toast } from 'sonner'; // 👈 Import Sonner toast
+import { toast } from 'sonner'; // 👈 Sonner toast imported
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -30,7 +30,7 @@ export default function TransactionFormModal({
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
-    // Filter available active accounts
+    // Filter available active accounts (keep currently selected account if editing)
     const availableAccounts = accounts.filter((acc) => {
         const isActive = Boolean(acc.is_active);
         const isCurrentlySelected = isEditing && String(acc.id) === String(editingTransaction?.account_id);
@@ -106,7 +106,7 @@ export default function TransactionFormModal({
         if (isEditing) {
             put(route('transactions.update', editingTransaction.id), {
                 onSuccess: () => {
-                    toast.success('Transaction updated successfully.'); // 👈 Toast for updates
+                    toast.success('Transaction updated successfully.'); // 👈 React-side Sonner Toast
                     onClose();
                     reset();
                 },
@@ -117,7 +117,7 @@ export default function TransactionFormModal({
         } else {
             post(route('transactions.store'), {
                 onSuccess: () => {
-                    toast.success('Transaction logged successfully.'); // 👈 Toast for creation
+                    toast.success('Transaction logged successfully.'); // 👈 React-side Sonner Toast
                     onClose();
                     reset();
                 },
@@ -129,10 +129,13 @@ export default function TransactionFormModal({
     };
 
     // Filter categories by transaction type AND active status
-    const filteredCategories = categories.filter((c) => 
-        c.type === data.type && 
-        (c.is_active === undefined || Boolean(c.is_active) || (isEditing && String(c.id) === String(editingTransaction?.category_id)))
-    );
+    const filteredCategories = categories.filter((c) => {
+        const isSameType = c.type === data.type;
+        const isActive = Boolean(c.is_active) || c.is_active === undefined;
+        const isCurrentlySelected = isEditing && String(c.id) === String(editingTransaction?.category_id);
+
+        return isSameType && (isActive || isCurrentlySelected);
+    });
 
     return (
         <>

@@ -8,7 +8,8 @@ import {
     ArrowUpCircle, 
     ArrowDownCircle, 
     ArrowLeftRight,
-    ListFilter
+    ListFilter,
+    Power
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -41,7 +42,10 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
     const [deletingCategory, setDeletingCategory] = useState(null);
-    const [selectedTab, setSelectedTab] = useState('all');
+    
+    // Filters State
+    const [selectedTab, setSelectedTab] = useState('all'); // Type filter: 'all', 'expense', 'income', 'transfer'
+    const [statusFilter, setStatusFilter] = useState('active'); // Status filter: 'active', 'inactive', 'all'
 
     // Category Transactions Modal State
     const [selectedCategoryForModal, setSelectedCategoryForModal] = useState(null);
@@ -62,11 +66,23 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
         setIsCategoryModalOpen(true);
     };
 
+    const handleToggleActive = (category) => {
+        router.patch(route('categories.toggle-active', category.id), {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(`Category "${category.name}" ${category.is_active ? 'deactivated' : 'activated'}.`);
+            },
+            onError: () => {
+                toast.error('Failed to update category status.');
+            }
+        });
+    };
+
     const handleDelete = () => {
         if (!deletingCategory) return;
         router.delete(route('categories.destroy', deletingCategory.id), {
             onSuccess: () => {
-                toast.success(`Category "${deletingCategory.name}" deleted successfully.`);
+                toast.success(`Category "${deletingCategory.name}" permanently deleted.`);
                 setDeletingCategory(null);
             },
             onError: () => {
@@ -75,9 +91,16 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
         });
     };
 
+    // Filter categories list by type and active status
     const filteredCategories = categories.filter((cat) => {
-        if (selectedTab === 'all') return true;
-        return cat.type === selectedTab;
+        // Status Filter
+        if (statusFilter === 'active' && !cat.is_active) return false;
+        if (statusFilter === 'inactive' && cat.is_active) return false;
+
+        // Type Filter
+        if (selectedTab !== 'all' && cat.type !== selectedTab) return false;
+
+        return true;
     });
 
     const renderTypeBadge = (type) => {
@@ -124,7 +147,7 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
 
                 {/* Category Card Container */}
                 <Card className="border-zinc-800">
-                    <CardHeader className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <CardHeader className="p-4 sm:p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
                         <div>
                             <CardTitle className="text-zinc-200">All Categories</CardTitle>
                             <CardDescription className="text-zinc-400">
@@ -132,31 +155,54 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                             </CardDescription>
                         </div>
 
-                        {/* Responsive Type Filter Tabs */}
-                        <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-1 rounded-lg text-xs w-full sm:w-auto overflow-x-auto no-scrollbar">
-                            {['all', 'expense', 'income', 'transfer'].map((tab) => (
-                                <button
-                                    key={tab}
-                                    onClick={() => setSelectedTab(tab)}
-                                    className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md font-medium capitalize transition-colors whitespace-nowrap ${
-                                        selectedTab === tab
-                                            ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                                            : 'text-zinc-400 hover:text-zinc-200'
-                                    }`}
-                                >
-                                    {tab}
-                                </button>
-                            ))}
+                        {/* Filter Controls Row */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto">
+                            {/* Status Filter Tabs (Active / Inactive / All) */}
+                            <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs shrink-0">
+                                {['active', 'inactive', 'all'].map((status) => (
+                                    <button
+                                        key={status}
+                                        onClick={() => setStatusFilter(status)}
+                                        className={`py-1.5 px-3 rounded-md font-medium capitalize text-center transition-all ${
+                                            statusFilter === status 
+                                                ? 'bg-zinc-800 text-zinc-100 shadow-sm' 
+                                                : 'text-zinc-400 hover:text-zinc-200'
+                                        }`}
+                                    >
+                                        {status}
+                                    </button>
+                                ))}
+                            </div>
+
+                            {/* Type Filter Tabs */}
+                            <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-1 rounded-lg text-xs overflow-x-auto no-scrollbar">
+                                {['all', 'expense', 'income', 'transfer'].map((tab) => (
+                                    <button
+                                        key={tab}
+                                        onClick={() => setSelectedTab(tab)}
+                                        className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md font-medium capitalize transition-colors whitespace-nowrap ${
+                                            selectedTab === tab
+                                                ? 'bg-zinc-800 text-zinc-100 shadow-sm'
+                                                : 'text-zinc-400 hover:text-zinc-200'
+                                        }`}
+                                    >
+                                        {tab}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
                     </CardHeader>
+
                     <CardContent className="p-0 sm:p-6 sm:pt-0">
-                        {/* Mobile Cards View (Visible on screens smaller than `md`) */}
+                        {/* Mobile Cards View */}
                         <div className="divide-y divide-zinc-800 md:hidden">
                             {filteredCategories.length > 0 ? (
                                 filteredCategories.map((cat) => (
                                     <div 
                                         key={cat.id}
-                                        className="p-4 flex items-center justify-between gap-3 active:bg-zinc-800/50 transition-colors cursor-pointer"
+                                        className={`p-4 flex items-center justify-between gap-3 active:bg-zinc-800/50 transition-colors cursor-pointer ${
+                                            !cat.is_active ? 'opacity-60' : ''
+                                        }`}
                                         onClick={() => openTransactionsModal(cat)}
                                     >
                                         <div className="flex items-center gap-3 min-w-0">
@@ -165,8 +211,11 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                                 style={{ backgroundColor: cat.color || '#3b82f6' }}
                                             />
                                             <div className="truncate">
-                                                <div className="font-medium text-zinc-200 text-sm truncate">
-                                                    {cat.name}
+                                                <div className="font-medium text-zinc-200 text-sm truncate flex items-center gap-1.5">
+                                                    <span>{cat.name}</span>
+                                                    {!cat.is_active && (
+                                                        <span className="text-xs text-zinc-500 font-normal">(Inactive)</span>
+                                                    )}
                                                 </div>
                                                 <div className="mt-1">
                                                     {renderTypeBadge(cat.type)}
@@ -191,6 +240,10 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                                     <DropdownMenuItem onClick={() => openEditModal(cat)} className="cursor-pointer hover:bg-zinc-800">
                                                         <Pencil className="mr-2 h-4 w-4 text-zinc-400" /> Edit
                                                     </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleToggleActive(cat)} className="cursor-pointer hover:bg-zinc-800">
+                                                        <Power className="mr-2 h-4 w-4 text-zinc-400" />
+                                                        {cat.is_active ? 'Deactivate' : 'Activate'}
+                                                    </DropdownMenuItem>
                                                     <DropdownMenuItem 
                                                         onClick={() => setDeletingCategory(cat)} 
                                                         className="text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30 cursor-pointer"
@@ -204,12 +257,12 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                 ))
                             ) : (
                                 <div className="text-center py-8 px-4 text-zinc-400 text-sm">
-                                    No categories found for the selected filter.
+                                    No categories match your criteria.
                                 </div>
                             )}
                         </div>
 
-                        {/* Desktop Table View (Visible on `md` and larger screens) */}
+                        {/* Desktop Table View */}
                         <div className="hidden md:block">
                             <Table>
                                 <TableHeader>
@@ -224,7 +277,9 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                         filteredCategories.map((cat) => (
                                             <TableRow 
                                                 key={cat.id}
-                                                className="cursor-pointer hover:bg-muted/50 border-b border-zinc-800 transition-colors"
+                                                className={`cursor-pointer hover:bg-muted/50 border-b border-zinc-800 transition-colors ${
+                                                    !cat.is_active ? 'opacity-60' : ''
+                                                }`}
                                                 onClick={() => openTransactionsModal(cat)}
                                             >
                                                 <TableCell className="font-medium text-zinc-300">
@@ -233,7 +288,12 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                                             className="h-3.5 w-3.5 rounded-full shrink-0" 
                                                             style={{ backgroundColor: cat.color || '#3b82f6' }}
                                                         />
-                                                        <span>{cat.name}</span>
+                                                        <span className="flex items-center gap-2">
+                                                            {cat.name}
+                                                            {!cat.is_active && (
+                                                                <span className="text-xs font-normal text-zinc-500">(Inactive)</span>
+                                                            )}
+                                                        </span>
                                                     </div>
                                                 </TableCell>
                                                 <TableCell>{renderTypeBadge(cat.type)}</TableCell>
@@ -254,6 +314,10 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                                             <DropdownMenuItem onClick={() => openEditModal(cat)} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800">
                                                                 <Pencil className="mr-2 h-4 w-4 text-zinc-400" /> Edit
                                                             </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleToggleActive(cat)} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800">
+                                                                <Power className="mr-2 h-4 w-4 text-zinc-400" />
+                                                                {cat.is_active ? 'Deactivate' : 'Activate'}
+                                                            </DropdownMenuItem>
                                                             <DropdownMenuItem 
                                                                 onClick={() => setDeletingCategory(cat)} 
                                                                 className="text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30 cursor-pointer"
@@ -268,7 +332,7 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                     ) : (
                                         <TableRow className="border-b border-zinc-800">
                                             <TableCell colSpan={3} className="text-center py-8 text-zinc-400">
-                                                No categories found for the selected filter.
+                                                No categories match your criteria.
                                             </TableCell>
                                         </TableRow>
                                     )}
@@ -298,16 +362,16 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
             <AlertDialog open={!!deletingCategory} onOpenChange={() => setDeletingCategory(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogTitle>Delete Category?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            This action will permanently remove the <strong>{deletingCategory?.name}</strong> category. 
-                            Existing transactions linked to this category will remain, but their category tag will be cleared.
+                            This will permanently delete the <strong>{deletingCategory?.name}</strong> category. 
+                            Existing transactions linked to this category will remain intact.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                         <AlertDialogCancel>Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700 text-white">
-                            Delete Category
+                            Delete
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

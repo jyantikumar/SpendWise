@@ -35,6 +35,9 @@ Route::get('/transactions', [TransactionController::class, 'index'])->name('tran
     Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
     Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
     Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
+    Route::patch('/categories/{category}/toggle-active', [CategoryController::class, 'toggleActive'])
+    ->withTrashed()
+    ->name('categories.toggle-active');
     Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
     // Category Transactions Modal API Endpoint
 Route::get('/categories/{category}/transactions', [CategoryController::class, 'categoryTransactions'])->name('categories.transactions');

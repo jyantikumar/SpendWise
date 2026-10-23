@@ -14,11 +14,18 @@ class CategoryController extends Controller
     {
         $user = $request->user();
 
+        // Include soft-deleted categories so they can be viewed and reactivated
         $categories = Category::where('user_id', $user->id)
+            ->withTrashed()
             ->withCount('transactions')
             ->orderBy('type')
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->map(function ($category) {
+                // Append virtual is_active flag based on soft delete status
+                $category->is_active = is_null($category->deleted_at);
+                return $category;
+            });
 
         $accounts = Account::where('user_id', $user->id)
             ->orderBy('name')
@@ -34,7 +41,7 @@ class CategoryController extends Controller
     {
         $validated = $request->validate([
             'name'  => ['required', 'string', 'max:255'],
-            'type'  => ['required', 'in:income,expense'],
+            'type'  => ['required', 'in:income,expense,transfer'],
             'color' => ['nullable', 'string', 'max:20'],
             'icon'  => ['nullable', 'string', 'max:50'],
         ]);
@@ -52,7 +59,7 @@ class CategoryController extends Controller
 
         $validated = $request->validate([
             'name'  => ['required', 'string', 'max:255'],
-            'type'  => ['required', 'in:income,expense'],
+            'type'  => ['required', 'in:income,expense,transfer'],
             'color' => ['nullable', 'string', 'max:20'],
             'icon'  => ['nullable', 'string', 'max:50'],
         ]);
@@ -62,20 +69,35 @@ class CategoryController extends Controller
         return back()->with('success', 'Category updated successfully.');
     }
 
+    public function toggleActive(Request $request, $id)
+    {
+        $category = Category::where('user_id', $request->user()->id)
+            ->withTrashed()
+            ->findOrFail($id);
+
+        if ($category->trashed()) {
+            $category->restore();
+            $status = 'activated';
+        } else {
+            $category->delete(); // Soft delete acts as deactivation
+            $status = 'deactivated';
+        }
+
+        return back()->with('success', "Category '{$category->name}' {$status} successfully.");
+    }
+
     public function destroy(Request $request, Category $category)
     {
         if ($category->user_id !== $request->user()->id) {
             abort(403);
         }
 
-        $category->delete();
+        // Force delete if user permanently removes it
+        $category->forceDelete();
 
-        return back()->with('success', 'Category deleted successfully.');
+        return back()->with('success', 'Category permanently deleted.');
     }
 
-    /**
-     * Fetch paginated transactions for a specific category (JSON response).
-     */
     public function categoryTransactions(Request $request, $categoryId)
     {
         $userId = $request->user()->id;
@@ -88,7 +110,10 @@ class CategoryController extends Controller
             ];
             $query = Transaction::where('user_id', $userId)->whereNull('category_id');
         } else {
-            $category = Category::where('user_id', $userId)->select('id', 'name', 'color')->findOrFail($categoryId);
+            $category = Category::where('user_id', $userId)
+                ->withTrashed()
+                ->select('id', 'name', 'color')
+                ->findOrFail($categoryId);
             $query = Transaction::where('user_id', $userId)->where('category_id', $category->id);
         }
 
@@ -97,7 +122,6 @@ class CategoryController extends Controller
         $startDate = $request->input('start_date');
         $endDate   = $request->input('end_date');
 
-        // Filter base query for calculations
         $filteredQuery = (clone $query)
             ->when($search, function ($q, $search) {
                 $q->where('description', 'like', "%{$search}%");
@@ -118,7 +142,6 @@ class CategoryController extends Controller
 
         $totalAmount = (clone $filteredQuery)->sum('amount');
 
-        // Paginate 8 items per page
         $paginatedTransactions = $filteredQuery
             ->select('id', 'user_id', 'account_id', 'destination_account_id', 'category_id', 'type', 'amount', 'description', 'transaction_date')
             ->with([
