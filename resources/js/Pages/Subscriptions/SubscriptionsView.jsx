@@ -313,7 +313,7 @@ export default function SubscriptionsView({
                 </div>
 
                 {/* KPI Summary Grid */}
-                <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-3">
+                <div className="grid gap-2 sm:gap-4 grid-cols-1 sm:grid-cols-2">
                     <Card className="border-zinc-800">
                         <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                             <CardTitle className="text-xs sm:text-sm font-medium text-zinc-400">Estimated Monthly Expenses</CardTitle>
@@ -336,18 +336,7 @@ export default function SubscriptionsView({
                         </CardContent>
                     </Card>
 
-                    <Card className="border-zinc-800">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-xs sm:text-sm font-medium text-zinc-400">Auto-Created Rules</CardTitle>
-                            <CheckCircle2 className="h-4 w-4 text-emerald-500" />
-                        </CardHeader>
-                        <CardContent>
-                            <div className="text-xl sm:text-2xl font-bold text-emerald-500">
-                                {recurringList.filter(i => i.auto_create).length}
-                            </div>
-                            <p className="text-[11px] text-zinc-400 mt-1">Managed via background scheduler</p>
-                        </CardContent>
-                    </Card>
+                   
                 </div>
 
                 {/* Active Filter Bar with Sub-Header */}
@@ -396,8 +385,8 @@ export default function SubscriptionsView({
 
                     <CardContent className="p-0 sm:p-6 sm:pt-0">
                         {/* Mobile List View (Visible on screens smaller than `sm`) */}
-                        {/* Mobile List View (Clean Stacked Card Layout) */}
-<div className="block sm:hidden divide-y divide-zinc-800/60 px-2">
+                        {/* Mobile List View (Bordered Cards Layout) */}
+<div className="block sm:hidden space-y-2.5 px-2">
     {filteredItems.length === 0 ? (
         <div className="text-center py-8 text-zinc-500 text-xs">
             No recurring schedules found.
@@ -410,120 +399,98 @@ export default function SubscriptionsView({
             return (
                 <div 
                     key={item.id} 
-                    className={`py-3 px-1 space-y-1.5 transition-opacity ${
-                        !effectiveActive ? 'opacity-40' : ''
+                    className={`relative p-3 rounded-lg border bg-zinc-900/40 transition-all ${
+                        !effectiveActive 
+                            ? 'border-zinc-800/60 opacity-50' 
+                            : 'border-zinc-800 hover:border-zinc-700'
                     }`}
                 >
-                    {/* Top Row: Title & Actions */}
-                    <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-1.5 min-w-0">
-                            <span className="relative flex h-2 w-2 items-center justify-center shrink-0">
-                                {effectiveActive && (
-                                    <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
-                                )}
-                                <span className={`relative inline-flex h-2 w-2 rounded-full ${
-                                    effectiveActive ? 'bg-emerald-500' : (expired ? 'bg-zinc-500' : 'bg-rose-500')
-                                }`} />
-                            </span>
+                    {/* Left Accent Indicator Bar */}
+                    <div className={`absolute left-0 top-3 bottom-3 w-1 rounded-r-full ${
+                        effectiveActive 
+                            ? (item.type === 'income' ? 'bg-emerald-500' : 'bg-rose-500') 
+                            : 'bg-zinc-600'
+                    }`} />
 
-                            <span className={`text-xs font-semibold truncate ${
-                                !effectiveActive ? 'line-through text-zinc-400' : 'text-zinc-200'
+                    <div className="pl-2 space-y-2">
+                        {/* Header Row: Title & Amount */}
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0 flex-1">
+                                <p className={`text-xs font-semibold truncate ${
+                                    !effectiveActive ? 'line-through text-zinc-400' : 'text-zinc-100'
+                                }`}>
+                                    {item.title}
+                                </p>
+                                <p className="text-[11px] text-zinc-400 truncate mt-0.5">
+                                    {item.account?.name || 'No account'}
+                                </p>
+                            </div>
+
+                            <span className={`text-sm font-bold shrink-0 ${
+                                !effectiveActive 
+                                    ? 'text-zinc-500' 
+                                    : item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'
                             }`}>
-                                {item.title}
+                                {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
                             </span>
-
-                            {expired && (
-                                <span className="text-[10px] text-zinc-500 font-medium uppercase shrink-0">
-                                    • Expired
-                                </span>
-                            )}
-                            {!item.is_active && !expired && (
-                                <span className="text-[10px] text-rose-400 font-medium uppercase shrink-0">
-                                    • Paused
-                                </span>
-                            )}
                         </div>
 
-                        {/* Actions */}
-                        <div className="flex items-center gap-1.5 shrink-0">
-                            <Button 
-                                size="sm" 
-                                variant="outline" 
-                                disabled={processingId === item.id || !effectiveActive}
-                                className="h-7 text-[11px] px-2.5 border-zinc-800 text-zinc-200 hover:bg-zinc-800 disabled:opacity-40"
-                                onClick={() => handleProcess(item)}
-                            >
-                                {processingId === item.id ? (
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                ) : (
-                                    'Pay'
-                                )}
-                            </Button>
-
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-400">
-                                        <MoreHorizontal className="h-3.5 w-3.5" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                                    <DropdownMenuLabel className="text-xs">Rule Actions</DropdownMenuLabel>
-                                    <DropdownMenuSeparator className="bg-zinc-800" />
-                                    <DropdownMenuItem onClick={() => openEditModal(item)} className="cursor-pointer text-xs">
-                                        <Pencil className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Edit
-                                    </DropdownMenuItem>
-                                    {!expired && (
-                                        <>
-                                            <DropdownMenuItem onClick={() => handleSkip(item)} disabled={!item.is_active} className="cursor-pointer text-xs">
-                                                <FastForward className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Skip Next Payment
-                                            </DropdownMenuItem>
-                                            <DropdownMenuItem onClick={() => handleToggleActive(item)} className="cursor-pointer text-xs">
-                                                <Power className="mr-2 h-3.5 w-3.5 text-zinc-400" />
-                                                {item.is_active ? 'Pause' : 'Activate'}
-                                            </DropdownMenuItem>
-                                        </>
-                                    )}
-                                    <DropdownMenuSeparator className="bg-zinc-800" />
-                                    <DropdownMenuItem 
-                                        onClick={() => setDeletingItem(item)} 
-                                        className="cursor-pointer text-xs text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30"
-                                    >
-                                        <Trash2 className="mr-2 h-3.5 w-3.5 text-rose-400" /> Delete
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </div>
-                    </div>
-
-                    {/* Bottom Row: Amount & Metadata */}
-                    <div className="flex items-center justify-between gap-2 text-[11px] text-zinc-400">
-                        <div className="flex items-center gap-1.5 min-w-0 truncate">
-                            {item.account?.name && (
-                                <>
-                                    <span className="truncate">{item.account.name}</span>
-                                    <span>•</span>
-                                </>
-                            )}
-                            <span className="shrink-0 capitalize">{item.frequency}</span>
-                            <span>•</span>
-                            <span className="shrink-0">Due {item.next_due_date ? String(item.next_due_date).split('T')[0] : '—'}</span>
-                            {item.auto_create && effectiveActive && (
-                                <>
-                                    <span>•</span>
-                                    <span className="inline-flex items-center text-emerald-400 font-medium shrink-0">
+                        {/* Footer Row: Tags & Actions */}
+                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800/60 text-[10px]">
+                            <div className="flex items-center gap-1.5 text-zinc-400 flex-wrap">
+                                <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-medium capitalize">
+                                    {item.frequency}
+                                </span>
+                                <span>Due {item.next_due_date ? String(item.next_due_date).split('T')[0] : '—'}</span>
+                                {item.auto_create && effectiveActive && (
+                                    <span className="inline-flex items-center text-emerald-400 font-medium ml-1">
                                         <Zap className="h-2.5 w-2.5 mr-0.5" /> Auto
                                     </span>
-                                </>
-                            )}
-                        </div>
+                                )}
+                            </div>
 
-                        <span className={`text-xs font-bold shrink-0 ${
-                            !effectiveActive 
-                                ? 'text-zinc-500' 
-                                : item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'
-                        }`}>
-                            {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
-                        </span>
+                            <div className="flex items-center gap-1 shrink-0">
+                                <Button 
+                                    size="sm" 
+                                    variant="secondary" 
+                                    disabled={processingId === item.id || !effectiveActive}
+                                    className="h-6 text-[10px] px-2 bg-zinc-800 text-zinc-200 hover:bg-zinc-700 disabled:opacity-40"
+                                    onClick={() => handleProcess(item)}
+                                >
+                                    {processingId === item.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Pay'}
+                                </Button>
+
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button size="icon" variant="ghost" className="h-6 w-6 text-zinc-400">
+                                            <MoreHorizontal className="h-3.5 w-3.5" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-900 text-zinc-200">
+                                        <DropdownMenuLabel className="text-xs">Rule Actions</DropdownMenuLabel>
+                                        <DropdownMenuSeparator className="bg-zinc-800" />
+                                        <DropdownMenuItem onClick={() => openEditModal(item)} className="cursor-pointer text-xs">
+                                            <Pencil className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Edit
+                                        </DropdownMenuItem>
+                                        {!expired && (
+                                            <>
+                                                <DropdownMenuItem onClick={() => handleSkip(item)} disabled={!item.is_active} className="cursor-pointer text-xs">
+                                                    <FastForward className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Skip Next Payment
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => handleToggleActive(item)} className="cursor-pointer text-xs">
+                                                    <Power className="mr-2 h-3.5 w-3.5 text-zinc-400" />
+                                                    {item.is_active ? 'Pause' : 'Activate'}
+                                                </DropdownMenuItem>
+                                            </>
+                                        )}
+                                        <DropdownMenuSeparator className="bg-zinc-800" />
+                                        <DropdownMenuItem onClick={() => setDeletingItem(item)} className="cursor-pointer text-xs text-rose-400">
+                                            <Trash2 className="mr-2 h-3.5 w-3.5 text-rose-400" /> Delete
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                        </div>
                     </div>
                 </div>
             );
