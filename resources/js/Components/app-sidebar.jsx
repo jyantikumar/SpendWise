@@ -38,8 +38,8 @@ const navGroups = [
         items: [
             { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
             { title: 'Transactions', url: '/transactions', icon: ReceiptText },
-            { title: 'Analysis', url: '/analysis', icon: ChartLine },
             { title: 'Subscriptions', url: '/subscriptions', icon: Calendar },
+             { title: 'Analysis', url: '/analysis', icon: ChartLine },
         ],
     },
     {
