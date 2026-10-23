@@ -29,6 +29,11 @@ export default function TransactionFormModal({
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
+    // Filter available active accounts (keep currently selected account if editing)
+    const availableAccounts = accounts.filter((acc) => 
+        acc.is_active || (isEditing && String(acc.id) === String(editingTransaction?.account_id))
+    );
+
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         account_id: '',
         destination_account_id: '',
@@ -62,7 +67,7 @@ export default function TransactionFormModal({
         } else {
             reset();
             setData({
-                account_id: accounts[0]?.id ? String(accounts[0].id) : '',
+                account_id: availableAccounts[0]?.id ? String(availableAccounts[0].id) : '',
                 destination_account_id: '',
                 category_id: '',
                 type: 'expense',
@@ -109,7 +114,11 @@ export default function TransactionFormModal({
         }
     };
 
-    const filteredCategories = categories.filter((c) => c.type === data.type);
+    // Filter categories by transaction type AND active status
+    const filteredCategories = categories.filter((c) => 
+        c.type === data.type && 
+        (c.is_active === undefined || c.is_active || (isEditing && String(c.id) === String(editingTransaction?.category_id)))
+    );
 
     return (
         <>
@@ -135,7 +144,7 @@ export default function TransactionFormModal({
                                 <SelectTrigger className="w-full h-10">
                                     <SelectValue placeholder="Select type" />
                                 </SelectTrigger>
-                                <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
                                     <SelectItem value="expense">Expense</SelectItem>
                                     <SelectItem value="income">Income</SelectItem>
                                     <SelectItem value="transfer">Transfer</SelectItem>
@@ -172,16 +181,16 @@ export default function TransactionFormModal({
                                 <SelectTrigger className="w-full h-10">
                                     <SelectValue placeholder="Select account" />
                                 </SelectTrigger>
-                                <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                    {accounts && accounts.length > 0 ? (
-                                        accounts.map((acc) => (
+                                <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                    {availableAccounts && availableAccounts.length > 0 ? (
+                                        availableAccounts.map((acc) => (
                                             <SelectItem key={acc.id} value={String(acc.id)}>
-                                                {acc.name} {acc.type ? `(${acc.type})` : ''}
+                                                {acc.name} {acc.type ? `(${acc.type})` : ''} {!acc.is_active ? '(Inactive)' : ''}
                                             </SelectItem>
                                         ))
                                     ) : (
                                         <div className="p-2 text-xs text-center text-muted-foreground">
-                                            No accounts available.
+                                            No active accounts available.
                                         </div>
                                     )}
                                 </SelectContent>
@@ -211,18 +220,18 @@ export default function TransactionFormModal({
                                     <SelectTrigger className="w-full h-10">
                                         <SelectValue placeholder="Select destination account" />
                                     </SelectTrigger>
-                                    <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                        {accounts && accounts.length > 0 ? (
-                                            accounts
+                                    <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                        {availableAccounts && availableAccounts.length > 0 ? (
+                                            availableAccounts
                                                 .filter((acc) => String(acc.id) !== String(data.account_id))
                                                 .map((acc) => (
                                                     <SelectItem key={acc.id} value={String(acc.id)}>
-                                                        {acc.name} {acc.type ? `(${acc.type})` : ''}
+                                                        {acc.name} {acc.type ? `(${acc.type})` : ''} {!acc.is_active ? '(Inactive)' : ''}
                                                     </SelectItem>
                                                 ))
                                         ) : (
                                             <div className="p-2 text-xs text-center text-muted-foreground">
-                                                No additional accounts available.
+                                                No additional active accounts available.
                                             </div>
                                         )}
                                     </SelectContent>
@@ -254,16 +263,16 @@ export default function TransactionFormModal({
                                 <SelectTrigger className="w-full h-10">
                                     <SelectValue placeholder="Select category (optional)" />
                                 </SelectTrigger>
-                                <SelectContent className="w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
                                     {filteredCategories.length > 0 ? (
                                         filteredCategories.map((cat) => (
                                             <SelectItem key={cat.id} value={String(cat.id)}>
-                                                {cat.name}
+                                                {cat.name} {!cat.is_active && cat.is_active !== undefined ? '(Inactive)' : ''}
                                             </SelectItem>
                                         ))
                                     ) : (
                                         <div className="p-2 text-xs text-center text-muted-foreground">
-                                            No categories available for this type.
+                                            No active categories available for this type.
                                         </div>
                                     )}
                                 </SelectContent>
@@ -315,20 +324,24 @@ export default function TransactionFormModal({
             </Dialog>
 
             {/* Quick Add Account Modal */}
-            <AccountFormModal
-                isOpen={isAccountModalOpen}
-                onClose={() => setIsAccountModalOpen(false)}
-                accountTypes={accountTypes}
-                onSuccessCallback={handleAccountCreated}
-            />
+            {isAccountModalOpen && (
+                <AccountFormModal
+                    isOpen={isAccountModalOpen}
+                    onClose={() => setIsAccountModalOpen(false)}
+                    accountTypes={accountTypes}
+                    onSuccessCallback={handleAccountCreated}
+                />
+            )}
 
             {/* Quick Add Category Modal */}
-            <CategoryFormModal 
-                isOpen={isCategoryModalOpen}
-                onClose={() => setIsCategoryModalOpen(false)}
-                defaultType={data.type}
-                onSuccessCallback={handleCategoryCreated}
-            />
+            {isCategoryModalOpen && (
+                <CategoryFormModal 
+                    isOpen={isCategoryModalOpen}
+                    onClose={() => setIsCategoryModalOpen(false)}
+                    defaultType={data.type}
+                    onSuccessCallback={handleCategoryCreated}
+                />
+            )}
         </>
     );
 }

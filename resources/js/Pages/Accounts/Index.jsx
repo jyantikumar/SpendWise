@@ -8,7 +8,8 @@ import {
     Wallet, 
     CreditCard,
     CheckCircle2,
-    ListFilter
+    ListFilter,
+    Power
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -41,6 +42,9 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
     const [editingAccount, setEditingAccount] = useState(null);
     const [deletingAccount, setDeletingAccount] = useState(null);
 
+    // Status Filter State (Default: active)
+    const [statusFilter, setStatusFilter] = useState('active');
+
     // Account Transactions Modal State
     const [selectedAccount, setSelectedAccount] = useState(null);
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
@@ -63,9 +67,21 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
         setIsTxModalOpen(true);
     };
 
+    const handleToggleActive = (account) => {
+        router.patch(`/accounts/${account.id}/toggle-active`, {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                toast.success(`Account "${account.name}" ${account.is_active ? 'deactivated' : 'activated'}.`);
+            },
+            onError: () => {
+                toast.error('Failed to update account status.');
+            }
+        });
+    };
+
     const handleDelete = () => {
         if (!deletingAccount) return;
-        router.delete(route('accounts.destroy', deletingAccount.id), {
+        router.delete(`/accounts/${deletingAccount.id}`, {
             onSuccess: () => {
                 toast.success(`Account "${deletingAccount.name}" deleted successfully.`);
                 setDeletingAccount(null);
@@ -83,6 +99,13 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
 
     const activeAccountCount = accounts.filter((a) => a.is_active).length;
     const inactiveAccountCount = accounts.filter((a) => !a.is_active).length;
+
+    // Filter accounts list based on status filter
+    const filteredAccounts = accounts.filter((acc) => {
+        if (statusFilter === 'active') return acc.is_active;
+        if (statusFilter === 'inactive') return !acc.is_active;
+        return true; // 'all'
+    });
 
     return (
         <AppLayout title="Accounts" headerTitle="Account Management">
@@ -143,17 +166,37 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
 
                 {/* Accounts List Container */}
                 <Card className="border-zinc-800">
-                    <CardHeader className="p-4 sm:p-6">
-                        <CardTitle className="text-zinc-200">All Accounts</CardTitle>
-                        <CardDescription className="text-zinc-400">
-                            View active balances and account classifications. Tap an account or action menu to view transactions.
-                        </CardDescription>
+                    <CardHeader className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <CardTitle className="text-zinc-200">All Accounts</CardTitle>
+                            <CardDescription className="text-zinc-400">
+                                View active balances and account classifications. Tap an account to view transactions.
+                            </CardDescription>
+                        </div>
+
+                        {/* Segmented Status Filter Tabs */}
+                        <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 w-full sm:w-auto">
+                            {['active', 'inactive', 'all'].map((status) => (
+                                <button
+                                    key={status}
+                                    onClick={() => setStatusFilter(status)}
+                                    className={`py-1.5 px-3 rounded-md text-xs font-medium capitalize text-center transition-all ${
+                                        statusFilter === status 
+                                            ? 'bg-zinc-800 text-zinc-100 shadow-sm' 
+                                            : 'text-zinc-400 hover:text-zinc-200'
+                                    }`}
+                                >
+                                    {status}
+                                </button>
+                            ))}
+                        </div>
                     </CardHeader>
+
                     <CardContent className="p-0 sm:p-6 sm:pt-0">
                         {/* Mobile Cards View (Visible on screens smaller than `md`) */}
                         <div className="divide-y divide-zinc-800 md:hidden">
-                            {accounts.length > 0 ? (
-                                accounts.map((acc) => (
+                            {filteredAccounts.length > 0 ? (
+                                filteredAccounts.map((acc) => (
                                     <div 
                                         key={acc.id}
                                         className={`p-4 flex items-center justify-between gap-3 active:bg-zinc-800/50 transition-colors ${
@@ -216,6 +259,10 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                                         <DropdownMenuItem onClick={() => openEditModal(acc)} className="cursor-pointer hover:bg-zinc-800">
                                                             <Pencil className="mr-2 h-4 w-4 text-zinc-400" /> Edit
                                                         </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleToggleActive(acc)} className="cursor-pointer hover:bg-zinc-800">
+                                                            <Power className="mr-2 h-4 w-4 text-zinc-400" />
+                                                            {acc.is_active ? 'Deactivate' : 'Activate'}
+                                                        </DropdownMenuItem>
                                                         <DropdownMenuItem 
                                                             onClick={() => setDeletingAccount(acc)} 
                                                             className="text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30 cursor-pointer"
@@ -230,7 +277,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                 ))
                             ) : (
                                 <div className="text-center py-8 px-4 text-zinc-400 text-sm">
-                                    No accounts created yet. Click "Add Account" to get started.
+                                    No {statusFilter !== 'all' ? statusFilter : ''} accounts found.
                                 </div>
                             )}
                         </div>
@@ -246,8 +293,8 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {accounts.length > 0 ? (
-                                        accounts.map((acc) => (
+                                    {filteredAccounts.length > 0 ? (
+                                        filteredAccounts.map((acc) => (
                                             <TableRow 
                                                 key={acc.id} 
                                                 className={`cursor-pointer hover:bg-muted/50 border-b border-zinc-800 transition-colors ${
@@ -305,6 +352,10 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                                             <DropdownMenuItem onClick={() => openEditModal(acc)} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800">
                                                                 <Pencil className="mr-2 h-4 w-4 text-zinc-400" /> Edit
                                                             </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => handleToggleActive(acc)} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800">
+                                                                <Power className="mr-2 h-4 w-4 text-zinc-400" />
+                                                                {acc.is_active ? 'Deactivate' : 'Activate'}
+                                                            </DropdownMenuItem>
                                                             <DropdownMenuItem 
                                                                 onClick={() => setDeletingAccount(acc)} 
                                                                 className="text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30 cursor-pointer"
@@ -319,7 +370,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                     ) : (
                                         <TableRow className="border-b border-zinc-800">
                                             <TableCell colSpan={3} className="text-center py-8 text-zinc-400">
-                                                No accounts created yet. Click "Add Account" to get started.
+                                                No {statusFilter !== 'all' ? statusFilter : ''} accounts found.
                                             </TableCell>
                                         </TableRow>
                                     )}

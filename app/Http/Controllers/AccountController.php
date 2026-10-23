@@ -155,4 +155,18 @@ class AccountController extends Controller
 
         return back()->with('success', 'Account deleted successfully.');
     }
+    public function toggleActive(Request $request, Account $account)
+{
+    if ($account->user_id !== $request->user()->id) {
+        abort(403);
+    }
+
+    $account->update([
+        'is_active' => !$account->is_active,
+    ]);
+
+    $status = $account->is_active ? 'activated' : 'deactivated';
+
+    return back()->with('success', "Account {$account->name} {$status} successfully.");
+}
 }

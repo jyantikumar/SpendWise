@@ -43,6 +43,7 @@ Route::get('/categories/{category}/transactions', [CategoryController::class, 'c
     Route::get('/accounts', [AccountController::class, 'index'])->name('accounts.index');
     Route::post('/accounts', [AccountController::class, 'store'])->name('accounts.store');
     Route::put('/accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
+    Route::patch('/accounts/{account}/toggle-active', [AccountController::class, 'toggleActive'])->name('accounts.toggle-active'); // 👈 Added
     Route::delete('/accounts/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
 // Account Transactions Modal API Endpoint
 Route::get('/accounts/{account}/transactions', [AccountController::class, 'accountTransactions'])->name('accounts.transactions');
