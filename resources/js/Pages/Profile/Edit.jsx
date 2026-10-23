@@ -103,14 +103,14 @@ function UpdateProfileInformationForm({ mustVerifyEmail, status }) {
                     </div>
                 )}
 
-                <div className="flex items-center gap-3">
-                    <Button type="submit" disabled={processing} size="sm">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <Button type="submit" disabled={processing} size="sm" className="w-full sm:w-auto">
                         {processing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                         Save Changes
                     </Button>
 
                     {recentlySuccessful && (
-                        <span className="text-xs text-emerald-400 flex items-center gap-1 font-medium">
+                        <span className="text-xs text-emerald-400 flex items-center justify-center sm:justify-start gap-1 font-medium">
                             <Check className="h-3.5 w-3.5" /> Saved successfully.
                         </span>
                     )}
@@ -241,14 +241,14 @@ function UpdatePasswordForm() {
                     )}
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <Button type="submit" disabled={processing} size="sm">
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <Button type="submit" disabled={processing} size="sm" className="w-full sm:w-auto">
                         {processing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                         Update Password
                     </Button>
 
                     {recentlySuccessful && (
-                        <span className="text-xs text-emerald-400 flex items-center gap-1 font-medium">
+                        <span className="text-xs text-emerald-400 flex items-center justify-center sm:justify-start gap-1 font-medium">
                             <Check className="h-3.5 w-3.5" /> Password updated.
                         </span>
                     )}
@@ -316,7 +316,7 @@ function DeleteUserForm() {
                     variant="destructive" 
                     size="sm" 
                     onClick={confirmUserDeletion}
-                    className="gap-1.5"
+                    className="w-full sm:w-auto gap-1.5"
                 >
                     <Trash2 className="h-4 w-4" /> Delete Account
                 </Button>
@@ -362,8 +362,8 @@ function DeleteUserForm() {
                                 )}
                             </div>
 
-                            <DialogFooter className="pt-2">
-                                <Button type="button" variant="outline" onClick={closeModal} size="sm">
+                            <DialogFooter className="pt-2 flex flex-col-reverse sm:flex-row gap-2">
+                                <Button type="button" variant="outline" onClick={closeModal} size="sm" className="w-full sm:w-auto">
                                     Cancel
                                 </Button>
                                 <Button
@@ -371,6 +371,7 @@ function DeleteUserForm() {
                                     variant="destructive"
                                     size="sm"
                                     disabled={processing}
+                                    className="w-full sm:w-auto"
                                 >
                                     {processing && <Loader2 className="h-4 w-4 animate-spin mr-2" />}
                                     Confirm Deletion
@@ -401,7 +402,7 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                         <h1 className="text-lg font-semibold tracking-tight text-zinc-200">Account Settings</h1>
                     </header>
 
-                    <main className="flex-1 p-6 md:p-10 max-w-3xl mx-auto w-full space-y-6">
+                    <main className="flex-1 p-4 sm:p-6 md:p-10 max-w-3xl mx-auto w-full space-y-6">
                         <div className="space-y-0.5">
                             <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Settings</h2>
                             <p className="text-zinc-400 text-sm">
@@ -412,24 +413,24 @@ export default function Edit({ auth, mustVerifyEmail, status }) {
                         <Separator className="bg-zinc-800" />
 
                         <Tabs defaultValue="general" className="flex flex-col space-y-8 w-full pt-2">
-                            <TabsList className="w-full justify-start border-b border-zinc-800 rounded-none bg-transparent p-0 gap-6 h-auto">
+                            <TabsList className="w-full justify-start border-b border-zinc-800 rounded-none bg-transparent p-0 gap-4 sm:gap-6 h-auto overflow-x-auto no-scrollbar">
                                 <TabsTrigger 
                                     value="general" 
-                                    className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-primary data-[state=active]:text-zinc-100 data-[state=active]:bg-transparent shadow-none"
+                                    className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-primary data-[state=active]:text-zinc-100 data-[state=active]:bg-transparent shadow-none whitespace-nowrap"
                                 >
                                     <User className="h-4 w-4" />
                                     General
                                 </TabsTrigger>
                                 <TabsTrigger 
                                     value="security" 
-                                    className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-primary data-[state=active]:text-zinc-100 data-[state=active]:bg-transparent shadow-none"
+                                    className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-primary data-[state=active]:text-zinc-100 data-[state=active]:bg-transparent shadow-none whitespace-nowrap"
                                 >
                                     <KeyRound className="h-4 w-4" />
                                     Security
                                 </TabsTrigger>
                                 <TabsTrigger 
                                     value="danger" 
-                                    className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-destructive data-[state=active]:text-destructive data-[state=active]:bg-transparent shadow-none"
+                                    className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-destructive data-[state=active]:text-destructive data-[state=active]:bg-transparent shadow-none whitespace-nowrap"
                                 >
                                     <AlertTriangle className="h-4 w-4" />
                                     Danger Zone

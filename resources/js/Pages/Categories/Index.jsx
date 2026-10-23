@@ -107,73 +107,74 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
 
     return (
         <AppLayout title="Categories" headerTitle="Category Management">
-            {/* Header Controls */}
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Categories</h2>
-                    <p className="text-sm text-zinc-400">
-                        Organize your cash flow into custom income, expense, and transfer categories.
-                    </p>
+            <div className="space-y-6">
+                {/* Header Controls */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                    <div>
+                        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Categories</h2>
+                        <p className="text-sm text-zinc-400">
+                            Organize your cash flow into custom income, expense, and transfer categories.
+                        </p>
+                    </div>
+
+                    <Button onClick={openCreateModal} className="w-full sm:w-auto gap-2">
+                        <Plus className="h-4 w-4" /> Add Category
+                    </Button>
                 </div>
 
-                <Button onClick={openCreateModal} className="gap-2">
-                    <Plus className="h-4 w-4" /> Add Category
-                </Button>
-            </div>
+                {/* Category Card Container */}
+                <Card className="border-zinc-800">
+                    <CardHeader className="p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                        <div>
+                            <CardTitle className="text-zinc-200">All Categories</CardTitle>
+                            <CardDescription className="text-zinc-400">
+                                Tap or click any category to view recorded transactions.
+                            </CardDescription>
+                        </div>
 
-            {/* Category Table Card */}
-            <Card className="border-zinc-800">
-                <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                    <div>
-                        <CardTitle className="text-zinc-200">All Categories</CardTitle>
-                        <CardDescription className="text-zinc-400">Click any row to view transactions recorded under that category.</CardDescription>
-                    </div>
-
-                    {/* Type Filter Buttons */}
-                    <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-1 rounded-lg text-xs">
-                        {['all', 'expense', 'income', 'transfer'].map((tab) => (
-                            <button
-                                key={tab}
-                                onClick={() => setSelectedTab(tab)}
-                                className={`px-3 py-1.5 rounded-md font-medium capitalize transition-colors ${
-                                    selectedTab === tab
-                                        ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                                        : 'text-zinc-400 hover:text-zinc-200'
-                                }`}
-                            >
-                                {tab}
-                            </button>
-                        ))}
-                    </div>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="border-b border-zinc-800">
-                                <TableHead className="text-zinc-400">Category Name</TableHead>
-                                <TableHead className="text-zinc-400">Type</TableHead>
-                                <TableHead className="text-right text-zinc-400"></TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
+                        {/* Responsive Type Filter Tabs */}
+                        <div className="flex items-center gap-1 bg-zinc-900 border border-zinc-800 p-1 rounded-lg text-xs w-full sm:w-auto overflow-x-auto no-scrollbar">
+                            {['all', 'expense', 'income', 'transfer'].map((tab) => (
+                                <button
+                                    key={tab}
+                                    onClick={() => setSelectedTab(tab)}
+                                    className={`flex-1 sm:flex-none px-3 py-1.5 rounded-md font-medium capitalize transition-colors whitespace-nowrap ${
+                                        selectedTab === tab
+                                            ? 'bg-zinc-800 text-zinc-100 shadow-sm'
+                                            : 'text-zinc-400 hover:text-zinc-200'
+                                    }`}
+                                >
+                                    {tab}
+                                </button>
+                            ))}
+                        </div>
+                    </CardHeader>
+                    <CardContent className="p-0 sm:p-6 sm:pt-0">
+                        {/* Mobile Cards View (Visible on screens smaller than `md`) */}
+                        <div className="divide-y divide-zinc-800 md:hidden">
                             {filteredCategories.length > 0 ? (
                                 filteredCategories.map((cat) => (
-                                    <TableRow 
+                                    <div 
                                         key={cat.id}
-                                        className="cursor-pointer hover:bg-muted/50 border-b border-zinc-800 transition-colors"
+                                        className="p-4 flex items-center justify-between gap-3 active:bg-zinc-800/50 transition-colors cursor-pointer"
                                         onClick={() => openTransactionsModal(cat)}
                                     >
-                                        <TableCell className="font-medium text-zinc-300">
-                                            <div className="flex items-center gap-3">
-                                                <div 
-                                                    className="h-3.5 w-3.5 rounded-full shrink-0" 
-                                                    style={{ backgroundColor: cat.color || '#3b82f6' }}
-                                                />
-                                                <span>{cat.name}</span>
+                                        <div className="flex items-center gap-3 min-w-0">
+                                            <div 
+                                                className="h-3.5 w-3.5 rounded-full shrink-0" 
+                                                style={{ backgroundColor: cat.color || '#3b82f6' }}
+                                            />
+                                            <div className="truncate">
+                                                <div className="font-medium text-zinc-200 text-sm truncate">
+                                                    {cat.name}
+                                                </div>
+                                                <div className="mt-1">
+                                                    {renderTypeBadge(cat.type)}
+                                                </div>
                                             </div>
-                                        </TableCell>
-                                        <TableCell>{renderTypeBadge(cat.type)}</TableCell>
-                                        <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                        </div>
+
+                                        <div onClick={(e) => e.stopPropagation()}>
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <button 
@@ -183,11 +184,11 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                                         <MoreHorizontal className="h-4 w-4" />
                                                     </button>
                                                 </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="border-zinc-800 bg-background text-zinc-300">
-                                                    <DropdownMenuItem onClick={() => openTransactionsModal(cat)} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800">
+                                                <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-900 text-zinc-300">
+                                                    <DropdownMenuItem onClick={() => openTransactionsModal(cat)} className="cursor-pointer hover:bg-zinc-800">
                                                         <ListFilter className="mr-2 h-4 w-4 text-zinc-400" /> View
                                                     </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => openEditModal(cat)} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800">
+                                                    <DropdownMenuItem onClick={() => openEditModal(cat)} className="cursor-pointer hover:bg-zinc-800">
                                                         <Pencil className="mr-2 h-4 w-4 text-zinc-400" /> Edit
                                                     </DropdownMenuItem>
                                                     <DropdownMenuItem 
@@ -198,20 +199,85 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
+                                        </div>
+                                    </div>
                                 ))
                             ) : (
-                                <TableRow className="border-b border-zinc-800">
-                                    <TableCell colSpan={3} className="text-center py-8 text-zinc-400">
-                                        No categories found for the selected filter.
-                                    </TableCell>
-                                </TableRow>
+                                <div className="text-center py-8 px-4 text-zinc-400 text-sm">
+                                    No categories found for the selected filter.
+                                </div>
                             )}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
+                        </div>
+
+                        {/* Desktop Table View (Visible on `md` and larger screens) */}
+                        <div className="hidden md:block">
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="border-b border-zinc-800">
+                                        <TableHead className="text-zinc-400">Category Name</TableHead>
+                                        <TableHead className="text-zinc-400">Type</TableHead>
+                                        <TableHead className="text-right text-zinc-400"></TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {filteredCategories.length > 0 ? (
+                                        filteredCategories.map((cat) => (
+                                            <TableRow 
+                                                key={cat.id}
+                                                className="cursor-pointer hover:bg-muted/50 border-b border-zinc-800 transition-colors"
+                                                onClick={() => openTransactionsModal(cat)}
+                                            >
+                                                <TableCell className="font-medium text-zinc-300">
+                                                    <div className="flex items-center gap-3">
+                                                        <div 
+                                                            className="h-3.5 w-3.5 rounded-full shrink-0" 
+                                                            style={{ backgroundColor: cat.color || '#3b82f6' }}
+                                                        />
+                                                        <span>{cat.name}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>{renderTypeBadge(cat.type)}</TableCell>
+                                                <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                                                    <DropdownMenu>
+                                                        <DropdownMenuTrigger asChild>
+                                                            <button 
+                                                                type="button"
+                                                                className="h-8 w-8 inline-flex items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200 outline-none transition-colors"
+                                                            >
+                                                                <MoreHorizontal className="h-4 w-4" />
+                                                            </button>
+                                                        </DropdownMenuTrigger>
+                                                        <DropdownMenuContent align="end" className="border-zinc-800 bg-background text-zinc-300">
+                                                            <DropdownMenuItem onClick={() => openTransactionsModal(cat)} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800">
+                                                                <ListFilter className="mr-2 h-4 w-4 text-zinc-400" /> View
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem onClick={() => openEditModal(cat)} className="cursor-pointer hover:bg-zinc-800 focus:bg-zinc-800">
+                                                                <Pencil className="mr-2 h-4 w-4 text-zinc-400" /> Edit
+                                                            </DropdownMenuItem>
+                                                            <DropdownMenuItem 
+                                                                onClick={() => setDeletingCategory(cat)} 
+                                                                className="text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30 cursor-pointer"
+                                                            >
+                                                                <Trash2 className="mr-2 h-4 w-4 text-rose-400" /> Delete
+                                                            </DropdownMenuItem>
+                                                        </DropdownMenuContent>
+                                                    </DropdownMenu>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))
+                                    ) : (
+                                        <TableRow className="border-b border-zinc-800">
+                                            <TableCell colSpan={3} className="text-center py-8 text-zinc-400">
+                                                No categories found for the selected filter.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
+                    </CardContent>
+                </Card>
+            </div>
 
             {/* Category Transactions Modal */}
             <CategoryTransactionsModal
