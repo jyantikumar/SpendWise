@@ -21,16 +21,50 @@ export function MasterRulesTab({
     setEditingItem, 
     setIsCreateOpen, 
     handleToggleActive, 
-    setDeletingItem 
+    setDeletingItem,
+    filterStatus,
+    setFilterStatus
 }) {
     return (
         <Card className="border-zinc-800">
             <CardHeader className="p-4 sm:p-6 pb-3">
-                <CardTitle className="text-sm sm:text-base text-zinc-200">Scheduled Rules</CardTitle>
-                <CardDescription className="text-xs text-zinc-400">
-                    Overview of repeat processing schedules across accounts.
-                </CardDescription>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    {/* Header Title & Quick Filter Pills */}
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <CardTitle className="text-sm sm:text-base text-zinc-200">Scheduled Rules</CardTitle>
+
+                        {/* Inline Status Filter Pills */}
+                        <div className="flex items-center gap-1 bg-zinc-900/80 p-0.5 rounded-lg border border-zinc-800 text-xs">
+                            {[
+                                { id: 'all', label: 'All' },
+                                { id: 'active', label: 'Active' },
+                                { id: 'paused', label: 'Paused' },
+                            ].map((statusOption) => (
+                                <button
+                                    key={statusOption.id}
+                                    type="button"
+                                    onClick={() => {
+                                        setFilterStatus(statusOption.id);
+                                        setRulesPage(1);
+                                    }}
+                                    className={`py-1 px-2.5 rounded-md text-[11px] font-medium transition-all ${
+                                        filterStatus === statusOption.id 
+                                            ? 'bg-zinc-800 text-zinc-100 shadow-sm' 
+                                            : 'text-zinc-400 hover:text-zinc-200'
+                                    }`}
+                                >
+                                    {statusOption.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    <CardDescription className="text-xs text-zinc-400 sm:text-right">
+                        Overview of repeat processing schedules across accounts.
+                    </CardDescription>
+                </div>
             </CardHeader>
+
             <CardContent className="p-4 sm:p-6 sm:pt-0">
                 {/* Mobile View */}
                 <div className="block sm:hidden space-y-2.5">

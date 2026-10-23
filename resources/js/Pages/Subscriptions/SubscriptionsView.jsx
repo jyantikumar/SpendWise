@@ -109,8 +109,9 @@ export default function SubscriptionsView({
     const filteredRules = recurringList.filter((item) => {
         if (filterType === 'expense' && item.type !== 'expense') return false;
         if (filterType === 'income' && item.type !== 'income') return false;
-        if (filterStatus === 'active' && !item.is_active) return false;
-        if (filterStatus === 'paused' && item.is_active) return false;
+        if (filterStatus === 'all' && !item.is_active) return false;
+    if (filterStatus === 'active' && !item.is_active) return false;
+    if (filterStatus === 'paused' && item.is_active) return false;
         return true;
     });
 
@@ -270,18 +271,20 @@ const totalMonthlyIncome = upcomingInstances
                     {/* Tab 3: Master Schedule Rules */}
                     <TabsContent value="rules" className="w-full mt-0">
                         <MasterRulesTab 
-                            filteredRules={filteredRules}
-                            paginatedRules={paginatedRules}
-                            rulesPage={rulesPage}
-                            setRulesPage={setRulesPage}
-                            totalRulesPages={totalRulesPages}
-                            itemsPerPage={ITEMS_PER_PAGE}
-                            formatCurrency={formatCurrency}
-                            setEditingItem={setEditingItem}
-                            setIsCreateOpen={setIsCreateOpen}
-                            handleToggleActive={handleToggleActive}
-                            setDeletingItem={setDeletingItem}
-                        />
+    filteredRules={filteredRules}
+    paginatedRules={paginatedRules}
+    rulesPage={rulesPage}
+    setRulesPage={setRulesPage}
+    totalRulesPages={totalRulesPages}
+    itemsPerPage={ITEMS_PER_PAGE}
+    formatCurrency={formatCurrency}
+    setEditingItem={setEditingItem}
+    setIsCreateOpen={setIsCreateOpen}
+    handleToggleActive={handleToggleActive}
+    setDeletingItem={setDeletingItem}
+    filterStatus={filterStatus}
+    setFilterStatus={setFilterStatus}
+/>
                     </TabsContent>
                 </Tabs>
             </div>
