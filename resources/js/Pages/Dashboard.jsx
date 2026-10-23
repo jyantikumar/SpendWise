@@ -166,6 +166,7 @@ export default function Dashboard({
     categoryBreakdown, 
     latestTransactions = [], 
     accounts = [], 
+    accountTypes = [],
     categories = [], 
     currentFilter = 'this_day',
     customDates = {}
@@ -285,12 +286,15 @@ export default function Dashboard({
                     </header>
 
                     <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
+                        {/* Header Controls aligned right on laptop/desktop */}
                         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                           
-                            {/* Responsive Controls Bar */}
-                            <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                            <div className="hidden sm:block text-sm text-zinc-400 font-medium">
+                                Overview & Activity
+                            </div>
+
+                            <div className="w-full sm:w-auto flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-3 sm:ml-auto">
                                 {currentFilter === 'custom' ? (
-                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
+                                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 w-full sm:w-auto">
                                         <div className="grid grid-cols-2 gap-2 w-full sm:w-auto">
                                             <Select value={currentFilter} onValueChange={handleFilterChange}>
                                                 <SelectTrigger className="w-full sm:w-[150px] h-10 border-zinc-800 text-zinc-300">
@@ -336,7 +340,7 @@ export default function Dashboard({
                                         </Button>
                                     </div>
                                 ) : (
-                                    <div className="grid grid-cols-2 gap-2 sm:flex items-center sm:gap-2.5 w-full sm:w-auto">
+                                    <div className="grid grid-cols-2 gap-2 sm:flex items-center justify-end sm:gap-2.5 w-full sm:w-auto">
                                         <Select value={currentFilter} onValueChange={handleFilterChange}>
                                             <SelectTrigger className="w-full sm:w-[160px] h-10 border-zinc-800 text-zinc-300">
                                                 <SlidersHorizontal className="mr-2 h-4 w-4 shrink-0" />
@@ -352,7 +356,7 @@ export default function Dashboard({
                                             </SelectContent>
                                         </Select>
 
-                                        <Button onClick={openCreateModal} className="gap-2 h-10 w-full sm:w-auto">
+                                        <Button onClick={openCreateModal} className="gap-2 h-10 w-full sm:w-auto shrink-0">
                                             <Plus className="h-4 w-4" /> 
                                             <span className="inline sm:hidden">New</span>
                                             <span className="hidden sm:inline">New Transaction</span>
@@ -636,6 +640,7 @@ export default function Dashboard({
                     editingTransaction={editingTransaction}
                     accounts={accounts}
                     categories={categories}
+                    accountTypes={accountTypes}
                 />
             )}
 

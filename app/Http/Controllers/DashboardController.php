@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\AccountType;
 use App\Models\Category;
 use App\Models\Transaction;
 use Illuminate\Http\Request;
@@ -121,8 +122,11 @@ class DashboardController extends Controller
             ],
             'latestTransactions' => $latestTransactions,
             'accounts' => Account::where('user_id', $userId)
-    ->orderBy('name')
-    ->get(['id', 'name', 'type', 'balance', 'is_active']), // 👈 Added is_active
+                ->orderBy('name')
+                ->get(['id', 'name', 'type', 'balance', 'is_active']), // 👈 Added is_active
+            'accountTypes' => AccountType::where('user_id', $userId)
+                ->orderBy('name')
+                ->get(['id', 'name', 'color', 'icon']), // 👈 Add accountTypes array
             'categories' => Category::where('user_id', $userId)->orderBy('name')->get(['id', 'name', 'type', 'color', 'icon']),
             'currentFilter' => $filter,
             'customDates' => [
