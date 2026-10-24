@@ -65,7 +65,8 @@ export function NotificationBell() {
     onClick={() => setPayingInstance({ 
         ...item, 
         rule_id: item.id,
-        account_id: item.account_id || item.account?.id || '' 
+        account_id: item.account_id || item.account?.id || '',
+        category_name: item.category_name ?? item.category?.name ?? '',
     })}
     className="h-6 text-[11px] px-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded font-medium"
 >
@@ -159,12 +160,14 @@ export function NotificationBell() {
                 </Popover.Portal>
             </Popover.Root>
 
-            <PayInstanceDialog
+           <PayInstanceDialog
     open={!!payingInstance}
     onOpenChange={() => setPayingInstance(null)}
     instance={payingInstance}
     accounts={accounts}
+    isAccountLocked={true}
     isAmountLocked={true}
+    isCategoryLocked={true}
 />
         </>
     );

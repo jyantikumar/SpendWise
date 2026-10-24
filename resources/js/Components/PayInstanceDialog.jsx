@@ -26,12 +26,16 @@ export function PayInstanceDialog({
     onOpenChange, 
     instance = null, 
     accounts = [], 
+    categories = [],
     isAccountLocked = false,
-    isAmountLocked = false 
+    isAmountLocked = false,
+    isCategoryLocked = false,
 }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         due_date: '',
         account_id: '',
+        category_id: '',
+        category_name: '',
         amount: '',
         payment_date: '',
         date_option: 'due_date',
@@ -44,9 +48,16 @@ export function PayInstanceDialog({
                 ? String(rawAccountId) 
                 : (accounts[0]?.id ? String(accounts[0].id) : '');
 
+            const rawCategoryId = instance.category_id ?? instance.category?.id;
+            const initialCategory = rawCategoryId !== undefined && rawCategoryId !== null 
+                ? String(rawCategoryId) 
+                : '';
+
             setData({
                 due_date: instance.due_date || '',
                 account_id: initialAccount,
+                category_id: initialCategory,
+                category_name: instance.category_name || instance.category?.name || 'Uncategorized',
                 amount: instance.amount ? String(instance.amount) : '',
                 payment_date: instance.due_date || new Date().toISOString().slice(0, 10),
                 date_option: 'due_date',
@@ -93,28 +104,6 @@ export function PayInstanceDialog({
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-4 pt-2">
-                    {/* Account */}
-                    <div className="space-y-1.5">
-                        <Label className="text-xs text-zinc-300">Payment Account</Label>
-                        <Select 
-                            value={data.account_id} 
-                            onValueChange={(val) => setData('account_id', val)}
-                            disabled={isAccountLocked}
-                        >
-                            <SelectTrigger className="h-9 w-full border-zinc-800 bg-zinc-900 text-xs text-zinc-200 disabled:opacity-60 disabled:cursor-not-allowed">
-                                <SelectValue placeholder="Select account" />
-                            </SelectTrigger>
-                            <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                                {accounts.map((acc) => (
-                                    <SelectItem key={acc.id} value={String(acc.id)}>
-                                        {acc.name}
-                                    </SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        {errors.account_id && <p className="text-[11px] text-rose-500">{errors.account_id}</p>}
-                    </div>
-
                     {/* Amount */}
                     <div className="space-y-1.5">
                         <Label htmlFor="amount" className="text-xs text-zinc-300">
@@ -130,6 +119,61 @@ export function PayInstanceDialog({
                             className="h-9 w-full border-zinc-800 bg-zinc-900 text-xs text-zinc-200 disabled:opacity-60 disabled:cursor-not-allowed"
                         />
                         {errors.amount && <p className="text-[11px] text-rose-500">{errors.amount}</p>}
+                    </div>
+
+                    {/* Category & Account (Side-by-Side Grid) */}
+                    <div className="grid grid-cols-2 gap-3">
+                        {/* Category */}
+                        <div className="space-y-1.5">
+                            <Label className="text-xs text-zinc-300">Category</Label>
+                            {isCategoryLocked ? (
+                                <Input
+                                    type="text"
+                                    value={data.category_name}
+                                    disabled={true}
+                                    className="h-9 w-full border-zinc-800 bg-zinc-900 text-xs text-zinc-200 disabled:opacity-60 disabled:cursor-not-allowed"
+                                />
+                            ) : (
+                                <Select 
+                                    value={data.category_id} 
+                                    onValueChange={(val) => setData('category_id', val)}
+                                >
+                                    <SelectTrigger className="h-9 w-full border-zinc-800 bg-zinc-900 text-xs text-zinc-200">
+                                        <SelectValue placeholder="Select category" />
+                                    </SelectTrigger>
+                                    <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
+                                        {categories.map((cat) => (
+                                            <SelectItem key={cat.id} value={String(cat.id)}>
+                                                {cat.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            )}
+                            {errors.category_id && <p className="text-[11px] text-rose-500">{errors.category_id}</p>}
+                        </div>
+
+                        {/* Account */}
+                        <div className="space-y-1.5">
+                            <Label className="text-xs text-zinc-300">Payment Account</Label>
+                            <Select 
+                                value={data.account_id} 
+                                onValueChange={(val) => setData('account_id', val)}
+                                disabled={isAccountLocked}
+                            >
+                                <SelectTrigger className="h-9 w-full border-zinc-800 bg-zinc-900 text-xs text-zinc-200 disabled:opacity-60 disabled:cursor-not-allowed">
+                                    <SelectValue placeholder="Select account" />
+                                </SelectTrigger>
+                                <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
+                                    {accounts.map((acc) => (
+                                        <SelectItem key={acc.id} value={String(acc.id)}>
+                                            {acc.name}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                            {errors.account_id && <p className="text-[11px] text-rose-500">{errors.account_id}</p>}
+                        </div>
                     </div>
 
                     {/* Payment Date Selection */}

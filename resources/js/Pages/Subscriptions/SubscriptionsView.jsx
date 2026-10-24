@@ -318,11 +318,15 @@ const totalMonthlyIncome = upcomingInstances
             />
 
             <PayInstanceDialog
-                open={!!payingInstance}
-                onOpenChange={() => setPayingInstance(null)}
-                instance={payingInstance}
-                accounts={accounts}
-            />
+    open={!!payingInstance}
+    onOpenChange={() => setPayingInstance(null)}
+    instance={payingInstance}
+    accounts={accounts}
+    categories={categories}
+    isAccountLocked={true}
+    isAmountLocked={true}
+    isCategoryLocked={true}
+/>
 
             <AlertDialog open={!!deletingItem} onOpenChange={() => setDeletingItem(null)}>
                 <AlertDialogContent className="border-zinc-800 bg-zinc-950 text-zinc-100">

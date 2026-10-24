@@ -71,21 +71,29 @@ while ($currentDueDate->lte($today) && (! $endDate || $currentDueDate->lte($endD
     $isPaid = in_array($formattedDate, $rulePaidDates);
     $isSkipped = in_array($formattedDate, $skippedDates);
 
-    if (! $isPaid && ! $isSkipped) {
-        $item = [
-            'id' => $rule->id,
-            'title' => $rule->title,
-            'amount' => $rule->amount,
-            'due_date' => $formattedDate,
-            'type' => $rule->type,
-            'account_id' => $rule->account_id,
-        ];
+    $recurringRules = RecurringTransaction::with('category')
+    ->where('user_id', $user->id)
+    ->where('is_active', true)
+    ->get();
 
-        if ($currentDueDate->isToday()) {
-            $notifications['due_today'][] = $item;
-        } elseif ($currentDueDate->lt($today)) {
-            $notifications['overdue'][] = $item;
-        }
+// 2. Include category details in $item array
+if (! $isPaid && ! $isSkipped) {
+    $item = [
+        'id' => $rule->id,
+        'title' => $rule->title,
+        'amount' => $rule->amount,
+        'due_date' => $formattedDate,
+        'type' => $rule->type,
+        'account_id' => $rule->account_id,
+        'category_id' => $rule->category_id,
+        'category_name' => $rule->category?->name ?? 'Uncategorized',
+    ];
+
+    if ($currentDueDate->isToday()) {
+        $notifications['due_today'][] = $item;
+    } elseif ($currentDueDate->lt($today)) {
+        $notifications['overdue'][] = $item;
+    }
     }
 
     // Move switch OUTSIDE the if statement so it always increments
