@@ -48,7 +48,7 @@ class CategoryController extends Controller
 
         $request->user()->categories()->create($validated);
 
-        return back()->with('success', 'Category created successfully.');
+        return back();
     }
 
     public function update(Request $request, Category $category)
@@ -66,7 +66,7 @@ class CategoryController extends Controller
 
         $category->update($validated);
 
-        return back()->with('success', 'Category updated successfully.');
+        return back();
     }
 
     public function toggleActive(Request $request, $id)
@@ -83,7 +83,7 @@ class CategoryController extends Controller
             $status = 'deactivated';
         }
 
-        return back()->with('success', "Category '{$category->name}' {$status} successfully.");
+       return back();
     }
 
     public function destroy(Request $request, Category $category)
@@ -95,7 +95,7 @@ class CategoryController extends Controller
         // Force delete if user permanently removes it
         $category->forceDelete();
 
-        return back()->with('success', 'Category permanently deleted.');
+      return back();
     }
 
     public function categoryTransactions(Request $request, $categoryId)

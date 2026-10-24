@@ -109,7 +109,7 @@ class RecurringTransactionController extends Controller
 
         RecurringTransaction::create($validated);
 
-        return back()->with('success', 'Recurring rule created successfully.');
+       return back();
     }
 
     public function update(Request $request, RecurringTransaction $recurringTransaction)
@@ -132,7 +132,7 @@ class RecurringTransactionController extends Controller
 
         $recurringTransaction->update($validated);
 
-        return back()->with('success', 'Recurring rule updated successfully.');
+return back();
     }
 
     public function process(Request $request, RecurringTransaction $recurringTransaction)
@@ -192,8 +192,7 @@ class RecurringTransactionController extends Controller
             }
         });
 
-        return back()->with('success', "Payment logged for {$validated['due_date']}.");
-    }
+return back();}
 
     public function skip(Request $request, RecurringTransaction $recurringTransaction)
     {
@@ -213,8 +212,8 @@ class RecurringTransactionController extends Controller
             $recurringTransaction->update(['skipped_dates' => $currentSkipped]);
         }
 
-        return back()->with('success', "Skipped instance for {$skippedDate}.");
-    }
+return back();}
+
 
     public function toggle(Request $request, RecurringTransaction $recurringTransaction)
     {
@@ -226,8 +225,8 @@ class RecurringTransactionController extends Controller
             'is_active' => !$recurringTransaction->is_active,
         ]);
 
-        return back()->with('success', 'Recurring status updated.');
-    }
+return back();}
+
 
     public function destroy(Request $request, RecurringTransaction $recurringTransaction)
     {
@@ -237,6 +236,6 @@ class RecurringTransactionController extends Controller
 
         $recurringTransaction->delete();
 
-        return back()->with('success', 'Recurring rule deleted.');
-    }
+return back();}
+
 }

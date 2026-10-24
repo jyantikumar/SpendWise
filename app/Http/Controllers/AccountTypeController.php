@@ -36,7 +36,7 @@ class AccountTypeController extends Controller
 
         $request->user()->accountTypes()->create($validated);
 
-        return back()->with('success', 'Account type created successfully.');
+       return back();
     }
 
     public function update(Request $request, AccountType $accountType)
@@ -61,7 +61,7 @@ class AccountTypeController extends Controller
 
         $accountType->update($validated);
 
-        return back()->with('success', 'Account type updated successfully.');
+       return back();
     }
 
     public function destroy(Request $request, AccountType $accountType)
@@ -72,6 +72,6 @@ class AccountTypeController extends Controller
 
         $accountType->delete();
 
-        return back()->with('success', 'Account type deleted successfully.');
+      return back();
     }
 }

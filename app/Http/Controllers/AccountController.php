@@ -122,7 +122,7 @@ class AccountController extends Controller
 
         $request->user()->accounts()->create($validated);
 
-        return back()->with('success', 'Account created successfully.');
+      return back();
     }
 
     public function update(Request $request, Account $account)
@@ -142,7 +142,7 @@ class AccountController extends Controller
 
         $account->update($validated);
 
-        return back()->with('success', 'Account updated successfully.');
+        return back();
     }
 
     public function destroy(Request $request, Account $account)
@@ -153,7 +153,7 @@ class AccountController extends Controller
 
         $account->delete();
 
-        return back()->with('success', 'Account deleted successfully.');
+       return back();
     }
     public function toggleActive(Request $request, Account $account)
 {
@@ -167,6 +167,6 @@ class AccountController extends Controller
 
     $status = $account->is_active ? 'activated' : 'deactivated';
 
-    return back()->with('success', "Account {$account->name} {$status} successfully.");
+   return back();
 }
 }

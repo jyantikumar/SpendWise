@@ -193,8 +193,8 @@ class TransactionController extends Controller
             }
         });
 
-        return back()->with('success', 'Transaction updated successfully.');
-    }
+return back();}
+
 
     public function destroy(Request $request, Transaction $transaction)
     {
@@ -220,6 +220,6 @@ class TransactionController extends Controller
             $transaction->delete();
         });
 
-        return back()->with('success', 'Transaction deleted successfully.');
-    }
+return back();}
+
 }
