@@ -16,7 +16,7 @@ class AnalysisController extends Controller
 
         // Default range remains 'monthly' for macro-first experience
         $range          = $request->input('range', 'monthly'); 
-        $type           = $request->input('type', 'expense');
+        $type           = $request->input('type', 'all');
         $accountId      = $request->input('account_id', 'all');
         $startDateInput = $request->input('start_date');
         $endDateInput   = $request->input('end_date');
