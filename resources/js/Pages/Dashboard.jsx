@@ -355,51 +355,115 @@ export default function Dashboard({
                 </div>
             </div>
 
-            {/* KPI Cards Grid */}
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
-                <Card className="border-zinc-800">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Total Balance</CardTitle>
-                        <Wallet className="h-4 w-4 text-zinc-400" />
+            {/* KPI Cards Grid & Cash Flow Distribution */}
+            <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                {/* Total Balance Card */}
+                <Card className="border-zinc-800 flex flex-col justify-between py-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 pt-3 px-4">
+                        <CardTitle className="text-xs font-medium text-zinc-400">Total Balance</CardTitle>
+                        <Wallet className="h-3.5 w-3.5 text-zinc-400" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-zinc-200">{formatCurrency(kpis?.totalBalance)}</div>
-                        <p className="text-xs text-zinc-400 mt-1">Across all liquid accounts</p>
+                    <CardContent className="pb-3 pt-0 px-4">
+                        <div className="text-xl font-bold text-zinc-200">{formatCurrency(kpis?.totalBalance)}</div>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">Across all liquid accounts</p>
                     </CardContent>
                 </Card>
 
-                <Card className="border-zinc-800">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Total Income</CardTitle>
-                        <TrendingUp className="h-4 w-4 text-emerald-500" />
+                {/* Income vs Expense Donut Chart Card */}
+                <Card className="border-zinc-800 flex flex-col justify-between py-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 pt-3 px-4">
+                        <CardTitle className="text-xs font-medium text-zinc-400">Income vs. Expense</CardTitle>
+                        <PieChartIcon className="h-3.5 w-3.5 text-zinc-400" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-emerald-500">{formatCurrency(kpis?.totalIncome)}</div>
-                        <p className="text-xs text-zinc-400 mt-1">Earned this period</p>
+                    <CardContent className="pb-2.5 pt-0 px-4">
+                        {((kpis?.totalIncome || 0) + (kpis?.totalExpense || 0)) > 0 ? (
+                            <div className="flex items-center justify-between gap-3">
+                                <div className="h-[70px] w-[70px] shrink-0">
+                                    <svg viewBox="0 0 200 200" className="w-full h-full">
+                                        {(() => {
+                                            const income = parseFloat(kpis?.totalIncome) || 0;
+                                            const expense = parseFloat(kpis?.totalExpense) || 0;
+                                            const total = income + expense;
+                                            if (total === 0) return null;
+
+                                            const data = [
+                                                { name: 'Income', value: income, color: '#10b981' },
+                                                { name: 'Expense', value: expense, color: '#f43f5e' }
+                                            ];
+
+                                            let cumulativeAngle = 0;
+                                            return data.map((item, index) => {
+                                                const angle = (item.value / total) * 360;
+                                                const startAngle = cumulativeAngle;
+                                                const endAngle = cumulativeAngle + angle;
+                                                cumulativeAngle += angle;
+
+                                                const cx = 100, cy = 100, rOut = 80, rIn = 52;
+                                                const radStart = ((startAngle - 90) * Math.PI) / 180;
+                                                const radEnd = ((endAngle - 90) * Math.PI) / 180;
+
+                                                const x1Out = cx + rOut * Math.cos(radStart);
+                                                const y1Out = cy + rOut * Math.sin(radStart);
+                                                const x2Out = cx + rOut * Math.cos(radEnd);
+                                                const y2Out = cy + rOut * Math.sin(radEnd);
+
+                                                const x1In = cx + rIn * Math.cos(radStart);
+                                                const y1In = cy + rIn * Math.sin(radStart);
+                                                const x2In = cx + rIn * Math.cos(radEnd);
+                                                const y2In = cy + rIn * Math.sin(radEnd);
+
+                                                const largeArc = angle > 180 ? 1 : 0;
+                                                const pathData = angle >= 359.99 
+                                                    ? `M ${cx} ${cy - rOut} A ${rOut} ${rOut} 0 1 1 ${cx - 0.01} ${cy - rOut} L ${cx - 0.01} ${cy - rIn} A ${rIn} ${rIn} 0 1 0 ${cx} ${cy - rIn} Z`
+                                                    : `M ${x1Out} ${y1Out} A ${rOut} ${rOut} 0 ${largeArc} 1 ${x2Out} ${y2Out} L ${x2In} ${y2In} A ${rIn} ${rIn} 0 ${largeArc} 0 ${x1In} ${y1In} Z`;
+
+                                                return (
+                                                    <path
+                                                        key={index}
+                                                        d={pathData}
+                                                        fill={item.color}
+                                                        className="transition-all duration-200"
+                                                    />
+                                                );
+                                            });
+                                        })()}
+                                    </svg>
+                                </div>
+
+                                <div className="flex flex-col justify-center gap-1 flex-1 text-[11px]">
+                                    <div className="flex items-center justify-between">
+                                        <span className="flex items-center gap-1.5 text-zinc-400 font-medium">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" /> Income
+                                        </span>
+                                        <span className="font-bold text-emerald-500">{formatCurrency(kpis?.totalIncome)}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <span className="flex items-center gap-1.5 text-zinc-400 font-medium">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-rose-500 shrink-0" /> Expense
+                                        </span>
+                                        <span className="font-bold text-rose-500">{formatCurrency(kpis?.totalExpense)}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center py-2 text-zinc-400 text-[11px]">
+                                No flow recorded for this period.
+                            </div>
+                        )}
                     </CardContent>
                 </Card>
 
-                <Card className="border-zinc-800">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Total Expenses</CardTitle>
-                        <TrendingDown className="h-4 w-4 text-rose-500" />
+                {/* Net Cash Flow Card */}
+                <Card className="border-zinc-800 flex flex-col justify-between py-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 pt-3 px-4">
+                        <CardTitle className="text-xs font-medium text-zinc-400">Net Cash Flow</CardTitle>
+                        <DollarSign className="h-3.5 w-3.5 text-zinc-400" />
                     </CardHeader>
-                    <CardContent>
-                        <div className="text-2xl font-bold text-rose-500">{formatCurrency(kpis?.totalExpense)}</div>
-                        <p className="text-xs text-zinc-400 mt-1">Spent this period</p>
-                    </CardContent>
-                </Card>
-
-                <Card className="border-zinc-800">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium text-zinc-400">Net Cash Flow</CardTitle>
-                        <DollarSign className="h-4 w-4 text-zinc-400" />
-                    </CardHeader>
-                    <CardContent>
-                        <div className={`text-2xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                    <CardContent className="pb-3 pt-0 px-4">
+                        <div className={`text-xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
                             {formatCurrency(kpis?.netCashFlow)}
                         </div>
-                        <p className="text-xs text-zinc-400 mt-1">Income minus expenses</p>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">Income minus expenses</p>
                     </CardContent>
                 </Card>
             </div>
