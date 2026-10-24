@@ -67,11 +67,24 @@ export default function AccountTransactionsModal({
         }
     }, [isOpen, initialStartDate, initialEndDate]);
 
-    // Reset page back to 1 whenever filters change
+    // Reset page back to 1 whenever generic filters change
     const handleFilterChange = (setter, value) => {
         setter(value);
         setCurrentPage(1);
     };
+
+    // Handle segmented type change & reset selected category back to 'all'
+    const handleTypeChange = (newType) => {
+        setSelectedType(newType);
+        setSelectedCategory('all');
+        setCurrentPage(1);
+    };
+
+    // Filter categories dynamically based on selected transaction type
+    const filteredCategories = categories.filter((cat) => {
+        if (selectedType === 'all') return false;
+        return cat.type === selectedType;
+    });
 
     // Fetch account transactions on filter / page change
     const fetchTransactions = async (searchTerm, page = 1) => {
@@ -198,7 +211,7 @@ export default function AccountTransactionsModal({
                             <button
                                 key={pill.value}
                                 type="button"
-                                onClick={() => handleFilterChange(setSelectedType, pill.value)}
+                                onClick={() => handleTypeChange(pill.value)}
                                 className={`w-full py-1 rounded-md font-medium text-xs text-center transition-all whitespace-nowrap ${
                                     selectedType === pill.value
                                         ? 'bg-zinc-800 text-zinc-100 shadow-sm'
@@ -210,7 +223,7 @@ export default function AccountTransactionsModal({
                         ))}
                     </div>
 
-                    {/* Right Group: Search, Full-Row Category, and Side-by-Side Dates */}
+                    {/* Right Group: Search, Dynamic Category Filter, and Side-by-Side Dates */}
                     <div className="flex flex-col sm:flex-row gap-2 flex-1 items-stretch sm:items-center">
                         {/* Search Input */}
                         <div className="relative flex-1">
@@ -223,22 +236,24 @@ export default function AccountTransactionsModal({
                             />
                         </div>
 
-                        {/* Category Filter (Spans available row width) */}
-                        <div className="flex-1">
-                            <Select value={selectedCategory} onValueChange={(val) => handleFilterChange(setSelectedCategory, val)}>
-                                <SelectTrigger className="h-8 text-xs w-full border-zinc-800 text-zinc-300">
-                                    <SelectValue placeholder="All Categories" />
-                                </SelectTrigger>
-                                <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                    <SelectItem value="all">All Categories</SelectItem>
-                                    {categories.map((cat) => (
-                                        <SelectItem key={cat.id} value={String(cat.id)}>
-                                            {cat.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        {/* Category Filter - Hidden when selectedType === 'all' */}
+                        {selectedType !== 'all' && (
+                            <div className="flex-1">
+                                <Select value={selectedCategory} onValueChange={(val) => handleFilterChange(setSelectedCategory, val)}>
+                                    <SelectTrigger className="h-8 text-xs w-full border-zinc-800 text-zinc-300">
+                                        <SelectValue placeholder="All Categories" />
+                                    </SelectTrigger>
+                                    <SelectContent className="border-zinc-800 bg-background text-zinc-300">
+                                        <SelectItem value="all">All Categories</SelectItem>
+                                        {filteredCategories.map((cat) => (
+                                            <SelectItem key={cat.id} value={String(cat.id)}>
+                                                {cat.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
 
                         {/* Side-by-Side Dates */}
                         <div className="grid grid-cols-2 gap-2 sm:w-auto shrink-0">
