@@ -247,21 +247,25 @@ class AnalysisController extends Controller
         }
 
         // Dynamic Range Label Construction
-        if ($range === 'this_month') {
-            $rangeLabel = Carbon::parse($calendarMonth)->format('F Y');
-        } elseif ($range === 'monthly') {
-            $rangeLabel = 'Monthly (' . $targetYear . ')';
-        } elseif ($range === 'yearly') {
-            $rangeLabel = 'Yearly';
-        } elseif ($range === '1_week') {
-            $rangeLabel = '1 Week';
-        } elseif ($range === '6_months') {
-            $rangeLabel = '6 Months';
-        } elseif ($range === 'this_year') {
-            $rangeLabel = 'This Year';
-        } else {
-            $rangeLabel = 'Custom Range';
-        }
+        // AnalysisController.php
+
+// Dynamic Range Label Construction
+if ($range === 'this_month') {
+    // Formats calendarMonth (e.g., '2026-10') into 'October 2026'
+    $rangeLabel = Carbon::parse($calendarMonth)->format('F Y'); 
+} elseif ($range === 'monthly') {
+    $rangeLabel = 'Monthly (' . $targetYear . ')';
+} elseif ($range === 'yearly') {
+    $rangeLabel = 'Yearly';
+} elseif ($range === '1_week') {
+    $rangeLabel = '1 Week';
+} elseif ($range === '6_months') {
+    $rangeLabel = '6 Months';
+} elseif ($range === 'this_year') {
+    $rangeLabel = 'This Year';
+} else {
+    $rangeLabel = 'Custom Range';
+}
 
         $accounts = $user->accounts()->orderBy('name')->get();
 

@@ -108,8 +108,8 @@ export default function AnalysisIndex({
     filters = {}, 
     categories = [] 
 }) {
-    // Active applied filters
-    const [type, setType] = useState(filters.type || 'expense');
+    // Active applied filters - Default type is 'all'
+    const [type, setType] = useState(filters.type || 'all');
     const [accountId, setAccountId] = useState(filters.account_id || 'all');
     const [range, setRange] = useState(filters.range || 'monthly');
     const [startDate, setStartDate] = useState(filters.start_date || '');
@@ -151,6 +151,29 @@ export default function AnalysisIndex({
             return `₱${(val / 1000).toFixed(0)}k`;
         }
         return `₱${Math.round(val)}`;
+    };
+
+    // Resolves explicit Horizon Label (e.g. 'October 2026' when range is 'this_month')
+    const getTimeHorizonLabel = (selectedRange) => {
+        if (selectedRange === 'this_month') {
+            try {
+                const dateObj = new Date(`${calendarMonth}-01`);
+                return dateObj.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            } catch (e) {
+                return 'This Month';
+            }
+        }
+
+        const rangeLabels = {
+            monthly: 'Monthly',
+            yearly: 'Yearly',
+            '1_week': '1 Week',
+            '6_months': '6 Months',
+            this_year: 'This Year',
+            custom: 'Custom Range',
+        };
+
+        return rangeLabels[selectedRange] || 'Select Horizon';
     };
 
     // Sync temp states whenever the sheet opens
@@ -215,13 +238,13 @@ export default function AnalysisIndex({
     };
 
     const handleResetFilters = () => {
-        setTempType('expense');
+        setTempType('all');
         setTempAccountId('all');
         setTempRange('monthly');
         setTempStartDate('');
         setTempEndDate('');
 
-        setType('expense');
+        setType('all');
         setAccountId('all');
         setRange('monthly');
         setStartDate('');
@@ -231,13 +254,13 @@ export default function AnalysisIndex({
     };
 
     const hasActiveFilters = Boolean(
-        type !== 'expense' || 
+        type !== 'all' || 
         accountId !== 'all' || 
         range !== 'monthly'
     );
 
     const activeFilterCount = [
-        type !== 'expense',
+        type !== 'all',
         accountId !== 'all',
         range !== 'monthly'
     ].filter(Boolean).length;
@@ -328,8 +351,7 @@ export default function AnalysisIndex({
                     <h2 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2 text-zinc-100">
                     </h2>
                     <p className="text-xs sm:text-sm text-zinc-400">
-                                                Track cash velocity, daily spending activity, and category distribution.
-
+                        Track cash velocity, daily spending activity, and category distribution.
                     </p>
                 </div>
 
@@ -409,7 +431,7 @@ export default function AnalysisIndex({
                                     <Select value={tempRange} onValueChange={setTempRange}>
                                         <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900">
                                             <SlidersHorizontal className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                                            <SelectValue />
+                                            <SelectValue>{getTimeHorizonLabel(tempRange)}</SelectValue>
                                         </SelectTrigger>
                                         <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-200">
                                             <SelectGroup>
@@ -498,10 +520,10 @@ export default function AnalysisIndex({
                     </div>
 
                     <div className="flex items-center gap-1.5 overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden pt-0.5">
-                        {type !== 'expense' && (
+                        {type !== 'all' && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/80 text-[11px] sm:text-xs capitalize shrink-0">
                                 <span>Type: {type}</span>
-                                <X className="h-3 w-3 shrink-0 cursor-pointer hover:text-rose-400" onClick={() => { setType('expense'); applyFilters({ type: 'expense' }); }} />
+                                <X className="h-3 w-3 shrink-0 cursor-pointer hover:text-rose-400" onClick={() => { setType('all'); applyFilters({ type: 'all' }); }} />
                             </span>
                         )}
 
@@ -515,7 +537,9 @@ export default function AnalysisIndex({
                         {range !== 'monthly' && (
                             <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/80 text-[11px] sm:text-xs shrink-0">
                                 <span>
-                                    {range === 'custom' && startDate && endDate
+                                    {range === 'this_month'
+                                        ? new Date(`${calendarMonth}-01`).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+                                        : range === 'custom' && startDate && endDate
                                         ? `${new Date(startDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })} - ${new Date(endDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: '2-digit' })}`
                                         : range.replace(/_/g, ' ')}
                                 </span>
