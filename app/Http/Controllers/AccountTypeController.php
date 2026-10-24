@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\AccountType;
+use App\Models\Category;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -12,12 +13,25 @@ class AccountTypeController extends Controller
     public function index(Request $request)
     {
         $accountTypes = AccountType::where('user_id', $request->user()->id)
+            ->with(['accounts' => function ($q) {
+                $q->select('id', 'account_type_id', 'name', 'balance', 'currency');
+            }])
             ->withCount('accounts')
+            ->orderBy('name')
+            ->get()
+            ->map(function ($type) {
+                $type->total_balance = $type->accounts->sum('balance');
+                return $type;
+            });
+
+        $categories = Category::where('user_id', $request->user()->id)
+            ->select('id', 'name', 'type')
             ->orderBy('name')
             ->get();
 
         return Inertia::render('AccountTypes/Index', [
             'accountTypes' => $accountTypes,
+            'categories'   => $categories,
         ]);
     }
 
@@ -36,7 +50,7 @@ class AccountTypeController extends Controller
 
         $request->user()->accountTypes()->create($validated);
 
-       return back();
+        return back();
     }
 
     public function update(Request $request, AccountType $accountType)
@@ -61,7 +75,7 @@ class AccountTypeController extends Controller
 
         $accountType->update($validated);
 
-       return back();
+        return back();
     }
 
     public function destroy(Request $request, AccountType $accountType)
@@ -72,6 +86,6 @@ class AccountTypeController extends Controller
 
         $accountType->delete();
 
-      return back();
+        return back();
     }
 }
