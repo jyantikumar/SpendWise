@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { useForm, usePage, Link } from '@inertiajs/react';
 import { 
     User, 
     Check, 
@@ -12,9 +12,7 @@ import {
     EyeOff
 } from 'lucide-react';
 
-import { AppSidebar } from '@/components/app-sidebar';
-import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
-import { TooltipProvider } from '@/components/ui/tooltip';
+import AppLayout from '@/Layouts/AuthenticatedLayout';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
@@ -385,76 +383,60 @@ function DeleteUserForm() {
     );
 }
 
-export default function Edit({ auth, mustVerifyEmail, status }) {
-    const user = auth?.user || {};
-
+export default function Edit({ mustVerifyEmail, status }) {
     return (
-        <TooltipProvider>
-            <SidebarProvider>
-                <Head title="Account Settings - SpendWise" />
+        <AppLayout title="Account Settings" headerTitle="Account Settings">
+            <div className="max-w-3xl mx-auto w-full space-y-6">
+                <div className="space-y-0.5">
+                    <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Settings</h2>
+                    <p className="text-zinc-400 text-sm">
+                        Manage your account settings and preferences.
+                    </p>
+                </div>
 
-                <AppSidebar user={user} />
+                <Separator className="bg-zinc-800" />
 
-                <SidebarInset>
-                    <header className="flex h-16 shrink-0 items-center gap-2 border-b border-zinc-800 px-4">
-                        <SidebarTrigger className="-ml-1" />
-                        <Separator orientation="vertical" className="mr-2 h-4 bg-zinc-800" />
-                        <h1 className="text-lg font-semibold tracking-tight text-zinc-200">Account Settings</h1>
-                    </header>
+                <Tabs defaultValue="general" className="flex flex-col space-y-8 w-full pt-2">
+                    <TabsList className="w-full justify-start border-b border-zinc-800 rounded-none bg-transparent p-0 gap-4 sm:gap-6 h-auto overflow-x-auto no-scrollbar">
+                        <TabsTrigger 
+                            value="general" 
+                            className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-primary data-[state=active]:text-zinc-100 data-[state=active]:bg-transparent shadow-none whitespace-nowrap"
+                        >
+                            <User className="h-4 w-4" />
+                            General
+                        </TabsTrigger>
+                        <TabsTrigger 
+                            value="security" 
+                            className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-primary data-[state=active]:text-zinc-100 data-[state=active]:bg-transparent shadow-none whitespace-nowrap"
+                        >
+                            <KeyRound className="h-4 w-4" />
+                            Security
+                        </TabsTrigger>
+                        <TabsTrigger 
+                            value="danger" 
+                            className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-destructive data-[state=active]:text-destructive data-[state=active]:bg-transparent shadow-none whitespace-nowrap"
+                        >
+                            <AlertTriangle className="h-4 w-4" />
+                            Danger Zone
+                        </TabsTrigger>
+                    </TabsList>
 
-                    <main className="flex-1 p-4 sm:p-6 md:p-10 max-w-3xl mx-auto w-full space-y-6">
-                        <div className="space-y-0.5">
-                            <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Settings</h2>
-                            <p className="text-zinc-400 text-sm">
-                                Manage your account settings and preferences.
-                            </p>
-                        </div>
+                    <TabsContent value="general" className="mt-0">
+                        <UpdateProfileInformationForm
+                            mustVerifyEmail={mustVerifyEmail}
+                            status={status}
+                        />
+                    </TabsContent>
 
-                        <Separator className="bg-zinc-800" />
+                    <TabsContent value="security" className="mt-0">
+                        <UpdatePasswordForm />
+                    </TabsContent>
 
-                        <Tabs defaultValue="general" className="flex flex-col space-y-8 w-full pt-2">
-                            <TabsList className="w-full justify-start border-b border-zinc-800 rounded-none bg-transparent p-0 gap-4 sm:gap-6 h-auto overflow-x-auto no-scrollbar">
-                                <TabsTrigger 
-                                    value="general" 
-                                    className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-primary data-[state=active]:text-zinc-100 data-[state=active]:bg-transparent shadow-none whitespace-nowrap"
-                                >
-                                    <User className="h-4 w-4" />
-                                    General
-                                </TabsTrigger>
-                                <TabsTrigger 
-                                    value="security" 
-                                    className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-primary data-[state=active]:text-zinc-100 data-[state=active]:bg-transparent shadow-none whitespace-nowrap"
-                                >
-                                    <KeyRound className="h-4 w-4" />
-                                    Security
-                                </TabsTrigger>
-                                <TabsTrigger 
-                                    value="danger" 
-                                    className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-destructive data-[state=active]:text-destructive data-[state=active]:bg-transparent shadow-none whitespace-nowrap"
-                                >
-                                    <AlertTriangle className="h-4 w-4" />
-                                    Danger Zone
-                                </TabsTrigger>
-                            </TabsList>
-
-                            <TabsContent value="general" className="mt-0">
-                                <UpdateProfileInformationForm
-                                    mustVerifyEmail={mustVerifyEmail}
-                                    status={status}
-                                />
-                            </TabsContent>
-
-                            <TabsContent value="security" className="mt-0">
-                                <UpdatePasswordForm />
-                            </TabsContent>
-
-                            <TabsContent value="danger" className="mt-0">
-                                <DeleteUserForm />
-                            </TabsContent>
-                        </Tabs>
-                    </main>
-                </SidebarInset>
-            </SidebarProvider>
-        </TooltipProvider>
+                    <TabsContent value="danger" className="mt-0">
+                        <DeleteUserForm />
+                    </TabsContent>
+                </Tabs>
+            </div>
+        </AppLayout>
     );
 }

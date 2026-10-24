@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
-import { Bell, AlertCircle, Clock, CheckCircle2 } from 'lucide-react';
+import { Bell, AlertCircle, Clock, Check, ChevronRight, SkipForward } from 'lucide-react';
 import * as Popover from '@radix-ui/react-popover';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
 import { PayInstanceDialog } from '@/components/PayInstanceDialog';
 
 export function NotificationBell() {
@@ -28,6 +28,49 @@ export function NotificationBell() {
         );
     };
 
+    const isExpense = (item) => item.type !== 'income';
+
+    const renderRow = (item, isOverdue) => (
+        <div 
+            key={`${isOverdue ? 'overdue' : 'today'}-${item.id}`}
+            className="group flex items-center justify-between p-2.5 hover:bg-zinc-800/50 rounded-lg transition-colors"
+        >
+            <div className="min-w-0 flex-1 pr-2">
+                <p className="text-xs font-medium text-zinc-200 truncate group-hover:text-white">
+                    {item.title}
+                </p>
+                <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
+                    <span className={isOverdue ? 'text-rose-400 font-medium' : 'text-amber-400 font-medium'}>
+                        {isOverdue ? item.due_date : 'Today'}
+                    </span>
+                    <span className="text-zinc-600">•</span>
+                    <span className="text-zinc-400 font-medium">
+                        {formatCurrency(item.amount)}
+                    </span>
+                </div>
+            </div>
+
+            <div className="flex items-center gap-1 shrink-0">
+                <button
+                    type="button"
+                    onClick={() => handleSkip(item)}
+                    className="p-1 text-zinc-500 hover:text-zinc-300 rounded transition-colors"
+                    title="Skip"
+                >
+                    <SkipForward className="h-3.5 w-3.5" />
+                </button>
+                <Button 
+                    size="sm" 
+                    variant="ghost"
+                    onClick={() => setPayingInstance({ ...item, rule_id: item.id })}
+                    className="h-6 text-[11px] px-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded font-medium"
+                >
+                    Pay
+                </Button>
+            </div>
+        </div>
+    );
+
     return (
         <>
             <Popover.Root>
@@ -35,13 +78,11 @@ export function NotificationBell() {
                     <Button 
                         variant="ghost" 
                         size="icon" 
-                        className="relative h-9 w-9 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60"
+                        className="relative h-9 w-9 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/80 rounded-lg transition-colors"
                     >
                         <Bell className="h-4 w-4" />
                         {count > 0 && (
-                            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold text-white ring-2 ring-zinc-950">
-                                {count > 99 ? '99+' : count}
-                            </span>
+                            <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500 ring-4 ring-zinc-900" />
                         )}
                     </Button>
                 </Popover.Trigger>
@@ -50,135 +91,70 @@ export function NotificationBell() {
                     <Popover.Content 
                         align="end" 
                         sideOffset={8}
-                        className="w-80 sm:w-96 border border-zinc-800 bg-zinc-950 p-0 text-zinc-100 shadow-xl rounded-lg z-50 focus:outline-none"
+                        className="w-80 sm:w-[360px] p-0 z-50 focus:outline-none"
                     >
-                        {/* Popover Header */}
-                        <div className="flex items-center justify-between border-b border-zinc-800 px-4 py-3">
-                            <div className="flex items-center gap-2">
-                                <span className="text-xs font-semibold text-zinc-200">Payment Alerts</span>
+                        <Card className="border-zinc-800 bg-zinc-900 text-zinc-100 shadow-2xl overflow-hidden rounded-2xl p-1.5 space-y-1.5">
+                            {/* Inset Header */}
+                            <CardHeader className="flex flex-row items-center justify-between px-3 py-2 space-y-0 rounded-xl bg-zinc-950/60">
+                                <CardTitle className="text-xs font-medium text-zinc-300">
+                                    Payment Notifications
+                                </CardTitle>
                                 {count > 0 && (
-                                    <Badge variant="outline" className="border-rose-900/80 bg-rose-950/30 text-[10px] text-rose-400">
-                                        {count} pending
-                                    </Badge>
+                                    <span className="text-xs text-zinc-400">
+                                        {count} action{count > 1 ? 's' : ''} needed
+                                    </span>
                                 )}
-                            </div>
-                        </div>
+                            </CardHeader>
 
-                        {/* List Area */}
-                        <div className="max-h-80 overflow-y-auto divide-y divide-zinc-800/60">
-                            {count === 0 ? (
-                                <div className="flex flex-col items-center justify-center py-8 text-center px-4">
-                                    <CheckCircle2 className="h-8 w-8 text-emerald-500/80 mb-2" />
-                                    <p className="text-xs font-medium text-zinc-300">All caught up!</p>
-                                    <p className="text-[11px] text-zinc-500 mt-0.5">No payments due today or overdue.</p>
-                                </div>
-                            ) : (
-                                <>
-                                    {/* Overdue Section */}
-                                    {overdue.length > 0 && (
-                                        <div className="p-2 space-y-1.5">
-                                            <div className="px-2 py-1 text-[10px] font-semibold tracking-wider text-rose-400 uppercase flex items-center gap-1">
-                                                <AlertCircle className="h-3 w-3" /> Overdue ({overdue.length})
-                                            </div>
-                                            {overdue.map((item, idx) => (
-                                                <div 
-                                                    key={`overdue-${item.id}-${idx}`} 
-                                                    className="p-2.5 rounded-lg border border-rose-950/40 bg-zinc-900/40 space-y-2"
-                                                >
-                                                    <div className="flex items-start justify-between gap-2">
-                                                        <div className="min-w-0 flex-1">
-                                                            <p className="text-xs font-semibold text-zinc-200 truncate">{item.title}</p>
-                                                            <p className="text-[10px] text-rose-400 font-medium mt-0.5">Due {item.due_date}</p>
-                                                        </div>
-                                                        <span className="text-xs font-bold text-rose-500 shrink-0">
-                                                            -{formatCurrency(item.amount)}
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="flex items-center justify-end gap-1.5 pt-1.5 border-t border-zinc-800/60">
-                                                        <Button 
-                                                            size="sm" 
-                                                            variant="outline" 
-                                                            className="h-6 text-[10px] px-2.5 border-rose-900/50 text-rose-400 hover:bg-rose-950/30 hover:text-rose-300"
-                                                            onClick={() => setPayingInstance({ ...item, rule_id: item.id })}
-                                                        >
-                                                            Pay
-                                                        </Button>
-                                                        <Button 
-                                                            size="sm" 
-                                                            variant="ghost" 
-                                                            className="h-6 text-[10px] px-2 text-zinc-400 hover:text-zinc-200"
-                                                            onClick={() => handleSkip(item)}
-                                                        >
-                                                            Skip
-                                                        </Button>
-                                                    </div>
+                            {/* Inset Body (Invisible Scrollbar Kept) */}
+                            <CardContent className="p-1 max-h-[320px] overflow-y-auto space-y-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                                {count === 0 ? (
+                                    <div className="flex flex-col items-center justify-center py-8 text-center px-4">
+                                        <Check className="h-5 w-5 text-emerald-400 mb-1.5" />
+                                        <p className="text-xs text-zinc-300">All payments settled</p>
+                                    </div>
+                                ) : (
+                                    <>
+                                        {overdue.length > 0 && (
+                                            <div className="p-1 rounded-xl bg-zinc-950/40 space-y-0.5">
+                                                <div className="px-2 py-1 text-[10px] font-semibold text-rose-400 uppercase tracking-wider flex items-center gap-1">
+                                                    <AlertCircle className="h-3 w-3" /> Overdue
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {/* Due Today Section */}
-                                    {due_today.length > 0 && (
-                                        <div className="p-2 space-y-1.5">
-                                            <div className="px-2 py-1 text-[10px] font-semibold tracking-wider text-amber-400 uppercase flex items-center gap-1">
-                                                <Clock className="h-3 w-3" /> Due Today ({due_today.length})
-                                            </div>
-                                            {due_today.map((item, idx) => (
-                                                <div 
-                                                    key={`today-${item.id}-${idx}`} 
-                                                    className="p-2.5 rounded-lg border border-zinc-800 bg-zinc-900/40 space-y-2"
-                                                >
-                                                    <div className="flex items-start justify-between gap-2">
-                                                        <div className="min-w-0 flex-1">
-                                                            <p className="text-xs font-semibold text-zinc-200 truncate">{item.title}</p>
-                                                            <p className="text-[10px] text-amber-400/80 font-medium mt-0.5">Due Today</p>
-                                                        </div>
-                                                        <span className="text-xs font-bold text-zinc-200 shrink-0">
-                                                            -{formatCurrency(item.amount)}
-                                                        </span>
-                                                    </div>
-
-                                                    <div className="flex items-center justify-end gap-1.5 pt-1.5 border-t border-zinc-800/60">
-                                                        <Button 
-                                                            size="sm" 
-                                                            variant="outline" 
-                                                            className="h-6 text-[10px] px-2.5 border-zinc-800 text-zinc-300 hover:text-zinc-100"
-                                                            onClick={() => setPayingInstance({ ...item, rule_id: item.id })}
-                                                        >
-                                                            Pay
-                                                        </Button>
-                                                        <Button 
-                                                            size="sm" 
-                                                            variant="ghost" 
-                                                            className="h-6 text-[10px] px-2 text-zinc-400 hover:text-zinc-200"
-                                                            onClick={() => handleSkip(item)}
-                                                        >
-                                                            Skip
-                                                        </Button>
-                                                    </div>
+                                                <div className="divide-y divide-zinc-800/40">
+                                                    {overdue.map((item) => renderRow(item, true))}
                                                 </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </>
-                            )}
-                        </div>
+                                            </div>
+                                        )}
 
-                        {/* Footer Navigation Link */}
-                        <div className="border-t border-zinc-800 p-2 text-center bg-zinc-900/40">
-                            <Link 
-                                href={route('subscriptions.index')} 
-                                className="text-[11px] text-zinc-400 hover:text-zinc-200 transition-colors font-medium block py-1"
-                            >
-                                View All Subscriptions & Dues →
-                            </Link>
-                        </div>
+                                        {due_today.length > 0 && (
+                                            <div className="p-1 rounded-xl bg-zinc-950/40 space-y-0.5">
+                                                <div className="px-2 py-1 text-[10px] font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-1">
+                                                    <Clock className="h-3 w-3" /> Due Today
+                                                </div>
+                                                <div className="divide-y divide-zinc-800/40">
+                                                    {due_today.map((item) => renderRow(item, false))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
+                            </CardContent>
+
+                            {/* Inset Footer */}
+                            <CardFooter className="p-0 rounded-xl bg-zinc-950/60 overflow-hidden">
+                                <Link 
+                                    href={route('subscriptions.index')} 
+                                    className="w-full text-[11px] text-zinc-400 hover:text-zinc-200 transition-colors font-medium py-2 px-3 flex items-center justify-between"
+                                >
+                                    <span>All subscriptions & dues</span>
+                                    <ChevronRight className="h-3 w-3 text-zinc-500" />
+                                </Link>
+                            </CardFooter>
+                        </Card>
                     </Popover.Content>
                 </Popover.Portal>
             </Popover.Root>
 
-            {/* Modal for processing payment when clicking Pay from Popover */}
             <PayInstanceDialog
                 open={!!payingInstance}
                 onOpenChange={() => setPayingInstance(null)}
