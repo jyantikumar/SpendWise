@@ -173,9 +173,10 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                 {/* Header Actions */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Transactions</h2>
+                        <h2 className="text-2xl font-bold tracking-tight text-zinc-100"></h2>
                         <p className="text-sm text-zinc-400">
-                            Log and view income, expenses, and account transfers.
+                                                      Log and view income, expenses, and account transfers.
+
                         </p>
                     </div>
 

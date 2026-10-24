@@ -10,10 +10,10 @@ export function SubscriptionHeader({
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
                 <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-zinc-100 flex items-center gap-2">
-                    <RefreshCw className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> Recurring & Subscriptions
                 </h2>
                 <p className="text-xs sm:text-sm text-zinc-400">
                     Track scheduled dues, missed payments, and recurring cash flow.
+                    
                 </p>
             </div>
 

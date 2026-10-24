@@ -326,10 +326,10 @@ export default function AnalysisIndex({
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                     <h2 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2 text-zinc-100">
-                        <BarChart3 className="h-5 w-5 sm:h-6 sm:w-6 text-primary" /> Visual Analytics
                     </h2>
                     <p className="text-xs sm:text-sm text-zinc-400">
-                        Track cash velocity, daily spending activity, and category distribution.
+                                                Track cash velocity, daily spending activity, and category distribution.
+
                     </p>
                 </div>
 

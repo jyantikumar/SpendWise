@@ -135,9 +135,10 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                 {/* Header Controls */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Categories</h2>
+                        <h2 className="text-2xl font-bold tracking-tight text-zinc-100"></h2>
                         <p className="text-sm text-zinc-400">
-                            Organize your cash flow into custom income, expense, and transfer categories.
+                                                        Organize your cash flow into custom income, expense, and transfer categories.
+
                         </p>
                     </div>
 

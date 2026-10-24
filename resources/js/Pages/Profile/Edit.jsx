@@ -388,9 +388,10 @@ export default function Edit({ mustVerifyEmail, status }) {
         <AppLayout title="Account Settings" headerTitle="Account Settings">
             <div className="max-w-3xl mx-auto w-full space-y-6">
                 <div className="space-y-0.5">
-                    <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Settings</h2>
+                    <h2 className="text-2xl font-bold tracking-tight text-zinc-100"></h2>
                     <p className="text-zinc-400 text-sm">
-                        Manage your account settings and preferences.
+                                                Manage your account settings and preferences.
+
                     </p>
                 </div>
 

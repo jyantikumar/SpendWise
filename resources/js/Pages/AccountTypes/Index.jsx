@@ -60,9 +60,10 @@ export default function AccountTypeIndex({ auth, accountTypes }) {
                 {/* Header Section */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Custom Account Types</h2>
+                        <h2 className="text-2xl font-bold tracking-tight text-zinc-100"></h2>
                         <p className="text-sm text-zinc-400">
-                            Define asset classes, banking types, and wallet classifications for your accounts.
+                                                        Define asset classes, banking types, and wallet classifications for your accounts.
+
                         </p>
                     </div>
 

@@ -113,9 +113,10 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                 {/* Top Action Header */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-zinc-100">Accounts & Assets</h2>
+                        <h2 className="text-2xl font-bold tracking-tight text-zinc-100"></h2>
                         <p className="text-sm text-zinc-400">
-                            Manage your bank accounts, wallets, credit cards, and custom liquidity sources.
+                                                        Manage your bank accounts, wallets, credit cards, and custom liquidity sources.
+
                         </p>
                     </div>
 
