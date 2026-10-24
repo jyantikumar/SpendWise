@@ -60,13 +60,17 @@ export function NotificationBell() {
                     <SkipForward className="h-3.5 w-3.5" />
                 </button>
                 <Button 
-                    size="sm" 
-                    variant="ghost"
-                    onClick={() => setPayingInstance({ ...item, rule_id: item.id })}
-                    className="h-6 text-[11px] px-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded font-medium"
-                >
-                    Pay
-                </Button>
+    size="sm" 
+    variant="ghost"
+    onClick={() => setPayingInstance({ 
+        ...item, 
+        rule_id: item.id,
+        account_id: item.account_id || item.account?.id || '' 
+    })}
+    className="h-6 text-[11px] px-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded font-medium"
+>
+    Pay
+</Button>
             </div>
         </div>
     );
@@ -156,11 +160,12 @@ export function NotificationBell() {
             </Popover.Root>
 
             <PayInstanceDialog
-                open={!!payingInstance}
-                onOpenChange={() => setPayingInstance(null)}
-                instance={payingInstance}
-                accounts={accounts}
-            />
+    open={!!payingInstance}
+    onOpenChange={() => setPayingInstance(null)}
+    instance={payingInstance}
+    accounts={accounts}
+    isAmountLocked={true}
+/>
         </>
     );
 }

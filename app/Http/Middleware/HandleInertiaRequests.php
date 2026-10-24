@@ -78,6 +78,7 @@ while ($currentDueDate->lte($today) && (! $endDate || $currentDueDate->lte($endD
             'amount' => $rule->amount,
             'due_date' => $formattedDate,
             'type' => $rule->type,
+            'account_id' => $rule->account_id,
         ];
 
         if ($currentDueDate->isToday()) {
