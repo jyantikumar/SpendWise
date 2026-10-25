@@ -356,7 +356,8 @@ export default function Dashboard({
             </div>
 
             {/* KPI Cards Grid & Cash Flow Distribution */}
-            <div className="grid gap-3 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+           {/* KPI Cards Grid & Cash Flow Distribution */}
+            <div className="grid gap-3 grid-cols-2 lg:grid-cols-3">
                 {/* Total Balance Card */}
                 <Card className="border-zinc-800 flex flex-col justify-between py-1">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 pt-3 px-4">
@@ -369,8 +370,22 @@ export default function Dashboard({
                     </CardContent>
                 </Card>
 
-                {/* Income vs Expense Donut Chart Card */}
+                {/* Net Cash Flow Card */}
                 <Card className="border-zinc-800 flex flex-col justify-between py-1">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 pt-3 px-4">
+                        <CardTitle className="text-xs font-medium text-zinc-400">Net Cash Flow</CardTitle>
+                        <DollarSign className="h-3.5 w-3.5 text-zinc-400" />
+                    </CardHeader>
+                    <CardContent className="pb-3 pt-0 px-4">
+                        <div className={`text-xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {formatCurrency(kpis?.netCashFlow)}
+                        </div>
+                        <p className="text-[11px] text-zinc-400 mt-0.5">Income minus expenses</p>
+                    </CardContent>
+                </Card>
+
+                {/* Income vs Expense Donut Chart Card - Spans full width on mobile if preferred, or sits nicely as the 3rd/4th item */}
+                <Card className="border-zinc-800 flex flex-col justify-between py-1 col-span-2 lg:col-span-1">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 pt-3 px-4">
                         <CardTitle className="text-xs font-medium text-zinc-400">Income vs. Expense</CardTitle>
                         <PieChartIcon className="h-3.5 w-3.5 text-zinc-400" />
@@ -450,20 +465,6 @@ export default function Dashboard({
                                 No flow recorded for this period.
                             </div>
                         )}
-                    </CardContent>
-                </Card>
-
-                {/* Net Cash Flow Card */}
-                <Card className="border-zinc-800 flex flex-col justify-between py-1">
-                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 pt-3 px-4">
-                        <CardTitle className="text-xs font-medium text-zinc-400">Net Cash Flow</CardTitle>
-                        <DollarSign className="h-3.5 w-3.5 text-zinc-400" />
-                    </CardHeader>
-                    <CardContent className="pb-3 pt-0 px-4">
-                        <div className={`text-xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                            {formatCurrency(kpis?.netCashFlow)}
-                        </div>
-                        <p className="text-[11px] text-zinc-400 mt-0.5">Income minus expenses</p>
                     </CardContent>
                 </Card>
             </div>
