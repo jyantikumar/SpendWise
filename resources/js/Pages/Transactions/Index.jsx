@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { toast } from 'sonner';
@@ -134,6 +134,14 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
         });
     };
 
+    // Helper to sanitize date formatting for the detail sheet
+    const handleRowClick = (tx) => {
+        setSelectedDetailTransaction({
+            ...tx,
+            date: tx.date || (tx.transaction_date ? String(tx.transaction_date).split('T')[0] : null)
+        });
+    };
+
     return (
         <AppLayout title="Transactions" headerTitle="Transaction Management">
             <div className="space-y-6">
@@ -216,7 +224,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                     <div 
                                         key={tx.id} 
                                         className="p-4 flex items-center justify-between gap-3 active:bg-zinc-800/50 transition-colors cursor-pointer"
-                                        onClick={() => setSelectedDetailTransaction(tx)}
+                                        onClick={() => handleRowClick(tx)}
                                     >
                                         <div className="min-w-0 flex-1">
                                             <div className="flex items-center gap-2 text-xs text-zinc-400 mb-1">
@@ -277,7 +285,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                             <TableRow 
                                                 key={tx.id} 
                                                 className="cursor-pointer hover:bg-muted/50 border-b border-zinc-800 transition-colors"
-                                                onClick={() => setSelectedDetailTransaction(tx)}
+                                                onClick={() => handleRowClick(tx)}
                                             >
                                                 <TableCell className="font-medium whitespace-nowrap text-zinc-300 text-xs">
                                                     {tx.transaction_date ? String(tx.transaction_date).split('T')[0] : (tx.date || '—')}

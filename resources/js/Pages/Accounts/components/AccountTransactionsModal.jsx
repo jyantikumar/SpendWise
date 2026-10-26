@@ -144,7 +144,10 @@ export default function AccountTransactionsModal({
     }, [isOpen, account?.id, search, selectedType, selectedCategory, startDate, endDate, currentPage]);
 
     const handleRowClick = (tx) => {
-        setSelectedTransaction(tx);
+        setSelectedTransaction({
+            ...tx,
+            date: tx.date || (tx.transaction_date ? String(tx.transaction_date).split('T')[0] : null)
+        });
         setIsDetailSheetOpen(true);
     };
 

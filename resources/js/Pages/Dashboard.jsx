@@ -216,13 +216,16 @@ export default function Dashboard({
                 />
             )}
 
-            <TransactionDetailSheet 
-                open={!!selectedDetailTransaction}
-                onOpenChange={(open) => !open && setSelectedDetailTransaction(null)}
-                transaction={selectedDetailTransaction}
-                onEdit={openEditModal}
-                onDelete={setDeletingTransaction}
-            />
+<TransactionDetailSheet 
+    open={!!selectedDetailTransaction}
+    onOpenChange={(open) => !open && setSelectedDetailTransaction(null)}
+    transaction={selectedDetailTransaction ? {
+        ...selectedDetailTransaction,
+        date: formatDateOnly(selectedDetailTransaction.date || selectedDetailTransaction.transaction_date)
+    } : null}
+    onEdit={openEditModal}
+    onDelete={setDeletingTransaction}
+/>
 
             <AlertDialog open={!!deletingTransaction} onOpenChange={(open) => !open && setDeletingTransaction(null)}>
                 <AlertDialogContent>

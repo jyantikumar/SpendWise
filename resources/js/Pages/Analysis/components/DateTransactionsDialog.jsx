@@ -334,10 +334,13 @@ export function DateTransactionsDialog({ open, onOpenChange, date, dayData, onEd
                                 {transactions.length > 0 ? (
                                     transactions.map((tx) => (
                                         <TableRow 
-                                            key={tx.id} 
-                                            onClick={() => setSelectedTransaction(tx)}
-                                            className="border-b border-zinc-800 hover:bg-muted/50 transition-colors cursor-pointer"
-                                        >
+    key={tx.id} 
+    onClick={() => setSelectedTransaction({
+        ...tx, 
+        date: tx.date || date || dayData.date // Ensures date is always present
+    })}
+    className="border-b border-zinc-800 hover:bg-muted/50 transition-colors cursor-pointer"
+>
                                             <TableCell className="py-2.5 max-w-[180px] truncate">
                                                 <span className="text-xs font-medium text-zinc-200 block truncate">
                                                     {tx.description || <span className="text-zinc-500 italic">No description</span>}
