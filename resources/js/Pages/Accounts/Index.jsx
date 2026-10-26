@@ -1,3 +1,4 @@
+// resources/js/Pages/Accounts/Index.jsx
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
@@ -36,8 +37,11 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
     const [selectedAccount, setSelectedAccount] = useState(null);
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
 
-    const formatCurrency = (val, currency = 'PHP') => 
-        new Intl.NumberFormat('en-PH', { style: 'currency', currency }).format(val || 0);
+    // Get user's preferred currency from auth props (defaults to PHP if not set)[cite: 37]
+    const userCurrency = auth?.user?.currency || 'PHP';
+
+    const formatCurrency = (val, currency = userCurrency) => 
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || userCurrency }).format(val || 0);
 
     const openCreateModal = () => {
         setEditingAccount(null);
@@ -113,6 +117,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                     totalPortfolioBalance={totalPortfolioBalance}
                     accountsCount={accounts.length}
                     formatCurrency={formatCurrency}
+                    userCurrency={userCurrency}
                 />
 
                 {/* Accounts List Container */}
@@ -152,6 +157,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                 onClose={() => setIsTxModalOpen(false)}
                 account={selectedAccount}
                 categories={categories}
+                userCurrency={userCurrency}
             />
 
             {/* Reusable Account Form Modal */}
@@ -160,6 +166,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                 onClose={() => setIsModalOpen(false)}
                 editingAccount={editingAccount}
                 accountTypes={accountTypes}
+                userCurrency={userCurrency}
             />
 
             {/* Delete Confirmation Alert */}

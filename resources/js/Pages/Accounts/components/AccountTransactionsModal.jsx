@@ -1,3 +1,4 @@
+// resources/js/Pages/Accounts/components/AccountTransactionsModal.jsx
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { 
@@ -29,7 +30,8 @@ export default function AccountTransactionsModal({
     account, 
     categories = [], 
     initialStartDate = '', 
-    initialEndDate = '' 
+    initialEndDate = '',
+    userCurrency = 'PHP' // Accept userCurrency prop with fallback[cite: 39]
 }) {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -58,8 +60,8 @@ export default function AccountTransactionsModal({
 
     const abortControllerRef = useRef(null);
 
-    const formatCurrency = (val, currency = 'PHP') => 
-        new Intl.NumberFormat('en-PH', { style: 'currency', currency }).format(val || 0);
+    const formatCurrency = (val, currency = account?.currency || userCurrency) => 
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || userCurrency }).format(val || 0);
 
     // Sync initial bounds only when opening modal
     useEffect(() => {
@@ -153,7 +155,7 @@ export default function AccountTransactionsModal({
 
     // Dynamic Summary Badge Logic
     const renderSummaryBadge = () => {
-        const curr = account?.currency || 'PHP';
+        const curr = account?.currency || userCurrency;
 
         if (selectedType === 'expense') {
             return (
@@ -326,7 +328,7 @@ export default function AccountTransactionsModal({
                                                     : 'text-blue-400'
                                             }`}>
                                                 {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
-                                                {formatCurrency(tx.amount, account?.currency || 'PHP')}
+                                                {formatCurrency(tx.amount, account?.currency || userCurrency)}
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -385,6 +387,7 @@ export default function AccountTransactionsModal({
                 open={isDetailSheetOpen}
                 onOpenChange={setIsDetailSheetOpen}
                 transaction={selectedTransaction}
+                userCurrency={userCurrency}
             />
         </>
     );

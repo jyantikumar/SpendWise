@@ -1,3 +1,4 @@
+// resources/js/Pages/Accounts/components/AccountFormModal.jsx
 import { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { BadgeCheck, BadgeX, Plus, Check } from 'lucide-react';
@@ -36,7 +37,8 @@ export default function AccountFormModal({
     onClose,
     editingAccount = null,
     accountTypes = [],
-    onSuccessCallback
+    onSuccessCallback,
+    userCurrency = 'PHP' // Accept userCurrency prop with fallback[cite: 41]
 }) {
     const isEditing = Boolean(editingAccount);
     const [isAccountTypeModalOpen, setIsAccountTypeModalOpen] = useState(false);
@@ -45,7 +47,7 @@ export default function AccountFormModal({
         name: '',
         type: accountTypes[0]?.name || '',
         balance: '0.00',
-        currency: 'PHP',
+        currency: userCurrency,
         color: '#3B82F6',
         is_active: true,
     });
@@ -60,7 +62,7 @@ export default function AccountFormModal({
                 name: editingAccount.name || '',
                 type: editingAccount.type || accountTypes[0]?.name || '',
                 balance: editingAccount.balance ? String(editingAccount.balance) : '0.00',
-                currency: editingAccount.currency || 'PHP',
+                currency: editingAccount.currency || userCurrency,
                 color: editingAccount.color || '#3B82F6',
                 is_active: Boolean(editingAccount.is_active),
             });
@@ -70,12 +72,12 @@ export default function AccountFormModal({
                 name: '',
                 type: accountTypes[0]?.name || '',
                 balance: '0.00',
-                currency: 'PHP',
+                currency: userCurrency,
                 color: '#3B82F6',
                 is_active: true,
             });
         }
-    }, [isOpen, editingAccount]);
+    }, [isOpen, editingAccount, userCurrency]);
 
     const handleAccountTypeCreated = (page) => {
         const updatedTypes = page.props.accountTypes || [];
@@ -201,8 +203,9 @@ export default function AccountFormModal({
                                 <Input
                                     maxLength={3}
                                     className="uppercase"
-                                    placeholder="PHP"
+                                    placeholder={userCurrency}
                                     value={data.currency}
+                                    disabled={true}
                                     onChange={(e) => setData('currency', e.target.value.toUpperCase())}
                                 />
                                 {errors.currency && <p className="text-xs text-rose-500">{errors.currency}</p>}
