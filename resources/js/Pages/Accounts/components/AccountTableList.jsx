@@ -17,6 +17,7 @@ export function AccountTableList({
     handleToggleActive,
     setDeletingAccount,
     formatCurrency,
+    userCurrency = 'PHP'
 }) {
     return (
         <>
@@ -24,7 +25,7 @@ export function AccountTableList({
             <div className="divide-y divide-zinc-800 md:hidden">
                 {filteredAccounts.length > 0 ? (
                     filteredAccounts.map((acc) => {
-                        const curr = acc.currency || 'PHP';
+                        const curr = acc.currency || userCurrency; // 👈 Fallback to userCurrency
                         return (
                             <div 
                                 key={acc.id}
@@ -122,7 +123,7 @@ export function AccountTableList({
                     <TableBody>
                         {filteredAccounts.length > 0 ? (
                             filteredAccounts.map((acc) => {
-                                const curr = acc.currency || 'PHP';
+                                const curr = acc.currency || userCurrency; 
                                 return (
                                     <TableRow 
                                         key={acc.id} 
