@@ -115,20 +115,7 @@ export function TransactionDetailSheet({
                     <SheetHeader className="text-left space-y-4">
                         <div className="flex items-center justify-between">
                             {getTypeBadge(transaction.type)}
-                            {transaction.id && (
-                                <button
-                                    onClick={handleCopyId}
-                                    className="flex items-center gap-1 text-xs font-mono text-zinc-400 hover:text-zinc-200 transition-colors bg-muted/50 hover:bg-muted px-2 py-1 rounded-md border border-zinc-800"
-                                    title="Copy Transaction ID"
-                                >
-                                    <span>#{transaction.id}</span>
-                                    {copied ? (
-                                        <Check className="h-3 w-3 text-emerald-500" />
-                                    ) : (
-                                        <Copy className="h-3 w-3" />
-                                    )}
-                                </button>
-                            )}
+                          
                         </div>
 
                         {/* High-end Hero Display */}

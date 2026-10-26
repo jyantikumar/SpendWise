@@ -21,6 +21,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
+import { TransactionDetailSheet } from '@/Pages/Transactions/components/TransactionDetailSheet';
+
 export default function AccountTransactionsModal({ 
     isOpen, 
     onClose, 
@@ -49,6 +51,10 @@ export default function AccountTransactionsModal({
         to: 0,
         total: 0,
     });
+
+    // Transaction Detail Sheet State
+    const [selectedTransaction, setSelectedTransaction] = useState(null);
+    const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
 
     const abortControllerRef = useRef(null);
 
@@ -137,6 +143,11 @@ export default function AccountTransactionsModal({
         return () => clearTimeout(timer);
     }, [isOpen, account?.id, search, selectedType, selectedCategory, startDate, endDate, currentPage]);
 
+    const handleRowClick = (tx) => {
+        setSelectedTransaction(tx);
+        setIsDetailSheetOpen(true);
+    };
+
     // Dynamic Summary Badge Logic
     const renderSummaryBadge = () => {
         const curr = account?.currency || 'PHP';
@@ -176,189 +187,202 @@ export default function AccountTransactionsModal({
     };
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[820px] max-h-[90vh] sm:max-h-[85vh] flex flex-col p-4 sm:p-6 border-zinc-800 bg-background overflow-hidden">
-                {/* Header */}
-                <DialogHeader className="pb-3 border-b border-zinc-800 shrink-0">
-                    <div className="flex items-center justify-between pr-8 sm:pr-10 gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                            <div className="min-w-0">
-                                <DialogTitle className="text-lg sm:text-xl font-bold text-zinc-200 truncate">
-                                    {account?.name || 'Account'}
-                                </DialogTitle>
-                                <DialogDescription className="text-xs text-zinc-400 mt-0.5 truncate">
-                                    Account transactions.
-                                </DialogDescription>
+        <>
+            <Dialog open={isOpen} onOpenChange={onClose}>
+                <DialogContent className="sm:max-w-[820px] max-h-[90vh] sm:max-h-[85vh] flex flex-col p-4 sm:p-6 border-zinc-800 bg-background overflow-hidden">
+                    {/* Header */}
+                    <DialogHeader className="pb-3 border-b border-zinc-800 shrink-0">
+                        <div className="flex items-center justify-between pr-8 sm:pr-10 gap-3">
+                            <div className="flex items-center gap-3 min-w-0">
+                                <div className="min-w-0">
+                                    <DialogTitle className="text-lg sm:text-xl font-bold text-zinc-200 truncate">
+                                        {account?.name || 'Account'}
+                                    </DialogTitle>
+                                    <DialogDescription className="text-xs text-zinc-400 mt-0.5 truncate">
+                                        Account transactions.
+                                    </DialogDescription>
+                                </div>
+                            </div>
+
+                            {/* Total Badge */}
+                            <div className="shrink-0">
+                                {renderSummaryBadge()}
                             </div>
                         </div>
+                    </DialogHeader>
 
-                        {/* Total Badge */}
-                        <div className="shrink-0">
-                            {renderSummaryBadge()}
-                        </div>
-                    </div>
-                </DialogHeader>
-
-                {/* Filter Controls Bar */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 py-3 border-b border-zinc-800 bg-zinc-900/40 -mx-4 px-4 sm:-mx-6 sm:px-6 shrink-0">
-                    {/* Left Group: Pilled Segmented Filter */}
-                    <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs w-full sm:w-64 shrink-0">
-                        {[
-                            { label: 'All', value: 'all' },
-                            { label: 'Expenses', value: 'expense' },
-                            { label: 'Income', value: 'income' },
-                        ].map((pill) => (
-                            <button
-                                key={pill.value}
-                                type="button"
-                                onClick={() => handleTypeChange(pill.value)}
-                                className={`w-full py-1 rounded-md font-medium text-xs text-center transition-all whitespace-nowrap ${
-                                    selectedType === pill.value
-                                        ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                                        : 'text-zinc-400 hover:text-zinc-200'
-                                }`}
-                            >
-                                {pill.label}
-                            </button>
-                        ))}
-                    </div>
-
-                    {/* Right Group: Search, Dynamic Category Filter, and Side-by-Side Dates */}
-                    <div className="flex flex-col sm:flex-row gap-2 flex-1 items-stretch sm:items-center">
-                        {/* Search Input */}
-                        <div className="relative flex-1">
-                            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
-                            <Input
-                                placeholder="Search description..."
-                                value={search}
-                                onChange={(e) => handleFilterChange(setSearch, e.target.value)}
-                                className="pl-8 h-8 text-xs w-full border-zinc-800 text-zinc-300"
-                            />
+                    {/* Filter Controls Bar */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 py-3 border-b border-zinc-800 bg-zinc-900/40 -mx-4 px-4 sm:-mx-6 sm:px-6 shrink-0">
+                        {/* Left Group: Pilled Segmented Filter */}
+                        <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs w-full sm:w-64 shrink-0">
+                            {[
+                                { label: 'All', value: 'all' },
+                                { label: 'Expenses', value: 'expense' },
+                                { label: 'Income', value: 'income' },
+                            ].map((pill) => (
+                                <button
+                                    key={pill.value}
+                                    type="button"
+                                    onClick={() => handleTypeChange(pill.value)}
+                                    className={`w-full py-1 rounded-md font-medium text-xs text-center transition-all whitespace-nowrap ${
+                                        selectedType === pill.value
+                                            ? 'bg-zinc-800 text-zinc-100 shadow-sm'
+                                            : 'text-zinc-400 hover:text-zinc-200'
+                                    }`}
+                                >
+                                    {pill.label}
+                                </button>
+                            ))}
                         </div>
 
-                        {/* Category Filter - Hidden when selectedType === 'all' */}
-                        {selectedType !== 'all' && (
-                            <div className="flex-1">
-                                <Select value={selectedCategory} onValueChange={(val) => handleFilterChange(setSelectedCategory, val)}>
-                                    <SelectTrigger className="h-8 text-xs w-full border-zinc-800 text-zinc-300">
-                                        <SelectValue placeholder="All Categories" />
-                                    </SelectTrigger>
-                                    <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                        <SelectItem value="all">All Categories</SelectItem>
-                                        {filteredCategories.map((cat) => (
-                                            <SelectItem key={cat.id} value={String(cat.id)}>
-                                                {cat.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                        {/* Right Group: Search, Dynamic Category Filter, and Side-by-Side Dates */}
+                        <div className="flex flex-col sm:flex-row gap-2 flex-1 items-stretch sm:items-center">
+                            {/* Search Input */}
+                            <div className="relative flex-1">
+                                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
+                                <Input
+                                    placeholder="Search description..."
+                                    value={search}
+                                    onChange={(e) => handleFilterChange(setSearch, e.target.value)}
+                                    className="pl-8 h-8 text-xs w-full border-zinc-800 text-zinc-300"
+                                />
+                            </div>
+
+                            {/* Category Filter - Hidden when selectedType === 'all' */}
+                            {selectedType !== 'all' && (
+                                <div className="flex-1">
+                                    <Select value={selectedCategory} onValueChange={(val) => handleFilterChange(setSelectedCategory, val)}>
+                                        <SelectTrigger className="h-8 text-xs w-full border-zinc-800 text-zinc-300">
+                                            <SelectValue placeholder="All Categories" />
+                                        </SelectTrigger>
+                                        <SelectContent className="border-zinc-800 bg-background text-zinc-300">
+                                            <SelectItem value="all">All Categories</SelectItem>
+                                            {filteredCategories.map((cat) => (
+                                                <SelectItem key={cat.id} value={String(cat.id)}>
+                                                    {cat.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            )}
+
+                            {/* Side-by-Side Dates */}
+                            <div className="grid grid-cols-2 gap-2 sm:w-auto shrink-0">
+                                <Input
+                                    type="date"
+                                    value={startDate}
+                                    onChange={(e) => handleFilterChange(setStartDate, e.target.value)}
+                                    className="h-8 text-xs w-full sm:w-[125px] border-zinc-800 text-zinc-300"
+                                />
+                                <Input
+                                    type="date"
+                                    value={endDate}
+                                    onChange={(e) => handleFilterChange(setEndDate, e.target.value)}
+                                    className="h-8 text-xs w-full sm:w-[125px] border-zinc-800 text-zinc-300"
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Transactions Table Container */}
+                    <div className="flex-1 overflow-y-auto min-h-[200px] my-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                        {loading ? (
+                            <div className="flex flex-col items-center justify-center h-48 gap-2 text-zinc-400">
+                                <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                                <span className="text-xs">Loading page {currentPage}...</span>
+                            </div>
+                        ) : transactions.length > 0 ? (
+                            <Table>
+                                <TableHeader className="sticky top-0 bg-background z-10">
+                                    <TableRow className="border-b border-zinc-800">
+                                        <TableHead className="text-zinc-400">Date</TableHead>
+                                        <TableHead className="text-zinc-400">Description</TableHead>
+                                        <TableHead className="text-right text-zinc-400">Amount</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {transactions.map((tx) => (
+                                        <TableRow 
+                                            key={tx.id} 
+                                            onClick={() => handleRowClick(tx)}
+                                            className="border-b border-zinc-800 hover:bg-muted/50 cursor-pointer transition-colors"
+                                        >
+                                            <TableCell className="font-medium text-xs whitespace-nowrap text-zinc-300">
+                                                {tx.transaction_date ? String(tx.transaction_date).split('T')[0] : '—'}
+                                            </TableCell>
+                                            <TableCell className="max-w-[150px] sm:max-w-[200px] truncate text-xs text-zinc-300">
+                                                {tx.description || <span className="text-zinc-500 italic">No description</span>}
+                                            </TableCell>
+                                          
+                                            <TableCell className={`text-right font-semibold text-xs whitespace-nowrap ${
+                                                tx.type === 'income' 
+                                                    ? 'text-emerald-400' 
+                                                    : tx.type === 'expense' 
+                                                    ? 'text-rose-400' 
+                                                    : 'text-blue-400'
+                                            }`}>
+                                                {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
+                                                {formatCurrency(tx.amount, account?.currency || 'PHP')}
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                            <div className="flex flex-col items-center justify-center h-48 text-center text-zinc-400">
+                                <Wallet className="h-8 w-8 stroke-1 mb-2 opacity-50" />
+                                <p className="text-sm font-medium text-zinc-300">No transactions found</p>
+                                <p className="text-xs opacity-75 mt-0.5">Try adjusting your filters or date range.</p>
                             </div>
                         )}
-
-                        {/* Side-by-Side Dates */}
-                        <div className="grid grid-cols-2 gap-2 sm:w-auto shrink-0">
-                            <Input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => handleFilterChange(setStartDate, e.target.value)}
-                                className="h-8 text-xs w-full sm:w-[125px] border-zinc-800 text-zinc-300"
-                            />
-                            <Input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => handleFilterChange(setEndDate, e.target.value)}
-                                className="h-8 text-xs w-full sm:w-[125px] border-zinc-800 text-zinc-300"
-                            />
-                        </div>
                     </div>
-                </div>
 
-                {/* Transactions Table Container */}
-                <div className="flex-1 overflow-y-auto min-h-[200px] my-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-                    {loading ? (
-                        <div className="flex flex-col items-center justify-center h-48 gap-2 text-zinc-400">
-                            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                            <span className="text-xs">Loading page {currentPage}...</span>
-                        </div>
-                    ) : transactions.length > 0 ? (
-                        <Table>
-                            <TableHeader className="sticky top-0 bg-background z-10">
-                                <TableRow className="border-b border-zinc-800">
-                                    <TableHead className="text-zinc-400">Date</TableHead>
-                                    <TableHead className="text-zinc-400">Description</TableHead>
-                                    <TableHead className="text-right text-zinc-400">Amount</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {transactions.map((tx) => (
-                                    <TableRow key={tx.id} className="border-b border-zinc-800 hover:bg-muted/50 transition-colors">
-                                        <TableCell className="font-medium text-xs whitespace-nowrap text-zinc-300">
-                                            {tx.transaction_date ? String(tx.transaction_date).split('T')[0] : '—'}
-                                        </TableCell>
-                                        <TableCell className="max-w-[150px] sm:max-w-[200px] truncate text-xs text-zinc-300">
-                                            {tx.description || <span className="text-zinc-500 italic">No description</span>}
-                                        </TableCell>
-                                      
-                                        <TableCell className={`text-right font-semibold text-xs whitespace-nowrap ${
-                                            tx.type === 'income' 
-                                                ? 'text-emerald-400' 
-                                                : tx.type === 'expense' 
-                                                ? 'text-rose-400' 
-                                                : 'text-blue-400'
-                                        }`}>
-                                            {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
-                                            {formatCurrency(tx.amount, account?.currency || 'PHP')}
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    ) : (
-                        <div className="flex flex-col items-center justify-center h-48 text-center text-zinc-400">
-                            <Wallet className="h-8 w-8 stroke-1 mb-2 opacity-50" />
-                            <p className="text-sm font-medium text-zinc-300">No transactions found</p>
-                            <p className="text-xs opacity-75 mt-0.5">Try adjusting your filters or date range.</p>
+                    {/* Pagination Footer */}
+                    {paginationData.total > 0 && (
+                        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-zinc-800 pt-3 text-xs text-zinc-400 shrink-0">
+                            <div>
+                                Showing <span className="font-medium text-zinc-200">{paginationData.from || 0}</span> to{' '}
+                                <span className="font-medium text-zinc-200">{paginationData.to || 0}</span> of{' '}
+                                <span className="font-medium text-zinc-200">{paginationData.total}</span> records
+                            </div>
+
+                            <div className="flex items-center gap-2">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={currentPage <= 1 || loading}
+                                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                                    className="h-7 px-2 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
+                                >
+                                    <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
+                                </Button>
+
+                                <span className="text-xs font-medium text-zinc-300 px-1">
+                                    {currentPage} / {paginationData.last_page || 1}
+                                </span>
+
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={currentPage >= paginationData.last_page || loading}
+                                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, paginationData.last_page))}
+                                    className="h-7 px-2 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
+                                >
+                                    Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                                </Button>
+                            </div>
                         </div>
                     )}
-                </div>
+                </DialogContent>
+            </Dialog>
 
-                {/* Pagination Footer */}
-                {paginationData.total > 0 && (
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-zinc-800 pt-3 text-xs text-zinc-400 shrink-0">
-                        <div>
-                            Showing <span className="font-medium text-zinc-200">{paginationData.from || 0}</span> to{' '}
-                            <span className="font-medium text-zinc-200">{paginationData.to || 0}</span> of{' '}
-                            <span className="font-medium text-zinc-200">{paginationData.total}</span> records
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={currentPage <= 1 || loading}
-                                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                                className="h-7 px-2 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
-                            >
-                                <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
-                            </Button>
-
-                            <span className="text-xs font-medium text-zinc-300 px-1">
-                                {currentPage} / {paginationData.last_page || 1}
-                            </span>
-
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                disabled={currentPage >= paginationData.last_page || loading}
-                                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, paginationData.last_page))}
-                                className="h-7 px-2 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
-                            >
-                                Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                            </Button>
-                        </div>
-                    </div>
-                )}
-            </DialogContent>
-        </Dialog>
+            {/* Transaction Detail Sheet */}
+            <TransactionDetailSheet 
+                open={isDetailSheetOpen}
+                onOpenChange={setIsDetailSheetOpen}
+                transaction={selectedTransaction}
+            />
+        </>
     );
 }
