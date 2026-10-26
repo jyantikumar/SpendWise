@@ -551,36 +551,35 @@ export default function AnalysisIndex({
                 </div>
             )}
 
-            {/* KPI Summary Tiles (Net Cash Flow & Peak Activity Day side-by-side on mobile, compact layout) */}
-            <div className="grid grid-cols-2 sm:grid-cols-1 gap-3 sm:gap-4 lg:contents">
-                    <Card className="border-zinc-800 py-1 flex flex-col justify-between">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3.5 sm:px-4">
-                            <CardTitle className="text-[11px] sm:text-xs font-medium text-zinc-400">Net Cash Flow</CardTitle>
-                            <DollarSign className="h-3.5 w-3.5 text-zinc-400" />
-                        </CardHeader>
-                        <CardContent className="px-3.5 sm:px-4 pb-3 pt-1">
-                            <div className={`text-base sm:text-xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                {formatCurrency(kpis?.netCashFlow)}
-                            </div>
-                            <p className="text-[10px] text-zinc-400 mt-0.5">Income - Expenses</p>
-                        </CardContent>
-                    </Card>
+            {/* KPI Summary Tiles & Income vs Expense Donut Card (3 columns on desktop, 2x1 grid on phone) */}
+            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+                <Card className="border-zinc-800 py-1 flex flex-col justify-between">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3.5 sm:px-4">
+                        <CardTitle className="text-[11px] sm:text-xs font-medium text-zinc-400">Net Cash Flow</CardTitle>
+                        <DollarSign className="h-3.5 w-3.5 text-zinc-400" />
+                    </CardHeader>
+                    <CardContent className="px-3.5 sm:px-4 pb-3 pt-1">
+                        <div className={`text-base sm:text-xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {formatCurrency(kpis?.netCashFlow)}
+                        </div>
+                        <p className="text-[10px] text-zinc-400 mt-0.5">Income - Expenses</p>
+                    </CardContent>
+                </Card>
 
-                    <Card className="border-zinc-800 py-1 flex flex-col justify-between">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3.5 sm:px-4">
-                            <CardTitle className="text-[11px] sm:text-xs font-medium text-zinc-400">Peak Activity</CardTitle>
-                            <CalendarIcon className="h-3.5 w-3.5 text-zinc-400" />
-                        </CardHeader>
-                        <CardContent className="px-3.5 sm:px-4 pb-3 pt-1">
-                            <div className="text-base sm:text-xl font-bold text-zinc-200">{formatCurrency(kpis?.peakAmount)}</div>
-                            <p className="text-[10px] text-zinc-400 mt-0.5 truncate">
-                                {kpis?.peakDate ? `Peak on ${kpis.peakDate}` : 'No activity'}
-                            </p>
-                        </CardContent>
-                    </Card>
-                </div>
-            <div className="grid gap-3 sm:gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
-                <Card className="border-zinc-800 flex flex-col justify-between py-1">
+                <Card className="border-zinc-800 py-1 flex flex-col justify-between">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3.5 sm:px-4">
+                        <CardTitle className="text-[11px] sm:text-xs font-medium text-zinc-400">Peak Activity</CardTitle>
+                        <CalendarIcon className="h-3.5 w-3.5 text-zinc-400" />
+                    </CardHeader>
+                    <CardContent className="px-3.5 sm:px-4 pb-3 pt-1">
+                        <div className="text-base sm:text-xl font-bold text-zinc-200">{formatCurrency(kpis?.peakAmount)}</div>
+                        <p className="text-[10px] text-zinc-400 mt-0.5 truncate">
+                            {kpis?.peakDate ? `Peak on ${kpis.peakDate}` : 'No activity'}
+                        </p>
+                    </CardContent>
+                </Card>
+
+                <Card className="border-zinc-800 flex flex-col justify-between py-1 col-span-2 lg:col-span-1">
                     <CardHeader className="pb-1 pt-3 px-3.5 sm:px-4 flex flex-row items-center justify-between space-y-0">
                         <CardTitle className="text-[11px] sm:text-xs font-semibold text-zinc-400 uppercase tracking-wider">
                             Income vs. Expense
@@ -636,8 +635,6 @@ export default function AnalysisIndex({
                         )}
                     </CardContent>
                 </Card>
-
-                
             </div>
 
             {/* CONDITIONAL MAIN SECTION */}
