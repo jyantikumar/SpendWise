@@ -213,18 +213,24 @@ export default function AnalysisIndex({
         }
     };
 
-    const handlePrevMonth = () => {
-        const [year, month] = (calendar.month || calendarMonth).split('-').map(Number);
-        const prevDate = new Date(year, month - 2, 1);
-        const formatted = prevDate.toISOString().slice(0, 7);
+   const handlePrevMonth = () => {
+        const currentVal = calendar.month || calendarMonth;
+        const [year, month] = currentVal.split('-').map(Number);
+        // Create a date object on the 1st of the current month, then subtract 1 month safely
+        const prevDate = new Date(year, month - 2, 1); 
+        const formatted = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
+        
         setCalendarMonth(formatted);
         applyFilters({ calendar_month: formatted });
     };
 
     const handleNextMonth = () => {
-        const [year, month] = (calendar.month || calendarMonth).split('-').map(Number);
-        const nextDate = new Date(year, month, 1);
-        const formatted = nextDate.toISOString().slice(0, 7);
+        const currentVal = calendar.month || calendarMonth;
+        const [year, month] = currentVal.split('-').map(Number);
+        // Create a date object on the 1st of the current month, then add 1 month safely
+        const nextDate = new Date(year, month, 1); 
+        const formatted = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
+        
         setCalendarMonth(formatted);
         applyFilters({ calendar_month: formatted });
     };
