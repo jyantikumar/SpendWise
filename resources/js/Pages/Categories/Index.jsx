@@ -23,6 +23,8 @@ import { CategoryFilterSelects } from '@/Pages/Categories/components/CategoryFil
 import { CategoryTableList } from '@/Pages/Categories/components/CategoryTableList';
 
 export default function CategoryIndex({ auth, categories = [], accounts = [] }) {
+    const userCurrency = auth?.user?.currency || 'PHP';
+
     const [isCreateOpen, setIsCreateOpen] = useState(false);
     const [editingCategory, setEditingCategory] = useState(null);
     const [deletingCategory, setDeletingCategory] = useState(null);
@@ -141,6 +143,7 @@ export default function CategoryIndex({ auth, categories = [], accounts = [] }) 
                 onClose={() => setIsCategoryModalOpen(false)}
                 category={selectedCategoryForModal}
                 accounts={accounts}
+                userCurrency={userCurrency}
             />
 
             {/* Reusable Category Form Modal */}

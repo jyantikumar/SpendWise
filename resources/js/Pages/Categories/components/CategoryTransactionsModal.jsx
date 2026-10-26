@@ -29,7 +29,8 @@ export default function CategoryTransactionsModal({
     category, 
     accounts = [], 
     initialStartDate = '', 
-    initialEndDate = '' 
+    initialEndDate = '',
+    userCurrency = 'PHP' // 👈 Accept userCurrency prop with fallback
 }) {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -57,8 +58,8 @@ export default function CategoryTransactionsModal({
 
     const abortControllerRef = useRef(null);
 
-    const formatCurrency = (val) => 
-        new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
+    const formatCurrency = (val, currency = userCurrency) => 
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: currency }).format(val || 0);
 
     // Reset filters and page when modal opens
     useEffect(() => {
@@ -159,7 +160,7 @@ export default function CategoryTransactionsModal({
                             {/* Total Badge inline near Close (X) button */}
                             <div className="shrink-0">
                                 <Badge variant="secondary" className="text-xs font-semibold px-2.5 py-1 bg-zinc-800 text-zinc-200 border border-zinc-700 whitespace-nowrap">
-                                    Total: {formatCurrency(totalAmount)}
+                                    Total: {formatCurrency(totalAmount, userCurrency)}
                                 </Badge>
                             </div>
                         </div>
@@ -254,7 +255,7 @@ export default function CategoryTransactionsModal({
                                                     : 'text-blue-400'
                                             }`}>
                                                 {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
-                                                {formatCurrency(tx.amount)}
+                                                {formatCurrency(tx.amount, userCurrency)}
                                             </TableCell>
                                         </TableRow>
                                     ))}
@@ -313,6 +314,7 @@ export default function CategoryTransactionsModal({
                 open={isDetailSheetOpen}
                 onOpenChange={setIsDetailSheetOpen}
                 transaction={selectedTransaction}
+                userCurrency={userCurrency}
             />
         </>
     );
