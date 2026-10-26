@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/card';
-import { PayInstanceDialog } from '@/components/PayInstanceDialog';
+import { PayInstanceDialog } from '@/Pages/Subscriptions/Components/PayInstanceDialog';
 
 export function NotificationBell() {
     const { notifications, accounts = [] } = usePage().props;

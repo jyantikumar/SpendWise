@@ -15,8 +15,8 @@ import {
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
-import { CreateRecurringDialog } from '@/components/CreateRecurringDialog';
-import { PayInstanceDialog } from '@/components/PayInstanceDialog';
+import { CreateRecurringDialog } from '@/Pages/Subscriptions/Components/CreateRecurringDialog';
+import { PayInstanceDialog } from '@/Pages/Subscriptions/Components/PayInstanceDialog';
 
 // Local Component Imports
 import { SubscriptionHeader } from './Components/SubscriptionHeader';

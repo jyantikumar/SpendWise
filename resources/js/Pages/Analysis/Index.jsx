@@ -48,7 +48,7 @@ import {
     SheetFooter,
 } from '@/components/ui/sheet';
 
-import { DateTransactionsDialog } from '@/components/DateTransactionsDialog';
+import { DateTransactionsDialog } from '@/Pages/Analysis/components/DateTransactionsDialog';
 import { ExpenseCategoryCard } from '@/components/ExpenseCategoryCard';
 import { AccountsBreakdownCard } from '@/components/AccountsBreakdownCard';
 

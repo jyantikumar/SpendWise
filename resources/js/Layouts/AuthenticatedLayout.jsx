@@ -6,7 +6,7 @@ import { AppSidebar } from '@/components/app-sidebar';
 import { SidebarInset, SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { Separator } from '@/components/ui/separator';
-import { NotificationBell } from '@/Components/NotificationBell';
+import { NotificationBell } from '@/Pages/Subscriptions/Components/NotificationBell';
 
 export default function AppLayout({ title = 'SpendWise', headerTitle = '', children }) {
     const { auth, flash, errors } = usePage().props;
