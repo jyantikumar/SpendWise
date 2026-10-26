@@ -26,6 +26,7 @@ class ProfileUpdateRequest extends FormRequest
                 'max:255',
                 Rule::unique(User::class)->ignore($this->user()->id),
             ],
+            'currency' => ['required', 'string', 'size:3'], // 👈 Add this validation rule
         ];
     }
 }

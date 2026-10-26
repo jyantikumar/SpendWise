@@ -25,7 +25,6 @@ export function AccountTableList({
             <div className="divide-y divide-zinc-800 md:hidden">
                 {filteredAccounts.length > 0 ? (
                     filteredAccounts.map((acc) => {
-                        const curr = acc.currency || userCurrency; // 👈 Fallback to userCurrency
                         return (
                             <div 
                                 key={acc.id}
@@ -57,14 +56,14 @@ export function AccountTableList({
                                                 <span className="text-xs text-zinc-500 font-normal">(Inactive)</span>
                                             )}
                                         </div>
-                                        <div className="text-xs text-zinc-400">{curr}</div>
+                                        <div className="text-xs text-zinc-400">{userCurrency}</div>
                                     </div>
                                 </div>
 
                                 <div className="flex items-center gap-2 shrink-0">
                                     <div className="text-right">
                                         <div className="font-bold text-sm text-zinc-200">
-                                            {formatCurrency(acc.balance, curr)}
+                                            {formatCurrency(acc.balance, userCurrency)}
                                         </div>
                                     </div>
 
@@ -123,7 +122,6 @@ export function AccountTableList({
                     <TableBody>
                         {filteredAccounts.length > 0 ? (
                             filteredAccounts.map((acc) => {
-                                const curr = acc.currency || userCurrency; 
                                 return (
                                     <TableRow 
                                         key={acc.id} 
@@ -157,12 +155,12 @@ export function AccountTableList({
                                                             <span className="text-xs font-normal text-zinc-500">(Inactive)</span>
                                                         )}
                                                     </div>
-                                                    <div className="text-xs text-zinc-400">{curr}</div>
+                                                    <div className="text-xs text-zinc-400">{userCurrency}</div>
                                                 </div>
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right font-bold text-base text-zinc-200">
-                                            {formatCurrency(acc.balance, curr)}
+                                            {formatCurrency(acc.balance, userCurrency)}
                                         </TableCell>
                                         <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                             <DropdownMenu>

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { BadgeCheck, BadgeX, Plus, Check } from 'lucide-react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -38,7 +39,7 @@ export default function AccountFormModal({
     editingAccount = null,
     accountTypes = [],
     onSuccessCallback,
-    userCurrency = 'PHP' // Accept userCurrency prop with fallback[cite: 41]
+    userCurrency = 'PHP' // Accept userCurrency prop with fallback
 }) {
     const isEditing = Boolean(editingAccount);
     const [isAccountTypeModalOpen, setIsAccountTypeModalOpen] = useState(false);
@@ -47,7 +48,6 @@ export default function AccountFormModal({
         name: '',
         type: accountTypes[0]?.name || '',
         balance: '0.00',
-        currency: userCurrency,
         color: '#3B82F6',
         is_active: true,
     });
@@ -62,7 +62,6 @@ export default function AccountFormModal({
                 name: editingAccount.name || '',
                 type: editingAccount.type || accountTypes[0]?.name || '',
                 balance: editingAccount.balance ? String(editingAccount.balance) : '0.00',
-                currency: editingAccount.currency || userCurrency,
                 color: editingAccount.color || '#3B82F6',
                 is_active: Boolean(editingAccount.is_active),
             });
@@ -72,12 +71,11 @@ export default function AccountFormModal({
                 name: '',
                 type: accountTypes[0]?.name || '',
                 balance: '0.00',
-                currency: userCurrency,
                 color: '#3B82F6',
                 is_active: true,
             });
         }
-    }, [isOpen, editingAccount, userCurrency]);
+    }, [isOpen, editingAccount, accountTypes]);
 
     const handleAccountTypeCreated = (page) => {
         const updatedTypes = page.props.accountTypes || [];
@@ -102,19 +100,27 @@ export default function AccountFormModal({
             put(route('accounts.update', editingAccount.id), {
                 preserveScroll: true,
                 onSuccess: (page) => {
+                    toast.success(`Account "${data.name}" updated successfully.`);
                     onClose();
                     reset();
                     if (onSuccessCallback) onSuccessCallback(page);
                 },
+                onError: () => {
+                    toast.error('Failed to update account.');
+                }
             });
         } else {
             post(route('accounts.store'), {
                 preserveScroll: true,
                 onSuccess: (page) => {
+                    toast.success(`Account "${data.name}" created successfully.`);
                     onClose();
                     reset();
                     if (onSuccessCallback) onSuccessCallback(page);
                 },
+                onError: () => {
+                    toast.error('Failed to create account.');
+                }
             });
         }
     };
@@ -126,7 +132,7 @@ export default function AccountFormModal({
                     <DialogHeader>
                         <DialogTitle>{isEditing ? 'Edit Account' : 'Add New Account'}</DialogTitle>
                         <DialogDescription>
-                            Set up your financial account details and balance.
+                            Set up your financial account details and balance. All accounts automatically use your preferred currency ({userCurrency}).
                         </DialogDescription>
                     </DialogHeader>
 
@@ -186,30 +192,15 @@ export default function AccountFormModal({
                             {errors.type && <p className="text-xs text-rose-500">{errors.type}</p>}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="grid gap-2">
-                                <label className="text-sm font-medium">Balance</label>
-                                <Input
-                                    type="number"
-                                    step="0.01"
-                                    value={data.balance}
-                                    onChange={(e) => setData('balance', e.target.value)}
-                                />
-                                {errors.balance && <p className="text-xs text-rose-500">{errors.balance}</p>}
-                            </div>
-
-                            <div className="grid gap-2">
-                                <label className="text-sm font-medium">Currency</label>
-                                <Input
-                                    maxLength={3}
-                                    className="uppercase"
-                                    placeholder={userCurrency}
-                                    value={data.currency}
-                                    disabled={true}
-                                    onChange={(e) => setData('currency', e.target.value.toUpperCase())}
-                                />
-                                {errors.currency && <p className="text-xs text-rose-500">{errors.currency}</p>}
-                            </div>
+                        <div className="grid gap-2">
+                            <label className="text-sm font-medium">Initial Balance</label>
+                            <Input
+                                type="number"
+                                step="0.01"
+                                value={data.balance}
+                                onChange={(e) => setData('balance', e.target.value)}
+                            />
+                            {errors.balance && <p className="text-xs text-rose-500">{errors.balance}</p>}
                         </div>
 
                         {/* Hex Color Swatches + Manual Hex Code Input */}

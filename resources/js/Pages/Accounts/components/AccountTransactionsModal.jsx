@@ -31,7 +31,7 @@ export default function AccountTransactionsModal({
     categories = [], 
     initialStartDate = '', 
     initialEndDate = '',
-    userCurrency = 'PHP' // Accept userCurrency prop with fallback[cite: 39]
+    userCurrency = 'PHP' // Accept global userCurrency prop
 }) {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -60,7 +60,8 @@ export default function AccountTransactionsModal({
 
     const abortControllerRef = useRef(null);
 
-    const formatCurrency = (val, currency = account?.currency || userCurrency) => 
+    // Use global userCurrency directly instead of checking account.currency
+    const formatCurrency = (val, currency = userCurrency) => 
         new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || userCurrency }).format(val || 0);
 
     // Sync initial bounds only when opening modal
@@ -155,7 +156,7 @@ export default function AccountTransactionsModal({
 
     // Dynamic Summary Badge Logic
     const renderSummaryBadge = () => {
-        const curr = account?.currency || userCurrency;
+        const curr = userCurrency;
 
         if (selectedType === 'expense') {
             return (
@@ -328,7 +329,7 @@ export default function AccountTransactionsModal({
                                                     : 'text-blue-400'
                                             }`}>
                                                 {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
-                                                {formatCurrency(tx.amount, account?.currency || userCurrency)}
+                                                {formatCurrency(tx.amount, userCurrency)}
                                             </TableCell>
                                         </TableRow>
                                     ))}

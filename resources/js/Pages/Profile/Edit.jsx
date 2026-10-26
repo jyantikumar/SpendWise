@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { useForm, usePage, Link } from '@inertiajs/react';
 import { 
     User, 
@@ -27,13 +27,60 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 
+// Comprehensive list of global currencies
+const currencies = [
+    { code: 'PHP', label: '₱ - Philippine Peso (PHP)' },
+    { code: 'USD', label: '$ - US Dollar (USD)' },
+    { code: 'EUR', label: '€ - Euro (EUR)' },
+    { code: 'GBP', label: '£ - British Pound (GBP)' },
+    { code: 'JPY', label: '¥ - Japanese Yen (JPY)' },
+    { code: 'CAD', label: '$ - Canadian Dollar (CAD)' },
+    { code: 'AUD', label: '$ - Australian Dollar (AUD)' },
+    { code: 'SGD', label: '$ - Singapore Dollar (SGD)' },
+    { code: 'KRW', label: '₩ - South Korean Won (KRW)' },
+    { code: 'INR', label: '₹ - Indian Rupee (INR)' },
+    { code: 'AED', label: 'د.إ - UAE Dirham (AED)' },
+    { code: 'CHF', label: 'CHF - Swiss Franc (CHF)' },
+    { code: 'CNY', label: '¥ - Chinese Yuan (CNY)' },
+    { code: 'HKD', label: '$ - Hong Kong Dollar (HKD)' },
+    { code: 'NZD', label: '$ - New Zealand Dollar (NZD)' },
+    { code: 'THB', label: '฿ - Thai Baht (THB)' },
+    { code: 'MYR', label: 'RM - Malaysian Ringgit (MYR)' },
+    { code: 'IDR', label: 'Rp - Indonesian Rupiah (IDR)' },
+    { code: 'VND', label: '₫ - Vietnamese Dong (VND)' },
+];
+
 function UpdateProfileInformationForm({ mustVerifyEmail, status }) {
     const user = usePage().props.auth.user;
 
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
         name: user.name || '',
         email: user.email || '',
+        currency: user.currency || 'PHP',
     });
+
+    // Find initial currency label matching user's saved currency code
+    const initialCurrencyObj = currencies.find((c) => c.code === (user.currency || 'PHP')) || currencies[0];
+    const [currencySearch, setCurrencySearch] = useState(initialCurrencyObj.label);
+    const [isOpen, setIsOpen] = useState(false);
+    const dropdownRef = useRef(null);
+
+    // Filter currencies based on user search input
+    const filteredCurrencies = currencies.filter((curr) =>
+        curr.label.toLowerCase().includes(currencySearch.toLowerCase()) ||
+        curr.code.toLowerCase().includes(currencySearch.toLowerCase())
+    );
+
+    // Close dropdown when clicking outside
+    useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
 
     const submit = (e) => {
         e.preventDefault();
@@ -45,7 +92,7 @@ function UpdateProfileInformationForm({ mustVerifyEmail, status }) {
             <div>
                 <h3 className="text-lg font-medium text-zinc-100">Profile Details</h3>
                 <p className="text-sm text-zinc-400">
-                    Update your account details and public information.
+                    Update your account details and default preferences.
                 </p>
             </div>
             <Separator className="bg-zinc-800" />
@@ -77,6 +124,55 @@ function UpdateProfileInformationForm({ mustVerifyEmail, status }) {
                         className="border-zinc-800 text-zinc-200"
                     />
                     {errors.email && <p className="text-xs font-medium text-destructive">{errors.email}</p>}
+                </div>
+
+                {/* Searchable Preferred Currency Dropdown */}
+                <div className="space-y-2 relative" ref={dropdownRef}>
+                    <Label htmlFor="currency" className="text-zinc-300">Preferred Currency</Label>
+                    <div className="relative">
+                        <Input
+                            type="text"
+                            placeholder="Search currency..."
+                            value={currencySearch}
+                            onFocus={() => setIsOpen(true)}
+                            onChange={(e) => {
+                                setCurrencySearch(e.target.value);
+                                setIsOpen(true);
+                            }}
+                            className="bg-[#1a1a1a] text-foreground pr-8 cursor-pointer border-zinc-800 text-zinc-200"
+                        />
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground">
+                            <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    {isOpen && (
+                        <ul className="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md border border-zinc-800 bg-[#1a1a1a] py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm top-full">
+                            {filteredCurrencies.length > 0 ? (
+                                filteredCurrencies.map((curr) => (
+                                    <li
+                                        key={curr.code}
+                                        onClick={() => {
+                                            setData('currency', curr.code);
+                                            setCurrencySearch(curr.label);
+                                            setIsOpen(false);
+                                        }}
+                                        className="relative cursor-pointer select-none py-2 pl-3 pr-9 text-foreground hover:bg-accent hover:text-accent-foreground"
+                                    >
+                                        {curr.label}
+                                    </li>
+                                ))
+                            ) : (
+                                <li className="cursor-default select-none py-2 px-3 text-muted-foreground">
+                                    No currency found
+                                </li>
+                            )}
+                        </ul>
+                    )}
+
+                    {errors.currency && <p className="text-xs font-medium text-destructive">{errors.currency}</p>}
                 </div>
 
                 {mustVerifyEmail && user.email_verified_at === null && (
@@ -390,8 +486,7 @@ export default function Edit({ mustVerifyEmail, status }) {
                 <div className="space-y-0.5">
                     <h2 className="text-2xl font-bold tracking-tight text-zinc-100"></h2>
                     <p className="text-zinc-400 text-sm">
-                                                Manage your account settings and preferences.
-
+                        Manage your account settings and preferences.
                     </p>
                 </div>
 
@@ -415,10 +510,10 @@ export default function Edit({ mustVerifyEmail, status }) {
                         </TabsTrigger>
                         <TabsTrigger 
                             value="danger" 
-                            className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-zinc-400 data-[state=active]:border-destructive data-[state=active]:text-destructive data-[state=active]:bg-transparent shadow-none whitespace-nowrap"
+                            className="gap-2 rounded-none border-b-2 border-transparent px-2 pb-3 pt-2 font-semibold text-destructive data-[state=active]:border-destructive data-[state=active]:text-destructive data-[state=active]:bg-transparent shadow-none whitespace-nowrap"
                         >
                             <AlertTriangle className="h-4 w-4" />
-                            Danger Zone
+                            Danger
                         </TabsTrigger>
                     </TabsList>
 

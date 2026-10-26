@@ -115,14 +115,13 @@ class AccountController extends Controller
             'name'      => ['required', 'string', 'max:255'],
             'type'      => ['required', 'string', 'max:50'],
             'balance'   => ['required', 'numeric', 'min:-999999999.99', 'max:999999999.99'],
-            'currency'  => ['required', 'string', 'size:3'],
-            'color'     => ['nullable', 'string', 'max:7'], // 👈 Validate color
+            'color'     => ['nullable', 'string', 'max:7'],
             'is_active' => ['required', 'boolean'],
         ]);
 
         $request->user()->accounts()->create($validated);
 
-      return back();
+        return back();
     }
 
     public function update(Request $request, Account $account)
@@ -135,8 +134,7 @@ class AccountController extends Controller
             'name'      => ['required', 'string', 'max:255'],
             'type'      => ['required', 'string', 'max:50'],
             'balance'   => ['required', 'numeric', 'min:-999999999.99', 'max:999999999.99'],
-            'currency'  => ['required', 'string', 'size:3'],
-            'color'     => ['nullable', 'string', 'max:7'], // 👈 Validate color
+            'color'     => ['nullable', 'string', 'max:7'],
             'is_active' => ['required', 'boolean'],
         ]);
 
@@ -153,20 +151,19 @@ class AccountController extends Controller
 
         $account->delete();
 
-       return back();
+        return back();
     }
+
     public function toggleActive(Request $request, Account $account)
-{
-    if ($account->user_id !== $request->user()->id) {
-        abort(403);
+    {
+        if ($account->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $account->update([
+            'is_active' => !$account->is_active,
+        ]);
+
+        return back();
     }
-
-    $account->update([
-        'is_active' => !$account->is_active,
-    ]);
-
-    $status = $account->is_active ? 'activated' : 'deactivated';
-
-   return back();
-}
 }

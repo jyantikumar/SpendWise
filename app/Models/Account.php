@@ -16,8 +16,7 @@ class Account extends Model
         'name',
         'type',
         'balance',
-        'currency',
-        'color', // 👈 Added color field
+        'color', 
         'is_active',
     ];
 

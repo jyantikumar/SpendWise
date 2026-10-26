@@ -146,7 +146,6 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                             handleToggleActive={handleToggleActive}
                             setDeletingAccount={setDeletingAccount}
                             formatCurrency={formatCurrency}
-                            userCurrency={userCurrency} // 👈 Pass userCurrency here
                         />
                     </CardContent>
                 </Card>

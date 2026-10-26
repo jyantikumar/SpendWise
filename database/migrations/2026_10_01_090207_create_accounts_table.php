@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('name');
             $table->string('type'); // String allows flexible custom account types
             $table->decimal('balance', 15, 2)->default(0.00);
-            $table->string('currency', 3)->default('USD');
             $table->boolean('is_active')->default(true);
             $table->timestamps();
             $table->softDeletes();
