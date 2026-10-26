@@ -228,6 +228,7 @@ export default function Dashboard({
                 } : null}
                 onEdit={openEditModal}
                 onDelete={setDeletingTransaction}
+                userCurrency={userCurrency}
             />
 
             <AlertDialog open={!!deletingTransaction} onOpenChange={(open) => !open && setDeletingTransaction(null)}>
