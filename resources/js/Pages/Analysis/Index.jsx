@@ -4,7 +4,7 @@ import { router } from '@inertiajs/react';
 
 import AppLayout from '@/Layouts/AuthenticatedLayout';
 import { DateTransactionsDialog } from '@/Pages/Analysis/components/DateTransactionsDialog';
-import { ExpenseCategoryCard } from '@/components/ExpenseCategoryCard';
+import ExpensePieChart from '@/Pages/DashboardComponents/ExpensePieChart';
 import { AccountsBreakdownCard } from '@/components/AccountsBreakdownCard';
 
 import { AnalysisFilterSheet } from '@/Pages/Analysis/components/AnalysisFilterSheet';
@@ -13,7 +13,7 @@ import { AnalysisKpiGrid } from '@/Pages/Analysis/components/AnalysisKpiGrid';
 import { AnalysisChartSection } from '@/Pages/Analysis/components/AnalysisChartSection';
 
 export default function AnalysisIndex({ 
-    auth, // Destructure auth props
+    auth, 
     accounts = [], 
     kpis = {}, 
     trendData = [], 
@@ -43,7 +43,7 @@ export default function AnalysisIndex({
 
     const [isMobile, setIsMobile] = useState(false);
 
-    // Get user's preferred currency from auth props (defaults to PHP if not set)
+    // Get user's preferred currency from auth props (defaults to PHP if not set)[cite: 19]
     const userCurrency = auth?.user?.currency || 'PHP';
 
     useEffect(() => {
@@ -63,7 +63,6 @@ export default function AnalysisIndex({
 
     const formatCompactCurrency = (val) => {
         if (!val || val === 0) return '';
-        // Format compact currency symbol based on currency code or standard formatting
         const symbol = userCurrency === 'PHP' ? '₱' : userCurrency === 'USD' ? '$' : userCurrency === 'EUR' ? '€' : userCurrency;
         if (val >= 1000) {
             return `${symbol}${(val / 1000).toFixed(0)}k`;
@@ -344,11 +343,13 @@ export default function AnalysisIndex({
 
                 {/* Bottom Section: Side-by-Side Distribution Cards */}
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
-                    <ExpenseCategoryCard 
-                        categoryData={categoryData} 
-                        accounts={accounts}
-                        userCurrency={userCurrency}
-                    />
+                    <div className="p-4 sm:p-6 rounded-xl border border-zinc-800 bg-background flex flex-col">
+                        <h3 className="text-sm font-semibold text-zinc-200 mb-4">Expense Categories</h3>
+                        <ExpensePieChart 
+                            data={categoryData} 
+                            formatCurrency={formatCurrency}
+                        />
+                    </div>
 
                     <AccountsBreakdownCard 
                         accounts={accounts} 
@@ -361,7 +362,7 @@ export default function AnalysisIndex({
                     open={!!selectedDayObj}
                     onOpenChange={(open) => !open && setSelectedDayObj(null)}
                     dayData={selectedDayObj}
-                    userCurrency={userCurrency} // Pass dynamic userCurrency
+                    userCurrency={userCurrency}
                 />
             </div>
         </AppLayout>
