@@ -1,3 +1,4 @@
+// resources/js/Pages/Subscriptions/Components/PayInstanceDialog.jsx
 import { useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { 
@@ -30,6 +31,7 @@ export function PayInstanceDialog({
     isAccountLocked = false,
     isAmountLocked = false,
     isCategoryLocked = false,
+    userCurrency = 'PHP', // Added userCurrency prop with fallback
 }) {
     const { data, setData, post, processing, errors, reset } = useForm({
         due_date: '',
@@ -107,7 +109,7 @@ export function PayInstanceDialog({
                     {/* Amount */}
                     <div className="space-y-1.5">
                         <Label htmlFor="amount" className="text-xs text-zinc-300">
-                            Amount (₱)
+                            Amount ({userCurrency})
                         </Label>
                         <Input
                             id="amount"

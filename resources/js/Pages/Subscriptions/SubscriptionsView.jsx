@@ -1,3 +1,4 @@
+// resources/js/Pages/Subscriptions/SubscriptionsView.jsx
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { toast } from 'sonner';
@@ -30,6 +31,7 @@ import { MasterRulesTab } from './Components/MasterRulesTab';
 const ITEMS_PER_PAGE = 5;
 
 export default function SubscriptionsView({ 
+    auth, // Destructure auth props
     recurringTransactions = [], 
     pendingInstances = [],
     accounts = [], 
@@ -38,7 +40,7 @@ export default function SubscriptionsView({
     // Filter States
     const [filterType, setFilterType] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
-    const [dateFilter, setDateFilter] = useState('current_month'); // 'current_month' | '30_days' | 'all' | 'custom'
+    const [dateFilter, setDateFilter] = useState('current_month');
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
     
@@ -58,8 +60,11 @@ export default function SubscriptionsView({
         ? recurringTransactions 
         : (recurringTransactions?.data || []);
 
+    // Get user's preferred currency from auth props (defaults to PHP if not set)[cite: 25]
+    const userCurrency = auth?.user?.currency || 'PHP';
+
     const formatCurrency = (val) => 
-        new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: userCurrency }).format(val || 0);
 
     const handleResetFilters = () => {
         setFilterType('all');
@@ -102,7 +107,7 @@ export default function SubscriptionsView({
             return true;
         }
 
-        return true; // '30_days' or 'all'
+        return true;
     });
 
     // 3. Filter Master Rules
@@ -110,8 +115,8 @@ export default function SubscriptionsView({
         if (filterType === 'expense' && item.type !== 'expense') return false;
         if (filterType === 'income' && item.type !== 'income') return false;
         if (filterStatus === 'all' && !item.is_active) return false;
-    if (filterStatus === 'active' && !item.is_active) return false;
-    if (filterStatus === 'paused' && item.is_active) return false;
+        if (filterStatus === 'active' && !item.is_active) return false;
+        if (filterStatus === 'paused' && item.is_active) return false;
         return true;
     });
 
@@ -139,7 +144,6 @@ export default function SubscriptionsView({
         dateFilter !== 'current_month' || customStartDate !== '' || customEndDate !== ''
     ].filter(Boolean).length;
 
-    // Route Actions
     const handleSkipInstance = (item) => {
         router.post(route('recurring.skip', item.rule_id), { due_date: item.due_date }, {
             preserveScroll: true,
@@ -165,33 +169,29 @@ export default function SubscriptionsView({
         });
     };
 
-    // KPI Calculations
-    // KPI Calculations based on active timeframe
-const totalMonthlyExpenses = upcomingInstances
-    .filter((item) => item.type === 'expense')
-    .reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
+    const totalMonthlyExpenses = upcomingInstances
+        .filter((item) => item.type === 'expense')
+        .reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
 
-const totalMonthlyIncome = upcomingInstances
-    .filter((item) => item.type === 'income')
-    .reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
+    const totalMonthlyIncome = upcomingInstances
+        .filter((item) => item.type === 'income')
+        .reduce((acc, item) => acc + (Number(item.amount) || 0), 0);
+
     return (
         <AppLayout title="Recurring & Subscriptions" headerTitle="Recurring & Subscriptions">
             <div className="w-full space-y-6">
-                {/* 1. Page Header */}
                 <SubscriptionHeader 
                     activeFilterCount={activeFilterCount}
                     onOpenFilter={() => setIsFilterSheetOpen(true)}
                     onOpenCreate={() => { setEditingItem(null); setIsCreateOpen(true); }}
                 />
 
-                {/* 2. Top Summary KPI Cards */}
                 <SubscriptionKpiCards 
                     totalMonthlyExpenses={totalMonthlyExpenses}
                     totalMonthlyIncome={totalMonthlyIncome}
                     formatCurrency={formatCurrency}
                 />
 
-                {/* 3. Active Filters Badge Indicator Bar */}
                 <ActiveFiltersBar 
                     hasActiveFilters={hasActiveFilters}
                     activeFilterCount={activeFilterCount}
@@ -207,7 +207,6 @@ const totalMonthlyIncome = upcomingInstances
                     resetPages={{ setMissedPage, setUpcomingPage, setRulesPage }}
                 />
 
-                {/* 4. Main Navigation Tabs */}
                 <Tabs defaultValue="schedule" className="w-full flex flex-col space-y-4">
                     <div className="w-full">
                         <TabsList className="bg-zinc-900 border border-zinc-800 text-zinc-400 h-9 p-1 grid grid-cols-3 w-full">
@@ -237,7 +236,6 @@ const totalMonthlyIncome = upcomingInstances
                         </TabsList>
                     </div>
 
-                    {/* Tab 1: Upcoming Dues Schedule */}
                     <TabsContent value="schedule" className="w-full space-y-6 mt-0">
                         <UpcomingDuesTab 
                             dateFilter={dateFilter}
@@ -253,7 +251,6 @@ const totalMonthlyIncome = upcomingInstances
                         />
                     </TabsContent>
 
-                    {/* Tab 2: Missed & Overdue Payments */}
                     <TabsContent value="missed" className="w-full space-y-6 mt-0">
                         <MissedPaymentsTab 
                             overdueInstances={overdueInstances}
@@ -268,28 +265,26 @@ const totalMonthlyIncome = upcomingInstances
                         />
                     </TabsContent>
 
-                    {/* Tab 3: Master Schedule Rules */}
                     <TabsContent value="rules" className="w-full mt-0">
                         <MasterRulesTab 
-    filteredRules={filteredRules}
-    paginatedRules={paginatedRules}
-    rulesPage={rulesPage}
-    setRulesPage={setRulesPage}
-    totalRulesPages={totalRulesPages}
-    itemsPerPage={ITEMS_PER_PAGE}
-    formatCurrency={formatCurrency}
-    setEditingItem={setEditingItem}
-    setIsCreateOpen={setIsCreateOpen}
-    handleToggleActive={handleToggleActive}
-    setDeletingItem={setDeletingItem}
-    filterStatus={filterStatus}
-    setFilterStatus={setFilterStatus}
-/>
+                            filteredRules={filteredRules}
+                            paginatedRules={paginatedRules}
+                            rulesPage={rulesPage}
+                            setRulesPage={setRulesPage}
+                            totalRulesPages={totalRulesPages}
+                            itemsPerPage={ITEMS_PER_PAGE}
+                            formatCurrency={formatCurrency}
+                            setEditingItem={setEditingItem}
+                            setIsCreateOpen={setIsCreateOpen}
+                            handleToggleActive={handleToggleActive}
+                            setDeletingItem={setDeletingItem}
+                            filterStatus={filterStatus}
+                            setFilterStatus={setFilterStatus}
+                        />
                     </TabsContent>
                 </Tabs>
             </div>
 
-            {/* Filter Sheet Modal */}
             <FilterSheet 
                 open={isFilterSheetOpen}
                 onOpenChange={setIsFilterSheetOpen}
@@ -308,7 +303,6 @@ const totalMonthlyIncome = upcomingInstances
                 resetPages={{ setMissedPage, setUpcomingPage, setRulesPage }}
             />
 
-            {/* Dialogs & Action Modals */}
             <CreateRecurringDialog
                 open={isCreateOpen}
                 onOpenChange={setIsCreateOpen}
@@ -318,15 +312,16 @@ const totalMonthlyIncome = upcomingInstances
             />
 
             <PayInstanceDialog
-    open={!!payingInstance}
-    onOpenChange={() => setPayingInstance(null)}
-    instance={payingInstance}
-    accounts={accounts}
-    categories={categories}
-    isAccountLocked={true}
-    isAmountLocked={true}
-    isCategoryLocked={true}
-/>
+                open={!!payingInstance}
+                onOpenChange={() => setPayingInstance(null)}
+                instance={payingInstance}
+                accounts={accounts}
+                categories={categories}
+                isAccountLocked={true}
+                isAmountLocked={true}
+                isCategoryLocked={true}
+                userCurrency={userCurrency}
+            />
 
             <AlertDialog open={!!deletingItem} onOpenChange={() => setDeletingItem(null)}>
                 <AlertDialogContent className="border-zinc-800 bg-zinc-950 text-zinc-100">

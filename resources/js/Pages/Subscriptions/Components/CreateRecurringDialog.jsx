@@ -1,3 +1,4 @@
+// resources/js/Pages/Subscriptions/Components/CreateRecurringDialog.jsx
 import { useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { 
@@ -20,7 +21,14 @@ import {
 } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 
-export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, accounts = [], categories = [] }) {
+export function CreateRecurringDialog({ 
+    open, 
+    onOpenChange, 
+    editingItem = null, 
+    accounts = [], 
+    categories = [],
+    userCurrency = 'PHP' // Added userCurrency prop with fallback
+}) {
     const isEditing = Boolean(editingItem);
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
@@ -37,13 +45,16 @@ export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, 
 
     useEffect(() => {
         if (editingItem && open) {
+            // Safely resolve category ID from either category_id or category.id relation
+            const resolvedCategoryId = editingItem.category_id ?? editingItem.category?.id;
+
             setData({
                 title: editingItem.title || '',
                 amount: editingItem.amount ? String(editingItem.amount) : '',
                 type: editingItem.type || 'expense',
                 frequency: editingItem.frequency || 'monthly',
                 account_id: editingItem.account_id ? String(editingItem.account_id) : (accounts[0]?.id ? String(accounts[0].id) : ''),
-                category_id: editingItem.category_id ? String(editingItem.category_id) : '',
+                category_id: resolvedCategoryId ? String(resolvedCategoryId) : '',
                 start_date: editingItem.next_due_date ? String(editingItem.next_due_date).split('T')[0] : (editingItem.start_date ? String(editingItem.start_date).split('T')[0] : new Date().toISOString().slice(0, 10)),
                 end_date: editingItem.end_date ? String(editingItem.end_date).split('T')[0] : '',
                 auto_create: Boolean(editingItem.auto_create),
@@ -53,9 +64,10 @@ export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, 
         }
     }, [editingItem, open]);
 
-    // Ensure category list matches data.type OR includes the currently editing item's category so it doesn't get stripped out
+    // Ensure category list matches data.type OR includes the currently editing item's category
+    const editingCategoryId = editingItem?.category_id ?? editingItem?.category?.id;
     const filteredCategories = categories.filter(
-        (cat) => !cat.type || cat.type === data.type || String(cat.id) === String(editingItem?.category_id)
+        (cat) => !cat.type || cat.type === data.type || String(cat.id) === String(editingCategoryId)
     );
 
     const handleTypeChange = (newType) => {
@@ -122,7 +134,7 @@ export function CreateRecurringDialog({ open, onOpenChange, editingItem = null, 
                     <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-1">
                             <Label htmlFor="amount" className="text-xs text-zinc-300">
-                                Amount (₱)
+                                Amount ({userCurrency})
                             </Label>
                             <Input
                                 id="amount"

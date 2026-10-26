@@ -1,3 +1,4 @@
+// resources/js/Layouts/Components/NotificationBell.jsx
 import { useState } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
 import { Bell, AlertCircle, Clock, Check, ChevronRight, SkipForward } from 'lucide-react';
@@ -9,13 +10,16 @@ import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/componen
 import { PayInstanceDialog } from '@/Pages/Subscriptions/Components/PayInstanceDialog';
 
 export function NotificationBell() {
-    const { notifications, accounts = [] } = usePage().props;
+    const { auth, notifications, accounts = [] } = usePage().props;
     const { due_today = [], overdue = [], count = 0 } = notifications || {};
 
     const [payingInstance, setPayingInstance] = useState(null);
 
+    // Get user's preferred currency from auth props (defaults to PHP if not set)[cite: 27]
+    const userCurrency = auth?.user?.currency || 'PHP';
+
     const formatCurrency = (val) => 
-        new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: userCurrency }).format(val || 0);
 
     const handleSkip = (item) => {
         router.post(
@@ -60,18 +64,18 @@ export function NotificationBell() {
                     <SkipForward className="h-3.5 w-3.5" />
                 </button>
                 <Button 
-    size="sm" 
-    variant="ghost"
-    onClick={() => setPayingInstance({ 
-        ...item, 
-        rule_id: item.id,
-        account_id: item.account_id || item.account?.id || '',
-        category_name: item.category_name ?? item.category?.name ?? '',
-    })}
-    className="h-6 text-[11px] px-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded font-medium"
->
-    Pay
-</Button>
+                    size="sm" 
+                    variant="ghost"
+                    onClick={() => setPayingInstance({ 
+                        ...item, 
+                        rule_id: item.id,
+                        account_id: item.account_id || item.account?.id || '',
+                        category_name: item.category_name ?? item.category?.name ?? '',
+                    })}
+                    className="h-6 text-[11px] px-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded font-medium"
+                >
+                    Pay
+                </Button>
             </div>
         </div>
     );
@@ -99,7 +103,6 @@ export function NotificationBell() {
                         className="w-80 sm:w-[360px] p-0 z-50 focus:outline-none"
                     >
                         <Card className="border-zinc-800 bg-zinc-900 text-zinc-100 shadow-2xl overflow-hidden rounded-2xl p-1.5 space-y-1.5">
-                            {/* Inset Header */}
                             <CardHeader className="flex flex-row items-center justify-between px-3 py-2 space-y-0 rounded-xl bg-zinc-950/60">
                                 <CardTitle className="text-xs font-medium text-zinc-300">
                                     Payment Notifications
@@ -111,7 +114,6 @@ export function NotificationBell() {
                                 )}
                             </CardHeader>
 
-                            {/* Inset Body (Invisible Scrollbar Kept) */}
                             <CardContent className="p-1 max-h-[320px] overflow-y-auto space-y-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                                 {count === 0 ? (
                                     <div className="flex flex-col items-center justify-center py-8 text-center px-4">
@@ -145,7 +147,6 @@ export function NotificationBell() {
                                 )}
                             </CardContent>
 
-                            {/* Inset Footer */}
                             <CardFooter className="p-0 rounded-xl bg-zinc-950/60 overflow-hidden">
                                 <Link 
                                     href={route('subscriptions.index')} 
@@ -160,15 +161,16 @@ export function NotificationBell() {
                 </Popover.Portal>
             </Popover.Root>
 
-           <PayInstanceDialog
-    open={!!payingInstance}
-    onOpenChange={() => setPayingInstance(null)}
-    instance={payingInstance}
-    accounts={accounts}
-    isAccountLocked={true}
-    isAmountLocked={true}
-    isCategoryLocked={true}
-/>
+            <PayInstanceDialog
+                open={!!payingInstance}
+                onOpenChange={() => setPayingInstance(null)}
+                instance={payingInstance}
+                accounts={accounts}
+                isAccountLocked={true}
+                isAmountLocked={true}
+                isCategoryLocked={true}
+                userCurrency={userCurrency}
+            />
         </>
     );
 }
