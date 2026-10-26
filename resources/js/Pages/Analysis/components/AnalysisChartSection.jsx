@@ -1,3 +1,4 @@
+// resources/js/Pages/Analysis/components/AnalysisChartSection.jsx
 import { 
     ResponsiveContainer, 
     AreaChart, 
@@ -100,7 +101,7 @@ export function AnalysisChartSection({
                                 <Columns3 className="h-4 w-4 text-primary" /> Monthly Cash Flow Comparison
                             </span>
                             <span className="text-[10px] sm:text-xs font-normal text-zinc-400 bg-zinc-800/80 px-2 py-1 rounded-md border border-zinc-700/80 self-start sm:self-auto">
-                                💡 Tap bar to view daily details
+                                Tap bar to view daily details
                             </span>
                         </CardTitle>
                         <CardDescription className="text-xs text-zinc-400">
@@ -119,7 +120,7 @@ export function AnalysisChartSection({
                                     <YAxis 
                                         tick={{ fontSize: 10 }} 
                                         tickLine={false}
-                                        tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
+                                        tickFormatter={(v) => `${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
                                     />
                                     <Tooltip content={<BarComparisonTooltip formatCurrency={formatCurrency} subtext="Click bar to view daily breakdown & calendar" />} />
                                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
@@ -161,7 +162,7 @@ export function AnalysisChartSection({
                                 <CalendarDays className="h-4 w-4 text-primary" /> Yearly Cash Flow Comparison
                             </span>
                             <span className="text-[10px] sm:text-xs font-normal text-zinc-400 bg-zinc-800/80 px-2 py-1 rounded-md border border-zinc-700/80 self-start sm:self-auto">
-                                💡 Tap year bar to drill down into monthly breakdown
+                                Tap year bar to drill down into monthly breakdown
                             </span>
                         </CardTitle>
                         <CardDescription className="text-xs text-zinc-400">
@@ -180,7 +181,7 @@ export function AnalysisChartSection({
                                     <YAxis 
                                         tick={{ fontSize: 10 }} 
                                         tickLine={false}
-                                        tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
+                                        tickFormatter={(v) => `${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
                                     />
                                     <Tooltip content={<BarComparisonTooltip formatCurrency={formatCurrency} subtext="Click bar to drill down into monthly comparison" />} />
                                     <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
@@ -260,7 +261,7 @@ export function AnalysisChartSection({
                                         <YAxis 
                                             tick={{ fontSize: 10 }} 
                                             tickLine={false}
-                                            tickFormatter={(v) => `₱${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
+                                            tickFormatter={(v) => `${v >= 1000 ? (v / 1000).toFixed(0) + 'k' : v}`}
                                         />
                                         <Tooltip content={<AreaFlowTooltip formatCurrency={formatCurrency} type={type} />} />
                                         <Area 

@@ -1,3 +1,4 @@
+// resources/js/Pages/Analysis/components/DateTransactionsDialog.jsx
 import React, { useState, useEffect } from 'react';
 import { 
     Calendar, 
@@ -29,7 +30,15 @@ import {
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TransactionDetailSheet } from '@/Pages/Transactions/components/TransactionDetailSheet';
 
-export function DateTransactionsDialog({ open, onOpenChange, date, dayData, onEdit, onDelete }) {
+export function DateTransactionsDialog({ 
+    open, 
+    onOpenChange, 
+    date, 
+    dayData, 
+    onEdit, 
+    onDelete,
+    userCurrency = 'PHP' // Accept userCurrency prop with fallback
+}) {
     const [selectedType, setSelectedType] = useState('all');
     
     // Sheet Filter States
@@ -55,7 +64,7 @@ export function DateTransactionsDialog({ open, onOpenChange, date, dayData, onEd
     if (!dayData) return null;
 
     const formatCurrency = (val) =>
-        new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: userCurrency }).format(val || 0);
 
     const formatDate = (rawDate) => {
         if (!rawDate) return '';
@@ -63,7 +72,7 @@ export function DateTransactionsDialog({ open, onOpenChange, date, dayData, onEd
         if (typeof rawDate === 'string' && rawDate.match(/^\d{4}-\d{2}-\d{2}$/)) {
             const [year, month, day] = rawDate.split('-');
             const dateObj = new Date(year, month - 1, day);
-            return dateObj.toLocaleDateString('en-PH', {
+            return dateObj.toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -72,7 +81,7 @@ export function DateTransactionsDialog({ open, onOpenChange, date, dayData, onEd
         }
 
         const dateObj = new Date(rawDate);
-        return dateObj.toLocaleDateString('en-PH', {
+        return dateObj.toLocaleDateString('en-US', {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
@@ -334,13 +343,13 @@ export function DateTransactionsDialog({ open, onOpenChange, date, dayData, onEd
                                 {transactions.length > 0 ? (
                                     transactions.map((tx) => (
                                         <TableRow 
-    key={tx.id} 
-    onClick={() => setSelectedTransaction({
-        ...tx, 
-        date: tx.date || date || dayData.date // Ensures date is always present
-    })}
-    className="border-b border-zinc-800 hover:bg-muted/50 transition-colors cursor-pointer"
->
+                                            key={tx.id} 
+                                            onClick={() => setSelectedTransaction({
+                                                ...tx, 
+                                                date: tx.date || date || dayData.date
+                                            })}
+                                            className="border-b border-zinc-800 hover:bg-muted/50 transition-colors cursor-pointer"
+                                        >
                                             <TableCell className="py-2.5 max-w-[180px] truncate">
                                                 <span className="text-xs font-medium text-zinc-200 block truncate">
                                                     {tx.description || <span className="text-zinc-500 italic">No description</span>}
@@ -398,6 +407,7 @@ export function DateTransactionsDialog({ open, onOpenChange, date, dayData, onEd
                 currentDate={date || dayData?.date}
                 onEdit={onEdit}
                 onDelete={onDelete}
+                userCurrency={userCurrency}
             />
         </>
     );

@@ -1,7 +1,8 @@
+// resources/js/Components/AccountsBreakdownCard.jsx
 import { useState } from 'react';
 import { Wallet } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AccountTransactionsModal from '@/Pages/Accounts/components/AccountTransactionsModal';
 
 // Color Palette for Account Donut Slices
@@ -143,11 +144,11 @@ function AccountPieChart({ data = [], formatCurrency, onAccountClick }) {
     );
 }
 
-export function AccountsBreakdownCard({ accounts = [], categories = [], className = '' }) {
+export function AccountsBreakdownCard({ accounts = [], categories = [], className = '', userCurrency = 'PHP' }) {
     const [selectedAccount, setSelectedAccount] = useState(null);
 
     const formatCurrency = (val) => 
-        new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: userCurrency }).format(val || 0);
 
     const handleAccountClick = (account) => {
         setSelectedAccount(account);
@@ -160,7 +161,6 @@ export function AccountsBreakdownCard({ accounts = [], categories = [], classNam
                     <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
                         <Wallet className="h-4 w-4 text-emerald-500" /> Accounts Breakdown
                     </CardTitle>
-                   
                 </CardHeader>
                 <CardContent>
                     <AccountPieChart 

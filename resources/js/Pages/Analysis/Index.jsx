@@ -1,3 +1,4 @@
+// resources/js/Pages/Analysis/Index.jsx
 import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 
@@ -12,7 +13,7 @@ import { AnalysisKpiGrid } from '@/Pages/Analysis/components/AnalysisKpiGrid';
 import { AnalysisChartSection } from '@/Pages/Analysis/components/AnalysisChartSection';
 
 export default function AnalysisIndex({ 
-    auth, 
+    auth, // Destructure auth props
     accounts = [], 
     kpis = {}, 
     trendData = [], 
@@ -42,6 +43,9 @@ export default function AnalysisIndex({
 
     const [isMobile, setIsMobile] = useState(false);
 
+    // Get user's preferred currency from auth props (defaults to PHP if not set)
+    const userCurrency = auth?.user?.currency || 'PHP';
+
     useEffect(() => {
         const checkMobile = () => setIsMobile(window.innerWidth < 640);
         checkMobile();
@@ -55,14 +59,16 @@ export default function AnalysisIndex({
     }, [filters.range, filters.calendar_month]);
 
     const formatCurrency = (val) => 
-        new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: userCurrency }).format(val || 0);
 
     const formatCompactCurrency = (val) => {
         if (!val || val === 0) return '';
+        // Format compact currency symbol based on currency code or standard formatting
+        const symbol = userCurrency === 'PHP' ? '₱' : userCurrency === 'USD' ? '$' : userCurrency === 'EUR' ? '€' : userCurrency;
         if (val >= 1000) {
-            return `₱${(val / 1000).toFixed(0)}k`;
+            return `${symbol}${(val / 1000).toFixed(0)}k`;
         }
-        return `₱${Math.round(val)}`;
+        return `${symbol}${Math.round(val)}`;
     };
 
     const getTimeHorizonLabel = (selectedRange) => {
@@ -216,7 +222,6 @@ export default function AnalysisIndex({
    const handlePrevMonth = () => {
         const currentVal = calendar.month || calendarMonth;
         const [year, month] = currentVal.split('-').map(Number);
-        // Create a date object on the 1st of the current month, then subtract 1 month safely
         const prevDate = new Date(year, month - 2, 1); 
         const formatted = `${prevDate.getFullYear()}-${String(prevDate.getMonth() + 1).padStart(2, '0')}`;
         
@@ -227,7 +232,6 @@ export default function AnalysisIndex({
     const handleNextMonth = () => {
         const currentVal = calendar.month || calendarMonth;
         const [year, month] = currentVal.split('-').map(Number);
-        // Create a date object on the 1st of the current month, then add 1 month safely
         const nextDate = new Date(year, month, 1); 
         const formatted = `${nextDate.getFullYear()}-${String(nextDate.getMonth() + 1).padStart(2, '0')}`;
         
@@ -343,11 +347,13 @@ export default function AnalysisIndex({
                     <ExpenseCategoryCard 
                         categoryData={categoryData} 
                         accounts={accounts}
+                        userCurrency={userCurrency}
                     />
 
                     <AccountsBreakdownCard 
                         accounts={accounts} 
                         categories={categories}
+                        userCurrency={userCurrency}
                     />
                 </div>
 
@@ -355,6 +361,7 @@ export default function AnalysisIndex({
                     open={!!selectedDayObj}
                     onOpenChange={(open) => !open && setSelectedDayObj(null)}
                     dayData={selectedDayObj}
+                    userCurrency={userCurrency} // Pass dynamic userCurrency
                 />
             </div>
         </AppLayout>
