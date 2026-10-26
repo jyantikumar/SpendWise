@@ -17,7 +17,7 @@ import {
     AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
 
-import DashboardKpis from '@/components/DashboardKpis';
+import DashboardKpis from '@/Pages/DashboardComponents/DashboardKpis';
 import CategoryTransactionsModal from '@/Pages/Categories/components/CategoryTransactionsModal';
 import AccountTransactionsModal from '@/Pages/Accounts/components/AccountTransactionsModal';
 import TransactionFormModal from '@/Pages/Transactions/components/TransactionFormModal';

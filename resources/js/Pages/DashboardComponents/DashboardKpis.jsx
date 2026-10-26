@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
 export default function DashboardKpis({ kpis = {}, formatCurrency }) {
-    const [showTotalBalance, setShowTotalBalance] = useState(true);
+    const [showTotalBalance, setShowTotalBalance] = useState(false);
 
     const defaultFormat = (val) => 
         new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
