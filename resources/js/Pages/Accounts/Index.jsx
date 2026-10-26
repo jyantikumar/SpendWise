@@ -115,8 +115,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                     <div>
                         <h2 className="text-2xl font-bold tracking-tight text-zinc-100"></h2>
                         <p className="text-sm text-zinc-400">
-                                                        Manage your bank accounts, wallets, credit cards, and custom liquidity sources.
-
+                            Manage your bank accounts, wallets, credit cards, and custom liquidity sources.
                         </p>
                     </div>
 
@@ -126,30 +125,26 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                 </div>
 
                 {/* KPI Summary Grid */}
-                <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-2">
-                    <Card className="border-zinc-800">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-zinc-400">Total Portfolio Balance</CardTitle>
-                            <Wallet className="h-4 w-4 text-zinc-400" />
+                <div className="grid gap-3 sm:gap-4 grid-cols-2">
+                    <Card className="border-zinc-800 py-1">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3.5 sm:px-4">
+                            <CardTitle className="text-[11px] sm:text-xs font-medium text-zinc-400">Total Balance</CardTitle>
+                            <Wallet className="h-3.5 w-3.5 text-zinc-400" />
                         </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-zinc-200">{formatCurrency(totalPortfolioBalance)}</div>
-                            <p className="text-xs text-zinc-400 mt-1">Across all active accounts</p>
+                        <CardContent className="px-3.5 sm:px-4 pb-3 pt-1">
+                            <div className="text-base sm:text-xl font-bold text-zinc-200">{formatCurrency(totalPortfolioBalance)}</div>
                         </CardContent>
                     </Card>
 
-                    <Card className="border-zinc-800">
-                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                            <CardTitle className="text-sm font-medium text-zinc-400">Total Accounts</CardTitle>
-                            <CreditCard className="h-4 w-4 text-zinc-400" />
+                    <Card className="border-zinc-800 py-1">
+                        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-3.5 sm:px-4">
+                            <CardTitle className="text-[11px] sm:text-xs font-medium text-zinc-400">Total Accounts</CardTitle>
+                            <CreditCard className="h-3.5 w-3.5 text-zinc-400" />
                         </CardHeader>
-                        <CardContent>
-                            <div className="text-2xl font-bold text-zinc-200">{accounts.length}</div>
-                            <p className="text-xs text-zinc-400 mt-1">Registered financial accounts</p>
+                        <CardContent className="px-3.5 sm:px-4 pb-3 pt-1">
+                            <div className="text-base sm:text-xl font-bold text-zinc-200">{accounts.length}</div>
                         </CardContent>
                     </Card>
-
-                   
                 </div>
 
                 {/* Accounts List Container */}
