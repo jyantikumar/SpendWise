@@ -37,7 +37,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
     const [selectedAccount, setSelectedAccount] = useState(null);
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
 
-    // Get user's preferred currency from auth props (defaults to PHP if not set)[cite: 37]
+    // Get user's preferred currency from auth props (defaults to PHP if not set)[cite: 27]
     const userCurrency = auth?.user?.currency || 'PHP';
 
     const formatCurrency = (val, currency = userCurrency) => 
@@ -146,6 +146,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                             handleToggleActive={handleToggleActive}
                             setDeletingAccount={setDeletingAccount}
                             formatCurrency={formatCurrency}
+                            userCurrency={userCurrency} // 👈 Pass userCurrency down here!
                         />
                     </CardContent>
                 </Card>
