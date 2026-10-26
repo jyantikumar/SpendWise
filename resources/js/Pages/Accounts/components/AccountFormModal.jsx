@@ -39,7 +39,7 @@ export default function AccountFormModal({
     editingAccount = null,
     accountTypes = [],
     onSuccessCallback,
-    userCurrency = 'PHP' // Accept userCurrency prop with fallback
+    userCurrency = 'PHP'
 }) {
     const isEditing = Boolean(editingAccount);
     const [isAccountTypeModalOpen, setIsAccountTypeModalOpen] = useState(false);
@@ -100,27 +100,27 @@ export default function AccountFormModal({
             put(route('accounts.update', editingAccount.id), {
                 preserveScroll: true,
                 onSuccess: (page) => {
-                    toast.success(`Account "${data.name}" updated successfully.`);
+                    toast.success('Account updated successfully.');
                     onClose();
                     reset();
                     if (onSuccessCallback) onSuccessCallback(page);
                 },
                 onError: () => {
                     toast.error('Failed to update account.');
-                }
+                },
             });
         } else {
             post(route('accounts.store'), {
                 preserveScroll: true,
                 onSuccess: (page) => {
-                    toast.success(`Account "${data.name}" created successfully.`);
+                    toast.success('Account created successfully.');
                     onClose();
                     reset();
                     if (onSuccessCallback) onSuccessCallback(page);
                 },
                 onError: () => {
                     toast.error('Failed to create account.');
-                }
+                },
             });
         }
     };

@@ -1,5 +1,7 @@
+// resources/js/Pages/AccountTypes/components/AccountTypeFormModal.jsx
 import { useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { 
@@ -53,18 +55,26 @@ export default function AccountTypeFormModal({
             put(route('account-types.update', editingType.id), {
                 preserveScroll: true,
                 onSuccess: (page) => {
+                    toast.success('Account type updated successfully.');
                     onClose();
                     reset();
                     if (onSuccessCallback) onSuccessCallback(page);
+                },
+                onError: () => {
+                    toast.error('Failed to update account type.');
                 },
             });
         } else {
             post(route('account-types.store'), {
                 preserveScroll: true,
                 onSuccess: (page) => {
+                    toast.success('Account type created successfully.');
                     onClose();
                     reset();
                     if (onSuccessCallback) onSuccessCallback(page);
+                },
+                onError: () => {
+                    toast.error('Failed to create account type.');
                 },
             });
         }
