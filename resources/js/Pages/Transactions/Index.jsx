@@ -1,3 +1,4 @@
+// resources/js/Pages/Transactions/Index.jsx
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
@@ -49,6 +50,12 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
     const fromRecord = transactions?.from || 0;
     const toRecord = transactions?.to || 0;
     const totalRecords = transactions?.total || 0;
+
+    // Get user's preferred currency from auth props (defaults to PHP if not set)[cite: 19]
+    const userCurrency = auth?.user?.currency || 'PHP';
+
+    const formatCurrency = (val) => 
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: userCurrency }).format(val || 0);
 
     const applyFilters = (overrides = {}) => {
         const query = {
@@ -107,9 +114,6 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
         Boolean(filters.range && filters.range !== 'this_month')
     ].filter(Boolean).length;
 
-    const formatCurrency = (val) => 
-        new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
-
     const openCreateModal = () => {
         setEditingTransaction(null);
         setIsModalOpen(true);
@@ -134,7 +138,6 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
         });
     };
 
-    // Helper to sanitize date formatting for the detail sheet
     const handleRowClick = (tx) => {
         setSelectedDetailTransaction({
             ...tx,
@@ -375,6 +378,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                 transaction={selectedDetailTransaction}
                 onEdit={openEditModal}
                 onDelete={setDeletingTransaction}
+                userCurrency={userCurrency}
             />
 
             <TransactionFormModal

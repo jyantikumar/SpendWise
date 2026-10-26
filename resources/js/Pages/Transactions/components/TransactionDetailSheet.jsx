@@ -1,3 +1,4 @@
+// resources/js/Pages/Transactions/components/TransactionDetailSheet.jsx
 import React from 'react';
 import { FileText, Pencil, Trash2 } from 'lucide-react';
 
@@ -17,14 +18,15 @@ export function TransactionDetailSheet({
     transaction, 
     onEdit, 
     onDelete,
-    currentDate 
+    currentDate,
+    userCurrency = 'PHP' // Accept user currency prop with fallback[cite: 22]
 }) {
     if (!transaction) return null;
 
     const formatCurrency = (val) => 
-        new Intl.NumberFormat('en-PH', { 
+        new Intl.NumberFormat('en-US', { 
             style: 'currency', 
-            currency: 'PHP',
+            currency: userCurrency, 
             minimumFractionDigits: 2 
         }).format(val || 0);
 
@@ -120,7 +122,6 @@ export function TransactionDetailSheet({
                     ) : <div />}
 
                     <div className="flex items-center gap-2">
-                        
                         {onEdit && (
                             <Button 
                                 size="sm" 
