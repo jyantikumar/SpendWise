@@ -1,3 +1,4 @@
+// resources/js/Pages/AccountTypes/Index.jsx
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
@@ -19,7 +20,7 @@ import {
 
 import AccountTypeFormModal from '@/Pages/AccountTypes/components/AccountTypeFormModal';
 import AccountTypeDetailsModal from '@/Pages/AccountTypes/components/AccountTypeDetailsModal';
-import { AccountTypeTableList } from '@/Pages/AccountTypes/components/AccountTypeTableList';
+import AccountTypeTableList from '@/Pages/AccountTypes/components/AccountTypeTableList'; // 👈 Removed curly braces here
 
 export default function AccountTypeIndex({ auth, accountTypes = [], categories = [] }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -27,8 +28,11 @@ export default function AccountTypeIndex({ auth, accountTypes = [], categories =
     const [viewingType, setViewingType] = useState(null);
     const [deletingType, setDeletingType] = useState(null);
 
-    const formatCurrency = (val) => 
-        new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
+    // Get user's preferred currency from auth props (defaults to PHP if not set)
+    const userCurrency = auth?.user?.currency || 'PHP';
+
+    const formatCurrency = (val, currency = userCurrency) => 
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || userCurrency }).format(val || 0);
 
     const openCreateModal = () => {
         setEditingType(null);
@@ -85,6 +89,7 @@ export default function AccountTypeIndex({ auth, accountTypes = [], categories =
                             openEditModal={openEditModal}
                             setDeletingType={setDeletingType}
                             formatCurrency={formatCurrency}
+                            userCurrency={userCurrency}
                         />
                     </CardContent>
                 </Card>
@@ -96,6 +101,7 @@ export default function AccountTypeIndex({ auth, accountTypes = [], categories =
                 onClose={() => setViewingType(null)}
                 accountType={viewingType}
                 categories={categories}
+                userCurrency={userCurrency}
             />
 
             {/* Reusable Account Type Form Modal */}

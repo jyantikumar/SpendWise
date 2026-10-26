@@ -35,8 +35,11 @@ class AccountType extends Model
     /**
      * Get all accounts associated with this custom type.
      */
-    public function accounts(): HasMany
-    {
-        return $this->hasMany(Account::class);
-    }
+    // app/Models/AccountType.php
+
+public function accounts(): HasMany
+{
+    // Pass the foreign key ('account_type_id') and local key ('id') explicitly
+    return $this->hasMany(Account::class, 'account_type_id', 'id');
+}
 }

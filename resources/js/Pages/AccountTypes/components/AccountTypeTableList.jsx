@@ -1,3 +1,4 @@
+// resources/js/Pages/AccountTypes/components/AccountTypeTableList.jsx
 import { MoreHorizontal, Pencil, Trash2, Eye } from 'lucide-react';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -8,12 +9,13 @@ import {
     DropdownMenuTrigger 
 } from '@/components/ui/dropdown-menu';
 
-export function AccountTypeTableList({
-    accountTypes,
+export default function AccountTypeTableList({
+    accountTypes = [],
     setViewingType,
     openEditModal,
     setDeletingType,
     formatCurrency,
+    userCurrency = 'PHP'
 }) {
     return (
         <>

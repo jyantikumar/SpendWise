@@ -1,3 +1,4 @@
+// resources/js/Pages/AccountTypes/components/AccountTypeDetailsModal.jsx
 import { useState, useEffect, useMemo } from 'react';
 import { 
     Search, 
@@ -28,7 +29,8 @@ export default function AccountTypeDetailsModal({
     isOpen, 
     onClose, 
     accountType,
-    categories = [] 
+    categories = [],
+    userCurrency = 'PHP' // Accept userCurrency prop with fallback[cite: 46]
 }) {
     const [search, setSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -40,8 +42,8 @@ export default function AccountTypeDetailsModal({
         return accountType?.total_balance ?? accounts.reduce((sum, acc) => sum + Number(acc.balance || 0), 0);
     }, [accountType, accounts]);
 
-    const formatCurrency = (val, currency = 'PHP') => 
-        new Intl.NumberFormat('en-PH', { style: 'currency', currency }).format(val || 0);
+    const formatCurrency = (val, currency = userCurrency) => 
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || userCurrency }).format(val || 0);
 
     // Reset search, pagination & selected account when modal opens/changes
     useEffect(() => {
@@ -148,7 +150,7 @@ export default function AccountTypeDetailsModal({
                                             </TableCell>
                                             <TableCell className="text-right font-semibold text-xs whitespace-nowrap text-emerald-400">
                                                 <div className="flex items-center justify-end gap-1.5">
-                                                    <span>{formatCurrency(acc.balance, acc.currency || 'PHP')}</span>
+                                                    <span>{formatCurrency(acc.balance, acc.currency || userCurrency)}</span>
                                                     <ArrowRight className="h-3 w-3 text-zinc-600 group-hover:text-zinc-300 transition-colors" />
                                                 </div>
                                             </TableCell>
@@ -212,7 +214,8 @@ export default function AccountTypeDetailsModal({
                 onClose={() => setSelectedAccount(null)}
                 account={selectedAccount}
                 categories={categories}
+                userCurrency={userCurrency}
             />
         </>
     );
-}   
+}

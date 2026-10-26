@@ -1,3 +1,4 @@
+// resources/js/Pages/AccountTypes/components/AccountTransactionsSheet.jsx
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { 
@@ -28,7 +29,8 @@ export default function AccountTransactionsSheet({
     account, 
     categories = [], 
     initialStartDate = '', 
-    initialEndDate = '' 
+    initialEndDate = '',
+    userCurrency = 'PHP' // Accept userCurrency prop with fallback[cite: 45]
 }) {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -53,8 +55,8 @@ export default function AccountTransactionsSheet({
 
     const abortControllerRef = useRef(null);
 
-    const formatCurrency = (val, currency = 'PHP') => 
-        new Intl.NumberFormat('en-PH', { style: 'currency', currency }).format(val || 0);
+    const formatCurrency = (val, currency = userCurrency) => 
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || userCurrency }).format(val || 0);
 
     // Sync initial bounds when opening sheet
     useEffect(() => {
@@ -140,7 +142,7 @@ export default function AccountTransactionsSheet({
 
     // Dynamic Summary Badge Logic
     const renderSummaryBadge = () => {
-        const curr = account?.currency || 'PHP';
+        const curr = account?.currency || userCurrency;
 
         if (selectedType === 'expense') {
             return (
@@ -318,7 +320,7 @@ export default function AccountTransactionsSheet({
                                                 : 'text-blue-400'
                                         }`}>
                                             {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
-                                            {formatCurrency(tx.amount, account?.currency || 'PHP')}
+                                            {formatCurrency(tx.amount, account?.currency || userCurrency)}
                                         </TableCell>
                                     </TableRow>
                                 ))}
