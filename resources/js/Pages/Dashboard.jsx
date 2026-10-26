@@ -54,8 +54,11 @@ export default function Dashboard({
     const [startDateInput, setStartDateInput] = useState(customDates.startDate || '');
     const [endDateInput, setEndDateInput] = useState(customDates.endDate || '');
 
+    // Get user's preferred currency from auth props (defaults to PHP if not set)
+    const userCurrency = auth?.user?.currency || 'PHP';
+
     const formatCurrency = (val) => 
-        new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: userCurrency }).format(val || 0);
 
     const formatDateOnly = (dateString) => {
         if (!dateString) return '';
@@ -216,16 +219,16 @@ export default function Dashboard({
                 />
             )}
 
-<TransactionDetailSheet 
-    open={!!selectedDetailTransaction}
-    onOpenChange={(open) => !open && setSelectedDetailTransaction(null)}
-    transaction={selectedDetailTransaction ? {
-        ...selectedDetailTransaction,
-        date: formatDateOnly(selectedDetailTransaction.date || selectedDetailTransaction.transaction_date)
-    } : null}
-    onEdit={openEditModal}
-    onDelete={setDeletingTransaction}
-/>
+            <TransactionDetailSheet 
+                open={!!selectedDetailTransaction}
+                onOpenChange={(open) => !open && setSelectedDetailTransaction(null)}
+                transaction={selectedDetailTransaction ? {
+                    ...selectedDetailTransaction,
+                    date: formatDateOnly(selectedDetailTransaction.date || selectedDetailTransaction.transaction_date)
+                } : null}
+                onEdit={openEditModal}
+                onDelete={setDeletingTransaction}
+            />
 
             <AlertDialog open={!!deletingTransaction} onOpenChange={(open) => !open && setDeletingTransaction(null)}>
                 <AlertDialogContent>

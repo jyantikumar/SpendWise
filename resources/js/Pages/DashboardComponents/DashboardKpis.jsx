@@ -1,3 +1,4 @@
+// resources/js/Pages/DashboardComponents/DashboardKpis.jsx
 import { useState } from 'react';
 import { Wallet, DollarSign, PieChart as PieChartIcon, Eye, EyeOff } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,10 +7,8 @@ import { Button } from '@/components/ui/button';
 export default function DashboardKpis({ kpis = {}, formatCurrency }) {
     const [showTotalBalance, setShowTotalBalance] = useState(false);
 
-    const defaultFormat = (val) => 
-        new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP' }).format(val || 0);
-
-    const currencyFormatter = formatCurrency || defaultFormat;
+    // Use the formatCurrency passed from Dashboard.jsx (which uses user's currency)
+    const currencyFormatter = formatCurrency;
 
     const income = parseFloat(kpis?.totalIncome) || 0;
     const expense = parseFloat(kpis?.totalExpense) || 0;

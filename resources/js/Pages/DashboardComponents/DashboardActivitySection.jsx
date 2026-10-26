@@ -1,3 +1,4 @@
+// resources/js/Pages/DashboardComponents/DashboardActivitySection.jsx
 import { Link } from '@inertiajs/react';
 import { ArrowUpRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -147,7 +148,7 @@ export default function DashboardActivitySection({
                                         onClick={() => handleAccountClick(acc)}
                                     >
                                         <span className="font-medium text-sm text-zinc-200 truncate">{acc.name}</span>
-                                        <span className="font-semibold text-sm text-zinc-200 shrink-0">{formatCurrency(acc.balance, acc.currency)}</span>
+                                        <span className="font-semibold text-sm text-zinc-200 shrink-0">{formatCurrency(acc.balance)}</span>
                                     </div>
                                 ))
                             ) : (
@@ -174,7 +175,7 @@ export default function DashboardActivitySection({
                                                 onClick={() => handleAccountClick(acc)}
                                             >
                                                 <TableCell className="font-medium text-zinc-300">{acc.name}</TableCell>
-                                                <TableCell className="text-right font-semibold text-zinc-300">{formatCurrency(acc.balance, acc.currency)}</TableCell>
+                                                <TableCell className="text-right font-semibold text-zinc-300">{formatCurrency(acc.balance)}</TableCell>
                                             </TableRow>
                                         ))
                                     ) : (
