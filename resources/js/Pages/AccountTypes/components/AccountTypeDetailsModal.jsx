@@ -30,7 +30,7 @@ export default function AccountTypeDetailsModal({
     onClose, 
     accountType,
     categories = [],
-    userCurrency = 'PHP' // Accept userCurrency prop with fallback[cite: 46]
+    userCurrency = 'PHP' 
 }) {
     const [search, setSearch] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
@@ -101,7 +101,7 @@ export default function AccountTypeDetailsModal({
                             {/* Total Balance Badge */}
                             <div className="shrink-0">
                                 <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs font-semibold px-2.5 py-1 whitespace-nowrap">
-                                    Total: {formatCurrency(totalBalance)}
+                                    Total: {formatCurrency(totalBalance, userCurrency)}
                                 </Badge>
                             </div>
                         </div>
@@ -150,7 +150,8 @@ export default function AccountTypeDetailsModal({
                                             </TableCell>
                                             <TableCell className="text-right font-semibold text-xs whitespace-nowrap text-emerald-400">
                                                 <div className="flex items-center justify-end gap-1.5">
-                                                    <span>{formatCurrency(acc.balance, acc.currency || userCurrency)}</span>
+                                                    {/* 👈 Strictly use global userCurrency */}
+                                                    <span>{formatCurrency(acc.balance, userCurrency)}</span>
                                                     <ArrowRight className="h-3 w-3 text-zinc-600 group-hover:text-zinc-300 transition-colors" />
                                                 </div>
                                             </TableCell>

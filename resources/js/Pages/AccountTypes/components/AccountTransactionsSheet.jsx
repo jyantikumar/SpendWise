@@ -30,7 +30,7 @@ export default function AccountTransactionsSheet({
     categories = [], 
     initialStartDate = '', 
     initialEndDate = '',
-    userCurrency = 'PHP' // Accept userCurrency prop with fallback[cite: 45]
+    userCurrency = 'PHP' 
 }) {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -38,7 +38,7 @@ export default function AccountTransactionsSheet({
 
     // Filter States
     const [search, setSearch] = useState('');
-    const [selectedType, setSelectedType] = useState('all'); // Default: 'all'
+    const [selectedType, setSelectedType] = useState('all'); 
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [startDate, setStartDate] = useState(initialStartDate);
     const [endDate, setEndDate] = useState(initialEndDate);
@@ -70,26 +70,22 @@ export default function AccountTransactionsSheet({
         }
     }, [isOpen, initialStartDate, initialEndDate]);
 
-    // Reset page back to 1 whenever generic filters change
     const handleFilterChange = (setter, value) => {
         setter(value);
         setCurrentPage(1);
     };
 
-    // Handle segmented type change & reset selected category back to 'all'
     const handleTypeChange = (newType) => {
         setSelectedType(newType);
         setSelectedCategory('all');
         setCurrentPage(1);
     };
 
-    // Filter categories dynamically based on selected transaction type
     const filteredCategories = categories.filter((cat) => {
         if (selectedType === 'all') return false;
         return cat.type === selectedType;
     });
 
-    // Fetch account transactions on filter / page change
     const fetchTransactions = async (searchTerm, page = 1) => {
         if (!account?.id) return;
 
@@ -140,9 +136,8 @@ export default function AccountTransactionsSheet({
         return () => clearTimeout(timer);
     }, [isOpen, account?.id, search, selectedType, selectedCategory, startDate, endDate, currentPage]);
 
-    // Dynamic Summary Badge Logic
     const renderSummaryBadge = () => {
-        const curr = account?.currency || userCurrency;
+        const curr = userCurrency; // 👈 Strictly use global userCurrency
 
         if (selectedType === 'expense') {
             return (
@@ -184,7 +179,6 @@ export default function AccountTransactionsSheet({
                 side="right" 
                 className="w-full sm:max-w-[580px] lg:max-w-[640px] flex flex-col p-4 sm:p-6 border-l border-zinc-800 bg-background text-zinc-100 overflow-hidden"
             >
-                {/* Sheet Header */}
                 <SheetHeader className="pb-3 border-b border-zinc-800 shrink-0 text-left">
                     <div className="flex items-center justify-between gap-3 pr-6">
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -207,16 +201,13 @@ export default function AccountTransactionsSheet({
                             </div>
                         </div>
 
-                        {/* Total Badge */}
                         <div className="shrink-0">
                             {renderSummaryBadge()}
                         </div>
                     </div>
                 </SheetHeader>
 
-                {/* Filter Controls Bar */}
                 <div className="flex flex-col gap-2.5 py-3 border-b border-zinc-800 bg-zinc-900/40 -mx-4 px-4 sm:-mx-6 sm:px-6 shrink-0">
-                    {/* Segmented Type Control */}
                     <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs w-full shrink-0">
                         {[
                             { label: 'All', value: 'all' },
@@ -238,7 +229,6 @@ export default function AccountTransactionsSheet({
                         ))}
                     </div>
 
-                    {/* Search Input & Dynamic Category Select */}
                     <div className="flex flex-col sm:flex-row gap-2 items-stretch">
                         <div className="relative flex-1">
                             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
@@ -269,7 +259,6 @@ export default function AccountTransactionsSheet({
                         )}
                     </div>
 
-                    {/* Date Bounds Inputs */}
                     <div className="grid grid-cols-2 gap-2">
                         <Input
                             type="date"
@@ -286,7 +275,6 @@ export default function AccountTransactionsSheet({
                     </div>
                 </div>
 
-                {/* Transactions Table Container */}
                 <div className="flex-1 overflow-y-auto min-h-[220px] my-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                     {loading ? (
                         <div className="flex flex-col items-center justify-center h-48 gap-2 text-zinc-400">
@@ -320,7 +308,8 @@ export default function AccountTransactionsSheet({
                                                 : 'text-blue-400'
                                         }`}>
                                             {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
-                                            {formatCurrency(tx.amount, account?.currency || userCurrency)}
+                                            {/* 👈 Strictly use global userCurrency */}
+                                            {formatCurrency(tx.amount, userCurrency)}
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -335,7 +324,6 @@ export default function AccountTransactionsSheet({
                     )}
                 </div>
 
-                {/* Sheet Pagination Footer */}
                 {paginationData.total > 0 && (
                     <div className="flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-zinc-800 pt-3 text-xs text-zinc-400 shrink-0">
                         <div className="text-[11px] sm:text-xs">
