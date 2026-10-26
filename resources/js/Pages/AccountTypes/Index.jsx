@@ -25,8 +25,8 @@ import {
     AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
 
-import AccountTypeFormModal from '@/components/AccountTypeFormModal';
-import AccountTypeDetailsModal from '@/components/AccountTypeDetailsModal';
+import AccountTypeFormModal from '@/Pages/AccountTypes/components/AccountTypeFormModal';
+import AccountTypeDetailsModal from '@/Pages/AccountTypes/components/AccountTypeDetailsModal';
 
 export default function AccountTypeIndex({ auth, accountTypes = [], categories = [] }) {
     const [isModalOpen, setIsModalOpen] = useState(false);

@@ -36,8 +36,8 @@ import {
     AlertDialogTitle 
 } from '@/components/ui/alert-dialog';
 
-import CategoryTransactionsModal from '@/components/CategoryTransactionsModal';
-import CategoryFormModal from '@/components/CategoryFormModal';
+import CategoryTransactionsModal from '@/Pages/Categories/components/CategoryTransactionsModal';
+import CategoryFormModal from '@/Pages/Categories/components/CategoryFormModal';
 
 export default function CategoryIndex({ auth, categories = [], accounts = [] }) {
     const [isCreateOpen, setIsCreateOpen] = useState(false);

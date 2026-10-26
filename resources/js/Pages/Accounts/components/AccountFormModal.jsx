@@ -15,7 +15,7 @@ import {
     DialogTitle 
 } from '@/components/ui/dialog';
 
-import AccountTypeFormModal from '@/components/AccountTypeFormModal';
+import AccountTypeFormModal from '@/Pages/AccountTypes/components/AccountTypeFormModal';
 
 // Preset Hex Color Palette
 const HEX_PRESETS = [

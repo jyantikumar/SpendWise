@@ -20,7 +20,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
-import AccountTransactionsSheet from '@/components/AccountTransactionsSheet';
+import AccountTransactionsSheet from '@/Pages/AccountTypes/components/AccountTransactionsSheet';
 
 const ITEMS_PER_PAGE = 5;
 

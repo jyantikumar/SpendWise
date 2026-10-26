@@ -14,8 +14,8 @@ import {
     DialogTitle 
 } from '@/components/ui/dialog';
 
-import CategoryFormModal from '@/components/CategoryFormModal';
-import AccountFormModal from '@/components/AccountFormModal';
+import CategoryFormModal from '@/Pages/Categories/components/CategoryFormModal';
+import AccountFormModal from '@/Pages/Accounts/components/AccountFormModal';
 
 export default function TransactionFormModal({
     isOpen,

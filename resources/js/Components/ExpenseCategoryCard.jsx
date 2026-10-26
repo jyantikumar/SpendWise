@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { PieChart as PieIcon } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import CategoryTransactionsModal from '@/components/CategoryTransactionsModal';
+import CategoryTransactionsModal from '@/Pages/Categories/components/CategoryTransactionsModal';
 
 // SVG Donut Chart Component
 function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {

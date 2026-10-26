@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Wallet } from 'lucide-react';
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import AccountTransactionsModal from '@/components/AccountTransactionsModal';
+import AccountTransactionsModal from '@/Pages/Accounts/components/AccountTransactionsModal';
 
 // Color Palette for Account Donut Slices
 const ACCOUNT_COLORS = [
