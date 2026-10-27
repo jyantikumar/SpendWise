@@ -95,15 +95,7 @@ export default function DataExportImport() {
                 {/* Main Command Center Card */}
                 <Card className={`shadow-lg overflow-hidden transition-colors ${mode === 'clear' ? 'border-destructive/30 bg-zinc-900' : 'border-zinc-800 bg-zinc-900'}`}>
                     <CardHeader className="space-y-1 pb-0 border-b border-zinc-800/80">
-                        <div className="flex items-center justify-between pb-2">
-                            <CardTitle className={`text-sm font-semibold flex items-center gap-2 ${mode === 'clear' ? 'text-destructive' : 'text-zinc-100'}`}>
-                                {mode === 'clear' ? <AlertTriangle className="h-4 w-4" /> : <ArrowRightLeft className="h-4 w-4 text-zinc-400" />}
-                                {mode === 'clear' ? 'Danger Zone' : 'Data Portability Hub'}
-                            </CardTitle>
-                        </div>
-                        <CardDescription className="text-zinc-400 text-xs pb-3">
-                            {mode === 'clear' ? 'Permanently delete workspace logs and records.' : 'Backup workspace records or migrate logs securely.'}
-                        </CardDescription>
+                      
 
                         {/* Top-Level Mode Switcher: Underline Tabs */}
                         <div className="flex border-b border-zinc-800/80 gap-6">
