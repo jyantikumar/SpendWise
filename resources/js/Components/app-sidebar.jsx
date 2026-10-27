@@ -9,7 +9,8 @@ import {
     DollarSign,
     ChevronUp,
     ChartLine,
-    Calendar
+    Calendar,
+    ArrowLeftRight // 👈 1. Import an icon for import/export
 } from 'lucide-react';
 import { Link, router, usePage } from '@inertiajs/react';
 
@@ -39,7 +40,7 @@ const navGroups = [
             { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
             { title: 'Transactions', url: '/transactions', icon: ReceiptText },
             { title: 'Recurring Payments', url: '/subscriptions', icon: Calendar },
-             { title: 'Analysis', url: '/analysis', icon: ChartLine },
+            { title: 'Analysis', url: '/analysis', icon: ChartLine },
         ],
     },
     {
@@ -48,6 +49,7 @@ const navGroups = [
             { title: 'Accounts', url: '/accounts', icon: Wallet },
             { title: 'Account Types', url: '/account-types', icon: Layers },
             { title: 'Categories', url: '/categories', icon: Tags },
+            { title: 'Data Management', url: '/settings/data', icon: ArrowLeftRight }, // 👈 2. Added here!
         ],
     },
 ];

@@ -57,7 +57,7 @@ export default function DeleteUserForm({ className = '' }) {
         <Card className={`border-destructive/30 bg-destructive/5 shadow-sm ${className}`}>
             <CardHeader>
                 <CardTitle className="text-base font-semibold text-destructive flex items-center gap-2">
-                    <ShieldAlert className="h-4 w-4 text-destructive" /> Delete Account
+                    <ShieldAlert className="h-4 w-4 text-zinc-200" /> Delete Account
                 </CardTitle>
                 <CardDescription>
                     Permanently delete your account and all associated transaction records.
