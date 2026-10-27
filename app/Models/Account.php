@@ -15,7 +15,9 @@ class Account extends Model
         'user_id',
         'name',
         'type',
+        'account_type_id', // MUST be here for the import to link them
         'balance',
+        'is_active',
         'color', 
         'is_active',
     ];

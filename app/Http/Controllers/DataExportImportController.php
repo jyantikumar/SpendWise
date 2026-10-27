@@ -66,12 +66,27 @@ class DataExportImportController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. Map and Import Account Types
+            // 1. Map and Import Account Types (Handling Soft Deletes to bypass Unique Constraints)
             $accountTypeMap = [];
             foreach ($data['account_types'] ?? [] as $item) {
                 $oldId = $item['id'] ?? null;
                 unset($item['id'], $item['user_id'], $item['created_at'], $item['updated_at'], $item['deleted_at']);
-                $new = AccountType::updateOrCreate(['user_id' => $userId, 'name' => $item['name']], $item);
+                
+                $existing = AccountType::withTrashed()
+                    ->where('user_id', $userId)
+                    ->where('name', $item['name'])
+                    ->first();
+
+                if ($existing) {
+                    if ($existing->trashed()) {
+                        $existing->restore();
+                    }
+                    $existing->update($item);
+                    $new = $existing;
+                } else {
+                    $new = AccountType::create(array_merge(['user_id' => $userId, 'name' => $item['name']], $item));
+                }
+
                 if ($oldId) $accountTypeMap[$oldId] = $new->id;
             }
 
@@ -107,10 +122,9 @@ class DataExportImportController extends Controller
                 unset($item['id'], $item['user_id'], $item['created_at'], $item['updated_at'], $item['deleted_at']);
                 $item['user_id'] = $userId;
                 
-               RecurringTransaction::updateOrCreate(
+                RecurringTransaction::updateOrCreate(
                     [
                         'user_id' => $userId, 
-                        // Changed 'description' to 'title' to match your migration
                         'title' => $item['title'] ?? 'Imported Recurring Item', 
                         'amount' => $item['amount'] ?? 0
                     ], 

@@ -116,7 +116,7 @@ export default function DataExportImport() {
                                         : 'text-zinc-400 hover:text-zinc-200 border-b-2 border-transparent -mb-[1px]'
                                 }`}
                             >
-                                <Download className="h-3.5 w-3.5" /> Export Data
+                                <Download className="h-3.5 w-3.5" /> Export
                             </button>
                             <button
                                 type="button"
@@ -127,7 +127,7 @@ export default function DataExportImport() {
                                         : 'text-zinc-400 hover:text-zinc-200 border-b-2 border-transparent -mb-[1px]'
                                 }`}
                             >
-                                <Upload className="h-3.5 w-3.5" /> Import Data
+                                <Upload className="h-3.5 w-3.5" /> Import
                             </button>
                             <button
                                 type="button"
@@ -138,7 +138,7 @@ export default function DataExportImport() {
                                         : 'text-zinc-400 hover:text-destructive border-b-2 border-transparent -mb-[1px]'
                                 }`}
                             >
-                                <Trash2 className="h-3.5 w-3.5" /> Clear Account Data
+                                <Trash2 className="h-3.5 w-3.5" /> Clear User Data
                             </button>
                         </div>
                     </CardHeader>
@@ -328,7 +328,7 @@ export default function DataExportImport() {
                         {/* MODE: CLEAR */}
                         {mode === 'clear' && (
                             <div className="space-y-3 pt-1 animate-in fade-in-50 duration-150">
-                                <div className="p-4 rounded-lg border border-destructive/30 bg-destructive/5 space-y-2">
+                                <div className="p-4 rounded-lg space-y-2">
                                     <div className="font-medium text-destructive text-xs flex items-center gap-2">
                                         <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
                                         Destructive Workspace Action
