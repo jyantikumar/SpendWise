@@ -183,19 +183,22 @@ export default function SplitShow({ auth, splitEvent, totalSpent, balances, debt
                 {/* Top Header Actions */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
                     <div className="flex items-center gap-3">
-                        <Button asChild variant="outline" size="sm" className="border-zinc-800 text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100 h-9 text-xs">
-                            <Link href={route('splits.index')}>
-                                <ArrowLeft className="mr-2 h-4 w-4" /> Back to Splits
-                            </Link>
-                        </Button>
+                       <a 
+  href={route('splits.index')} 
+  className="inline-flex items-center justify-center rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100 h-9 px-3 text-xs"
+>
+  <ArrowLeft className="mr-2 h-4 w-4" />
+  Back to Splits
+</a>
+
                         <Badge variant="outline" className={`text-[10px] tracking-wider py-1 px-2.5 flex items-center gap-1.5 ${
                             isSettled 
-                                ? 'bg-emerald-950/40 text-emerald-400 border-emerald-900/60' 
+                                ?'bg-green-900 text-zinc-200 border-emerald-900/60' 
                                 : 'bg-zinc-900/60 text-zinc-400 border-zinc-800'
                         }`}>
                             {isSettled ? (
                                 <>
-                                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-400" />
+                                    <CheckCircle2 className="h-3.5 w-3.5 " />
                                     <span>PAID & SETTLED</span>
                                 </>
                             ) : (

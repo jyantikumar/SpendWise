@@ -9,11 +9,47 @@ use Inertia\Inertia;
 
 class SplitEventController extends Controller
 {
-    public function index()
+public function index()
     {
         $events = SplitEvent::with(['expenses.shares', 'settlements'])
             ->latest('event_date')
-            ->get();
+            ->get()
+            ->map(function ($event) {
+                // Calculate total spent for this event
+                $event->total_spent = $event->expenses->sum('amount');
+
+                // Calculate if the event is actually settled
+                $balances = [];
+                $addBalance = function (&$arr, $name, $amount) {
+                    $arr[$name] = ($arr[$name] ?? 0) + $amount;
+                };
+
+                foreach ($event->expenses as $expense) {
+                    $addBalance($balances, $expense->paid_by, $expense->amount);
+                    foreach ($expense->shares as $share) {
+                        $addBalance($balances, $share->participant_name, -$share->share_amount);
+                    }
+                }
+
+                foreach ($event->settlements as $settlement) {
+                    $addBalance($balances, $settlement->payer_name, $settlement->amount);
+                    $addBalance($balances, $settlement->payee_name, -$settlement->amount);
+                }
+
+                $hasUnpaidDebts = false;
+                foreach ($balances as $bal) {
+                    if (round($bal, 2) != 0) {
+                        $hasUnpaidDebts = true;
+                        break;
+                    }
+                }
+
+                $computedStatus = ($event->expenses->count() > 0 && !$hasUnpaidDebts) ? 'settled' : 'open';
+                $event->status = $computedStatus;
+                $event->event_date = \Carbon\Carbon::parse($event->event_date)->format('Y-m-d');
+
+                return $event;
+            });
 
         return Inertia::render('Splits/Index', [
             'events' => $events,
@@ -32,7 +68,31 @@ class SplitEventController extends Controller
 
         return redirect()->back()->with('success', 'Split event created successfully.');
     }
+public function update(Request $request, SplitEvent $splitEvent)
+    {
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'event_date' => 'required|date',
+        ]);
 
+        $splitEvent->update($validated);
+
+        return redirect()->back()->with('success', 'Split event updated successfully.');
+    }
+
+    public function destroy(SplitEvent $splitEvent)
+    {
+        // Clean up related records (or let database foreign key cascades handle it)
+        foreach ($splitEvent->expenses as $expense) {
+            $expense->shares()->delete();
+            $expense->delete();
+        }
+        $splitEvent->settlements()->delete();
+        $splitEvent->delete();
+
+        return redirect()->route('splits.index')->with('success', 'Split event deleted successfully.');
+    }
 public function show(SplitEvent $splitEvent)
     {
         // Paginate expenses instead of loading all at once (e.g., 10 per page)

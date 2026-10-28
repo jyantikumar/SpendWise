@@ -75,6 +75,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/splits', [SplitEventController::class, 'index'])->name('splits.index');
     Route::post('/splits', [SplitEventController::class, 'store'])->name('splits.store');
+    Route::put('splits/{splitEvent}', [SplitEventController::class, 'update'])->name('splits.update');
+Route::delete('splits/{splitEvent}', [SplitEventController::class, 'destroy'])->name('splits.destroy');
     Route::get('/splits/{splitEvent}', [SplitEventController::class, 'show'])->name('splits.show');
     
 Route::put('/splits/{splitEvent}/expenses/{expense}', [SplitEventController::class, 'updateExpense'])->name('splits.expenses.update');

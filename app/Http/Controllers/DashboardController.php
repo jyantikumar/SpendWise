@@ -13,26 +13,28 @@ use Carbon\Carbon;
 class DashboardController extends Controller
 {
     public function index(Request $request)
-    {
-        $userId = $request->user()->id;
-        $filter = $request->input('range', 'this_day');
+{
+    $userId = $request->user()->id;
+    // Change default filter from 'this_day' to 'this_month'
+    $filter = $request->input('range', 'this_month'); 
 
-        $customStartDate = $request->input('start_date');
-        $customEndDate   = $request->input('end_date');
+    $customStartDate = $request->input('start_date');
+    $customEndDate   = $request->input('end_date');
 
-        // Resolve date boundaries based on filter
-        if ($filter === 'custom' && $customStartDate && $customEndDate) {
-            $startDate = Carbon::parse($customStartDate)->startOfDay();
-            $endDate   = Carbon::parse($customEndDate)->endOfDay();
-        } else {
-            [$startDate, $endDate] = match ($filter) {
-                'this_day'     => [now()->startOfDay(), now()->endOfDay()],
-                'this_week'    => [now()->startOfWeek(), now()->endOfWeek()],
-                'last_30_days' => [now()->subDays(30)->startOfDay(), now()->endOfDay()],
-                'this_year'    => [now()->startOfYear(), now()->endOfYear()],
-                default        => [now()->startOfMonth(), now()->endOfMonth()],
-            };
-        }
+    // Resolve date boundaries based on filter
+    if ($filter === 'custom' && $customStartDate && $customEndDate) {
+        $startDate = Carbon::parse($customStartDate)->startOfDay();
+        $endDate   = Carbon::parse($customEndDate)->endOfDay();
+    } else {
+        [$startDate, $endDate] = match ($filter) {
+            'this_day'     => [now()->startOfDay(), now()->endOfDay()],
+            'this_week'    => [now()->startOfWeek(), now()->endOfWeek()],
+            'this_month'   => [now()->startOfMonth(), now()->endOfMonth()], // 👈 Ensure this is explicitly covered
+            'last_30_days' => [now()->subDays(30)->startOfDay(), now()->endOfDay()],
+            'this_year'    => [now()->startOfYear(), now()->endOfYear()],
+            default        => [now()->startOfMonth(), now()->endOfMonth()],
+        };
+    }
 
         $startStr = $startDate->format('Y-m-d H:i:s');
         $endStr   = $endDate->format('Y-m-d H:i:s');
