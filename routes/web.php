@@ -3,6 +3,7 @@
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TransactionController;
+use App\Http\Controllers\SplitEventController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountTypeController; 
@@ -72,6 +73,17 @@ Route::middleware(['auth'])->group(function () {
     Route::patch('/recurring/{recurringTransaction}/toggle', [RecurringTransactionController::class, 'toggle'])->name('recurring.toggle');
     Route::post('/recurring/{recurringTransaction}/skip', [RecurringTransactionController::class, 'skip'])->name('recurring.skip');
 
+    Route::get('/splits', [SplitEventController::class, 'index'])->name('splits.index');
+    Route::post('/splits', [SplitEventController::class, 'store'])->name('splits.store');
+    Route::get('/splits/{splitEvent}', [SplitEventController::class, 'show'])->name('splits.show');
+    
+Route::put('/splits/{splitEvent}/expenses/{expense}', [SplitEventController::class, 'updateExpense'])->name('splits.expenses.update');
+    Route::delete('/splits/{splitEvent}/expenses/{expense}', [SplitEventController::class, 'destroyExpense'])->name('splits.expenses.destroy');
+    
+    Route::post('/splits/{splitEvent}/expenses', [SplitEventController::class, 'storeExpense'])->name('splits.expenses.store');
+    Route::post('/splits/{splitEvent}/settlements', [SplitEventController::class, 'storeSettlement'])->name('splits.settlements.store');
+    Route::patch('/splits/{splitEvent}/status', [SplitEventController::class, 'updateStatus'])->name('splits.status.update');
+    
     Route::get('/settings/data', [DataExportImportController::class, 'index'])->name('settings.data');
     
     // JSON routes

@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
 {
     Schema::table('accounts', function (Blueprint $table) {
-        $table->string('color', 7)->default('#3b82f6')->after('currency');
+        $table->string('color', 7)->default('#3b82f6');
     });
 }
 

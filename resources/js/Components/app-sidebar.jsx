@@ -10,7 +10,8 @@ import {
     ChevronUp,
     ChartLine,
     Calendar,
-    ArrowLeftRight // 👈 1. Import an icon for import/export
+    ArrowLeftRight,
+Users
 } from 'lucide-react';
 import { Link, router, usePage } from '@inertiajs/react';
 
@@ -39,6 +40,7 @@ const navGroups = [
         items: [
             { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
             { title: 'Transactions', url: '/transactions', icon: ReceiptText },
+            { title: 'Split Payments', url: '/splits', icon: Users },
             { title: 'Recurring Payments', url: '/subscriptions', icon: Calendar },
             { title: 'Analysis', url: '/analysis', icon: ChartLine },
         ],
