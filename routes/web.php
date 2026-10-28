@@ -83,7 +83,9 @@ Route::put('/splits/{splitEvent}/expenses/{expense}', [SplitEventController::cla
     Route::post('/splits/{splitEvent}/expenses', [SplitEventController::class, 'storeExpense'])->name('splits.expenses.store');
     Route::post('/splits/{splitEvent}/settlements', [SplitEventController::class, 'storeSettlement'])->name('splits.settlements.store');
     Route::patch('/splits/{splitEvent}/status', [SplitEventController::class, 'updateStatus'])->name('splits.status.update');
-    
+    // Add these inside your split event routes group:
+Route::put('splits/{splitEvent}/settlements/{settlement}', [SplitEventController::class, 'updateSettlement'])->name('splits.settlements.update');
+Route::delete('splits/{splitEvent}/settlements/{settlement}', [SplitEventController::class, 'destroySettlement'])->name('splits.settlements.destroy');
     Route::get('/settings/data', [DataExportImportController::class, 'index'])->name('settings.data');
     
     // JSON routes

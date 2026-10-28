@@ -34,14 +34,13 @@ export default function SplitIndex({ events }) {
             <div className="space-y-6">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-xl font-bold tracking-tight text-zinc-100">Expense Sharing Events</h2>
                         <p className="text-sm text-zinc-400">Keep track of shared group costs and who owes what.</p>
                     </div>
 
                     <Dialog open={openModal} onOpenChange={setOpenModal}>
                         <DialogTrigger asChild>
                             <Button className="bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium">
-                                <Plus className="mr-2 h-4 w-4" /> New Split Event
+                                <Plus className="mr-2 h-4 w-4" /> New Event
                             </Button>
                         </DialogTrigger>
                         <DialogContent className="border-zinc-800 text-zinc-100">

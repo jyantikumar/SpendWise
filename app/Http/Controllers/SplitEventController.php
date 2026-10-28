@@ -33,9 +33,18 @@ class SplitEventController extends Controller
         return redirect()->back()->with('success', 'Split event created successfully.');
     }
 
-    public function show(SplitEvent $splitEvent)
+public function show(SplitEvent $splitEvent)
     {
-        $splitEvent->load(['expenses.shares', 'settlements']);
+        // Paginate expenses instead of loading all at once (e.g., 10 per page)
+        $paginatedExpenses = $splitEvent->expenses()->with(['shares'])
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        // For calculations (balances, debt breakdown, itemized shares), we still need all expenses unpaginated
+        $allExpensesForCalc = $splitEvent->expenses()->with(['shares'])->get();
+
+        $splitEvent->setRelation('expenses', $paginatedExpenses);
 
         $balances = [];
         $totalSpent = 0;
@@ -50,7 +59,7 @@ class SplitEventController extends Controller
             $arr[$name] = ($arr[$name] ?? 0) + $amount;
         };
 
-        foreach ($splitEvent->expenses as $expense) {
+        foreach ($allExpensesForCalc as $expense) {
             $totalSpent += $expense->amount;
             $addBalance($balances, $expense->paid_by, $expense->amount);
             
@@ -63,7 +72,6 @@ class SplitEventController extends Controller
                 
                 $totalShareByPerson[$share->participant_name] = ($totalShareByPerson[$share->participant_name] ?? 0) + $share->share_amount;
 
-                // Build itemized math record for the breakdown view
                 $participantItemizedShares[$share->participant_name][] = [
                     'description' => $expense->description,
                     'total_amount' => $expense->amount,
@@ -76,9 +84,6 @@ class SplitEventController extends Controller
         foreach ($splitEvent->settlements as $settlement) {
             $addBalance($balances, $settlement->payer_name, $settlement->amount);
             $addBalance($balances, $settlement->payee_name, -$settlement->amount);
-
-            $totalSettledPaid[$settlement->payer_name] = ($totalSettledPaid[$settlement->payer_name] ?? 0) + $settlement->amount;
-            $totalSettledReceived[$settlement->payee_name] = ($totalSettledReceived[$settlement->payee_name] ?? 0) + $settlement->amount;
         }
 
         // Pairwise Debt Calculation
@@ -180,7 +185,26 @@ class SplitEventController extends Controller
 
         return redirect()->back()->with('success', 'Event status updated.');
     }
+public function updateSettlement(Request $request, SplitEvent $splitEvent, \App\Models\SplitSettlement $settlement)
+    {
+        $validated = $request->validate([
+            'payer_name' => 'required|string',
+            'payee_name' => 'required|string|different:payer_name',
+            'amount' => 'required|numeric|min:0.01',
+            'paid_at' => 'required|date',
+        ]);
 
+        $settlement->update($validated);
+
+        return redirect()->back()->with('success', 'Settlement updated successfully.');
+    }
+
+    public function destroySettlement(SplitEvent $splitEvent, \App\Models\SplitSettlement $settlement)
+    {
+        $settlement->delete();
+
+        return redirect()->back()->with('success', 'Settlement deleted successfully.');
+    }
     /**
      * Update an existing shared expense.
      */
