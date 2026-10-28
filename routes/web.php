@@ -9,6 +9,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountTypeController; 
 use App\Http\Controllers\AnalysisController;
 use App\Http\Controllers\RecurringTransactionController;
+use App\Http\Controllers\WishlistItemController;
 use App\Http\Controllers\DataExportImportController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -102,6 +103,17 @@ Route::delete('splits/{splitEvent}/settlements/{settlement}', [SplitEventControl
     // CSV routes
     Route::get('/settings/data/export/csv', [DataExportImportController::class, 'exportCsv'])->name('settings.data.export.csv');
     Route::post('/settings/data/import/csv', [DataExportImportController::class, 'importCsv'])->name('settings.data.import.csv');
+
+    Route::get('/wishlist', [WishlistItemController::class, 'index'])->name('wishlist.index');
+Route::post('/wishlist', [WishlistItemController::class, 'store'])->name('wishlist.store');
+Route::get('/wishlist/{wishlist}', [WishlistItemController::class, 'show'])->name('wishlist.show');
+Route::put('/wishlist/{wishlist}', [WishlistItemController::class, 'update'])->name('wishlist.update');
+Route::delete('/wishlist/{wishlist}', [WishlistItemController::class, 'destroy'])->name('wishlist.destroy');
+Route::patch('/wishlist/{wishlist}/status', [WishlistItemController::class, 'toggleStatus'])->name('wishlist.status.toggle');
+
+Route::post('/wishlist/{wishlist}/prices', [WishlistItemController::class, 'storePrice'])->name('wishlist.prices.store');
+Route::put('/wishlist/{wishlist}/prices/{price}', [WishlistItemController::class, 'updatePrice'])->name('wishlist.prices.update');
+Route::delete('/wishlist/{wishlist}/prices/{price}', [WishlistItemController::class, 'destroyPrice'])->name('wishlist.prices.destroy');
 });
 
 require __DIR__.'/auth.php';
