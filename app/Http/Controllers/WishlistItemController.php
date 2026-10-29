@@ -106,9 +106,13 @@ class WishlistItemController extends Controller
     }
 
     public function destroyPrice(WishlistItem $wishlist, WishlistPrice $price)
-    {
-        $price->delete();
-
-        return redirect()->back()->with('success', 'Price link removed.');
+{
+    if ($price->wishlist_item_id !== $wishlist->id) {
+        abort(403);
     }
+
+    $price->delete();
+
+    return redirect()->back()->with('success', 'Price link removed.');
+}
 }

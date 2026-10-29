@@ -6,7 +6,7 @@ use App\Http\Controllers\TransactionController;
 use App\Http\Controllers\SplitEventController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\AccountController;
-use App\Http\Controllers\AccountTypeController; 
+use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\AnalysisController;
 use App\Http\Controllers\RecurringTransactionController;
 use App\Http\Controllers\SavingsGoalController;
@@ -21,7 +21,7 @@ Route::get('/', function () {
 
 // Protected Application Routes
 Route::middleware(['auth'])->group(function () {
-    
+
     // Main Dashboard & Analysis
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/analysis', [AnalysisController::class, 'index'])->name('analysis.index');
@@ -89,12 +89,10 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/{splitEvent}', [SplitEventController::class, 'destroy'])->name('destroy');
         Route::patch('/{splitEvent}/status', [SplitEventController::class, 'updateStatus'])->name('status.update');
 
-        // Nested Expenses
         Route::post('/{splitEvent}/expenses', [SplitEventController::class, 'storeExpense'])->name('expenses.store');
         Route::put('/{splitEvent}/expenses/{expense}', [SplitEventController::class, 'updateExpense'])->name('expenses.update');
         Route::delete('/{splitEvent}/expenses/{expense}', [SplitEventController::class, 'destroyExpense'])->name('expenses.destroy');
 
-        // Nested Settlements
         Route::post('/{splitEvent}/settlements', [SplitEventController::class, 'storeSettlement'])->name('settlements.store');
         Route::put('/{splitEvent}/settlements/{settlement}', [SplitEventController::class, 'updateSettlement'])->name('settlements.update');
         Route::delete('/{splitEvent}/settlements/{settlement}', [SplitEventController::class, 'destroySettlement'])->name('settlements.destroy');
@@ -109,31 +107,33 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/{wishlist}', [WishlistItemController::class, 'destroy'])->name('destroy');
         Route::patch('/{wishlist}/status', [WishlistItemController::class, 'toggleStatus'])->name('status.toggle');
 
-        // Nested Prices
         Route::post('/{wishlist}/prices', [WishlistItemController::class, 'storePrice'])->name('prices.store');
         Route::put('/{wishlist}/prices/{price}', [WishlistItemController::class, 'updatePrice'])->name('prices.update');
         Route::delete('/{wishlist}/prices/{price}', [WishlistItemController::class, 'destroyPrice'])->name('prices.destroy');
     });
-       // Savings Goals
-Route::prefix('savings')->name('savings.')->group(function () {
-    Route::get('/', [SavingsGoalController::class, 'index'])->name('index');
-    Route::post('/', [SavingsGoalController::class, 'store'])->name('store');
-    Route::get('/{savingsGoal}', [SavingsGoalController::class, 'show'])->name('show');
-    Route::put('/{savingsGoal}', [SavingsGoalController::class, 'update'])->name('update');
-    Route::delete('/{savingsGoal}', [SavingsGoalController::class, 'destroy'])->name('destroy');
-});
+
+    // Savings Goals
+    Route::prefix('savings')->name('savings.')->group(function () {
+        Route::get('/', [SavingsGoalController::class, 'index'])->name('index');
+        Route::post('/', [SavingsGoalController::class, 'store'])->name('store');
+        Route::get('/{savingsGoal}', [SavingsGoalController::class, 'show'])->name('show');
+        Route::put('/{savingsGoal}', [SavingsGoalController::class, 'update'])->name('update');
+        Route::delete('/{savingsGoal}', [SavingsGoalController::class, 'destroy'])->name('destroy');
+    });
 
     // Data Export, Import, Templates & Clear Data
     Route::prefix('settings/data')->name('settings.data.')->group(function () {
         Route::get('/', [DataExportImportController::class, 'index'])->name('index');
         Route::delete('/clear', [DataExportImportController::class, 'clearData'])->name('clear');
         Route::get('/template/{format}', [DataExportImportController::class, 'downloadTemplate'])->name('template');
-        
+
         Route::get('/export/json', [DataExportImportController::class, 'exportJson'])->name('export.json');
         Route::post('/import/json', [DataExportImportController::class, 'importJson'])->name('import.json');
-        
+
         Route::get('/export/csv', [DataExportImportController::class, 'exportCsv'])->name('export.csv');
         Route::post('/import/csv', [DataExportImportController::class, 'importCsv'])->name('import.csv');
     });
+
 });
+
 require __DIR__.'/auth.php';

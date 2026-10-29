@@ -210,7 +210,10 @@ export default function WishlistShow({ wishlist, lowestPrice }) {
                                         </TableRow>
                                     ) : (
                                         wishlist.prices.map((p) => {
-                                            const isLowest = Number(p.price) === Number(lowestPrice);
+                                            const isLowest =
+    lowestPrice !== null &&
+    lowestPrice !== undefined &&
+    Number(p.price) === Number(lowestPrice);
 
                                             return (
                                                 <TableRow key={p.id} className="border-b border-zinc-800 hover:bg-zinc-900/40">
@@ -261,7 +264,10 @@ export default function WishlistShow({ wishlist, lowestPrice }) {
                                 <p className="text-[11px] text-zinc-500 text-center py-3">No price comparison links added yet.</p>
                             ) : (
                                 wishlist.prices.map((p) => {
-                                    const isLowest = Number(p.price) === Number(lowestPrice);
+                                    const isLowest =
+    lowestPrice !== null &&
+    lowestPrice !== undefined &&
+    Number(p.price) === Number(lowestPrice);
 
                                     return (
                                         <div key={p.id} className="py-2 flex items-center justify-between gap-2">
