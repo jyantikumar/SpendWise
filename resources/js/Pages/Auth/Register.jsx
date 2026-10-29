@@ -4,6 +4,7 @@ import { Head, Link, useForm } from '@inertiajs/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function Register() {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -16,6 +17,8 @@ export default function Register() {
 
     const [currencySearch, setCurrencySearch] = useState('₱ - Philippine Peso (PHP)');
     const [isOpen, setIsOpen] = useState(false);
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const dropdownRef = useRef(null);
 
     // Comprehensive list of global currencies
@@ -174,37 +177,69 @@ export default function Register() {
                                 )}
                             </div>
 
+                            {/* Password Field with Toggle */}
                             <div className="grid gap-2">
                                 <label htmlFor="password" className="text-sm font-medium leading-none">
                                     Password
                                 </label>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    name="password"
-                                    value={data.password}
-                                    autoComplete="new-password"
-                                    onChange={(e) => setData('password', e.target.value)}
-                                    required
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        name="password"
+                                        value={data.password}
+                                        autoComplete="new-password"
+                                        onChange={(e) => setData('password', e.target.value)}
+                                        className="pr-10"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                    >
+                                        {showPassword ? (
+                                            <EyeOff className="h-4 w-4" />
+                                        ) : (
+                                            <Eye className="h-4 w-4" />
+                                        )}
+                                    </button>
+                                </div>
                                 {errors.password && (
                                     <p className="text-sm text-destructive">{errors.password}</p>
                                 )}
                             </div>
 
+                            {/* Confirm Password Field with Toggle */}
                             <div className="grid gap-2">
                                 <label htmlFor="password_confirmation" className="text-sm font-medium leading-none">
                                     Confirm Password
                                 </label>
-                                <Input
-                                    id="password_confirmation"
-                                    type="password"
-                                    name="password_confirmation"
-                                    value={data.password_confirmation}
-                                    autoComplete="new-password"
-                                    onChange={(e) => setData('password_confirmation', e.target.value)}
-                                    required
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="password_confirmation"
+                                        type={showConfirmPassword ? 'text' : 'password'}
+                                        name="password_confirmation"
+                                        value={data.password_confirmation}
+                                        autoComplete="new-password"
+                                        onChange={(e) => setData('password_confirmation', e.target.value)}
+                                        className="pr-10"
+                                        required
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none"
+                                        aria-label={showConfirmPassword ? 'Hide confirm password' : 'Show confirm password'}
+                                    >
+                                        {showConfirmPassword ? (
+                                            <EyeOff className="h-4 w-4" />
+                                        ) : (
+                                            <Eye className="h-4 w-4" />
+                                        )}
+                                    </button>
+                                </div>
                                 {errors.password_confirmation && (
                                     <p className="text-sm text-destructive">{errors.password_confirmation}</p>
                                 )}
