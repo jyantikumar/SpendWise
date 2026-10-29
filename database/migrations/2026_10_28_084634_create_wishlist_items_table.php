@@ -25,7 +25,7 @@ return new class extends Migration
             $table->foreignId('wishlist_item_id')->constrained('wishlist_items')->onDelete('cascade');
             $table->string('site_name'); // e.g., Shopee, Lazada, Amazon
             $table->decimal('price', 10, 2);
-            $table->string('product_url'); // Direct link to product
+            $table->text('product_url'); // Direct link to product
             $table->timestamps();
         });
     }
