@@ -114,7 +114,7 @@ export default function WishlistShow({ wishlist, lowestPrice }) {
                                     </div>
 
                                     <div>
-                                        <Label htmlFor="price" className="text-zinc-300 text-xs">Price (₱)</Label>
+                                        <Label htmlFor="price" className="text-zinc-300 text-xs">Price</Label>
                                         <Input
                                             id="price"
                                             type="number"
@@ -160,7 +160,7 @@ export default function WishlistShow({ wishlist, lowestPrice }) {
                             <Wallet className="h-3.5 w-3.5 text-zinc-500" />
                         </div>
                         <div className="text-sm sm:text-lg font-bold text-zinc-100 mt-1 truncate">
-                            {wishlist.target_price ? `₱${Number(wishlist.target_price).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'None set'}
+                            {wishlist.target_price ? `${Number(wishlist.target_price).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'None set'}
                         </div>
                     </Card>
 
@@ -226,7 +226,7 @@ export default function WishlistShow({ wishlist, lowestPrice }) {
                                                         )}
                                                     </TableCell>
                                                     <TableCell className="font-semibold text-zinc-100 text-xs py-2.5">
-                                                        ₱{Number(p.price).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                        {Number(p.price).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                     </TableCell>
                                                     <TableCell className="text-right py-2.5">
                                                         <DropdownMenu>
@@ -281,7 +281,7 @@ export default function WishlistShow({ wishlist, lowestPrice }) {
                                                     )}
                                                 </div>
                                                 <p className="font-semibold text-zinc-100 text-xs">
-                                                    ₱{Number(p.price).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                    {Number(p.price).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                 </p>
                                             </div>
 

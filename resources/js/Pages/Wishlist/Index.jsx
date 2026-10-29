@@ -228,7 +228,7 @@ export default function WishlistIndex({ items }) {
                                             <CardTitle className="text-xs sm:text-sm text-zinc-100 font-semibold line-clamp-1">{item.title}</CardTitle>
                                             {item.target_price && (
                                                 <p className="text-[10px] text-zinc-400">
-                                                    Target: ₱{Number(item.target_price).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                                    Target: {Number(item.target_price).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                                 </p>
                                             )}
                                         </div>
@@ -238,7 +238,7 @@ export default function WishlistIndex({ items }) {
                                         <div>
                                             <p className="text-[8px] uppercase tracking-wider text-zinc-500">Lowest</p>
                                             <p className="font-semibold text-zinc-100 text-[11px]">
-                                                {lowestPrice ? `₱${Number(lowestPrice).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'None'}
+                                                {lowestPrice ? `${Number(lowestPrice).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : 'None'}
                                             </p>
                                         </div>
                                         <span className="text-[10px] text-zinc-400 flex items-center gap-0.5 font-medium group-hover:text-zinc-100 transition-colors">
@@ -275,7 +275,7 @@ export default function WishlistIndex({ items }) {
 
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <div className="col-span-1">
-                                <Label htmlFor="target_price" className="text-zinc-300 text-xs">Target Budget (₱)</Label>
+                                <Label htmlFor="target_price" className="text-zinc-300 text-xs">Target Budget</Label>
                                 <Input
                                     id="target_price"
                                     type="number"

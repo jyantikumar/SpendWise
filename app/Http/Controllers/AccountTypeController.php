@@ -14,7 +14,7 @@ class AccountTypeController extends Controller
     {
         $accountTypes = AccountType::where('user_id', $request->user()->id)
             ->with(['accounts' => function ($q) {
-                $q->select('id', 'account_type_id', 'name', 'balance', 'currency');
+                $q->select('id', 'account_type_id', 'name', 'balance');
             }])
             ->withCount('accounts')
             ->orderBy('name')

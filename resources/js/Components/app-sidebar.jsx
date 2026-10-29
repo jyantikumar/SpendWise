@@ -42,13 +42,13 @@ const navGroups = [
         label: 'Main',
         items: [
             { title: 'Dashboard', url: '/dashboard', icon: LayoutDashboard },
-            { title: 'Transactions', url: '/transactions', icon: ReceiptText },
-            { title: 'Split Payments', url: '/splits', icon: Users },
-            { title: 'Recurring Payments', url: '/subscriptions', icon: Calendar },
-            { title: 'Wishlist', url: '/wishlist', icon: Gift },
-            { title: 'Savings Goals', url: '/savings', icon: Target },
-            { title: 'Budgets', url: '/budgets', icon: PiggyBank },
             { title: 'Analysis', url: '/analysis', icon: ChartLine },
+            { title: 'Transactions', url: '/transactions', icon: ReceiptText },
+            { title: 'Recurring Payments', url: '/subscriptions', icon: Calendar },
+            { title: 'Budgets', url: '/budgets', icon: PiggyBank },
+            { title: 'Savings Goals', url: '/savings', icon: Target },
+            { title: 'Wishlist', url: '/wishlist', icon: Gift },
+            { title: 'Split Payments', url: '/splits', icon: Users },
         ],
     },
     {
@@ -98,7 +98,7 @@ export function AppSidebar({ user }) {
             </SidebarHeader>
 
             {/* Navigation Items */}
-            <SidebarContent>
+            <SidebarContent className="[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {navGroups.map((group) => (
                     <SidebarGroup key={group.label}>
                         <SidebarGroupLabel className="text-zinc-500 font-medium text-xs uppercase tracking-wider">
