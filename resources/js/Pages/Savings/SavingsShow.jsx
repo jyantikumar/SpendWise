@@ -20,37 +20,18 @@ import { toast } from 'sonner';
 import AppLayout from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/components/ui/button';
 import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-    CardDescription,
-    CardFooter,
+    Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter,
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
+    Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from '@/components/ui/table';
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
+    AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+    AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
 import SavingsGoalFormModal from '@/Pages/Savings/components/SavingsGoalFormModal';
@@ -75,21 +56,13 @@ export default function SavingsShow({
     const userCurrency = auth?.user?.currency || 'PHP';
 
     const formatCurrency = (val) =>
-        new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: userCurrency,
-        }).format(val || 0);
+        new Intl.NumberFormat('en-US', { style: 'currency', currency: userCurrency }).format(val || 0);
 
     const formatDate = (dateString) => {
         if (!dateString) return '—';
-        return new Date(dateString).toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-        });
+        return new Date(dateString).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
     };
 
-    // Pagination metadata
     const depositRows = deposits?.data || [];
     const prevLink = deposits?.prev_page_url;
     const nextLink = deposits?.next_page_url;
@@ -115,18 +88,13 @@ export default function SavingsShow({
 
     const handleDelete = () => {
         router.delete(route('savings.destroy', goal.id), {
-            onSuccess: () => {
-                toast.success('Savings goal deleted.');
-            },
-            onError: () => {
-                toast.error('Failed to delete savings goal.');
-            },
+            onSuccess: () => toast.success('Savings goal deleted.'),
+            onError: () => toast.error('Failed to delete savings goal.'),
         });
     };
 
     const isCompleted = goal.status === 'completed';
     const depositCount = totalRecords;
-
     const openDepositModal = () => setIsDepositModalOpen(true);
 
     return (
@@ -134,12 +102,7 @@ export default function SavingsShow({
             <div className="space-y-4 sm:space-y-6">
                 {/* Back + Actions Bar */}
                 <div className="flex items-center justify-between gap-2">
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        asChild
-                        className="text-zinc-400 hover:text-zinc-100 -ml-2 px-2 sm:px-3 text-xs sm:text-sm"
-                    >
+                    <Button variant="ghost" size="sm" asChild className="text-zinc-400 hover:text-zinc-100 -ml-2 px-2 sm:px-3 text-xs sm:text-sm">
                         <Link href={route('savings.index')} className="flex items-center gap-1">
                             <ArrowLeft className="h-4 w-4" />
                             <span>Back</span>
@@ -147,7 +110,6 @@ export default function SavingsShow({
                         </Link>
                     </Button>
 
-                    {/* Desktop actions */}
                     <div className="hidden sm:flex items-center gap-2">
                         {!isCompleted && (
                             <Button size="sm" onClick={openDepositModal} className="gap-1.5">
@@ -172,7 +134,6 @@ export default function SavingsShow({
                         </DropdownMenu>
                     </div>
 
-                    {/* Mobile actions */}
                     <div className="flex sm:hidden items-center gap-1.5">
                         {!isCompleted && (
                             <Button size="sm" onClick={openDepositModal} className="gap-1 text-xs h-8 px-2.5">
@@ -213,7 +174,6 @@ export default function SavingsShow({
                                     </CardDescription>
                                 )}
                             </div>
-
                             {isCompleted ? (
                                 <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] px-1.5 sm:px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
                                     <CheckCircle2 className="h-3 w-3" /> Done
@@ -230,18 +190,12 @@ export default function SavingsShow({
                         <div className="grid grid-cols-2 gap-2 sm:flex sm:items-end sm:justify-between">
                             <div>
                                 <p className="text-[11px] sm:text-xs text-zinc-500">Saved so far</p>
-                                <p className="text-xl sm:text-3xl font-bold text-emerald-400">
-                                    {formatCurrency(goal.current_amount)}
-                                </p>
-                                <p className="text-[10px] sm:text-xs text-zinc-500">
-                                    of {formatCurrency(goal.target_amount)}
-                                </p>
+                                <p className="text-xl sm:text-3xl font-bold text-emerald-400">{formatCurrency(goal.current_amount)}</p>
+                                <p className="text-[10px] sm:text-xs text-zinc-500">of {formatCurrency(goal.target_amount)}</p>
                             </div>
                             <div className="text-right">
                                 <p className="text-[11px] sm:text-xs text-zinc-500">Remaining</p>
-                                <p className="text-base sm:text-xl font-semibold text-zinc-200">
-                                    {formatCurrency(goal.remaining_amount)}
-                                </p>
+                                <p className="text-base sm:text-xl font-semibold text-zinc-200">{formatCurrency(goal.remaining_amount)}</p>
                             </div>
                         </div>
 
@@ -258,18 +212,14 @@ export default function SavingsShow({
                                 <Calendar className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
                                 <div className="min-w-0">
                                     <p className="text-[10px] text-zinc-500">Target Date</p>
-                                    <p className="text-zinc-200 font-medium truncate text-[11px] sm:text-xs">
-                                        {formatDate(goal.target_date)}
-                                    </p>
+                                    <p className="text-zinc-200 font-medium truncate text-[11px] sm:text-xs">{formatDate(goal.target_date)}</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-1.5 text-xs">
                                 <Wallet className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
                                 <div className="min-w-0">
                                     <p className="text-[10px] text-zinc-500">Target Amount</p>
-                                    <p className="text-zinc-200 font-medium truncate text-[11px] sm:text-xs">
-                                        {formatCurrency(goal.target_amount)}
-                                    </p>
+                                    <p className="text-zinc-200 font-medium truncate text-[11px] sm:text-xs">{formatCurrency(goal.target_amount)}</p>
                                 </div>
                             </div>
                             <div className="col-span-2 sm:col-span-1 flex items-center gap-1.5 text-xs">
@@ -292,13 +242,10 @@ export default function SavingsShow({
                             <FileText className="h-4 w-4 text-zinc-400" />
                             Deposit History
                         </CardTitle>
-                        <CardDescription className="text-zinc-400 text-xs">
-                            Every savings deposit linked to this goal.
-                        </CardDescription>
+                        <CardDescription className="text-zinc-400 text-xs">Every savings deposit linked to this goal.</CardDescription>
                     </CardHeader>
 
                     <CardContent className="p-0">
-                        {/* Mobile list */}
                         <div className="md:hidden">
                             {depositRows.length > 0 ? (
                                 <div className="divide-y divide-zinc-800/70 px-3.5">
@@ -319,9 +266,7 @@ export default function SavingsShow({
                                                     )}
                                                 </div>
                                                 <div className="font-medium text-xs sm:text-sm text-zinc-200 truncate">
-                                                    {dep.description || (
-                                                        <span className="text-zinc-500 italic">No description</span>
-                                                    )}
+                                                    {dep.description || <span className="text-zinc-500 italic">No description</span>}
                                                 </div>
                                             </div>
                                             <div className="text-right font-semibold text-xs sm:text-sm text-emerald-400 whitespace-nowrap shrink-0">
@@ -344,7 +289,6 @@ export default function SavingsShow({
                             )}
                         </div>
 
-                        {/* Desktop table */}
                         <div className="hidden md:block px-3 sm:px-4">
                             <Table>
                                 <TableHeader>
@@ -363,19 +307,11 @@ export default function SavingsShow({
                                                 onClick={() => openDepositDetail(dep)}
                                                 className="border-b border-zinc-800/70 cursor-pointer hover:bg-zinc-900/40 transition-colors"
                                             >
-                                                <TableCell className="font-medium whitespace-nowrap text-zinc-300 text-xs">
-                                                    {formatDate(dep.transaction_date)}
-                                                </TableCell>
+                                                <TableCell className="font-medium whitespace-nowrap text-zinc-300 text-xs">{formatDate(dep.transaction_date)}</TableCell>
                                                 <TableCell className="max-w-[240px] truncate text-zinc-300 text-sm">
-                                                    {dep.description || (
-                                                        <span className="text-zinc-500 text-xs italic">
-                                                            No description
-                                                        </span>
-                                                    )}
+                                                    {dep.description || <span className="text-zinc-500 text-xs italic">No description</span>}
                                                 </TableCell>
-                                                <TableCell className="text-xs text-zinc-400">
-                                                    {dep.account_name || '—'}
-                                                </TableCell>
+                                                <TableCell className="text-xs text-zinc-400">{dep.account_name || '—'}</TableCell>
                                                 <TableCell className="text-right font-semibold text-sm text-emerald-400 whitespace-nowrap">
                                                     +{formatCurrency(dep.amount)}
                                                 </TableCell>
@@ -387,12 +323,7 @@ export default function SavingsShow({
                                                 No deposits recorded yet.
                                                 {!isCompleted && (
                                                     <div className="mt-3">
-                                                        <Button
-                                                            size="sm"
-                                                            variant="outline"
-                                                            onClick={openDepositModal}
-                                                            className="gap-1.5 border-zinc-700 text-zinc-300"
-                                                        >
+                                                        <Button size="sm" variant="outline" onClick={openDepositModal} className="gap-1.5 border-zinc-700 text-zinc-300">
                                                             <Plus className="h-3.5 w-3.5" /> Add First Deposit
                                                         </Button>
                                                     </div>
@@ -412,29 +343,16 @@ export default function SavingsShow({
                                 <span className="font-medium text-zinc-200">{toRecord}</span> of{' '}
                                 <span className="font-medium text-zinc-200">{totalRecords}</span> records
                             </div>
-
                             <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={!prevLink}
+                                <Button variant="outline" size="sm" disabled={!prevLink}
                                     onClick={() => prevLink && router.visit(prevLink, { preserveState: true, preserveScroll: true })}
-                                    className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
-                                >
+                                    className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs">
                                     <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
                                 </Button>
-
-                                <span className="text-xs font-medium text-zinc-300 px-1">
-                                    {currentPage} / {lastPage}
-                                </span>
-
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={!nextLink}
+                                <span className="text-xs font-medium text-zinc-300 px-1">{currentPage} / {lastPage}</span>
+                                <Button variant="outline" size="sm" disabled={!nextLink}
                                     onClick={() => nextLink && router.visit(nextLink, { preserveState: true, preserveScroll: true })}
-                                    className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
-                                >
+                                    className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs">
                                     Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
                                 </Button>
                             </div>
@@ -443,7 +361,6 @@ export default function SavingsShow({
                 </Card>
             </div>
 
-            {/* Deposit Detail Sheet */}
             <TransactionDetailSheet
                 open={isDetailSheetOpen}
                 onOpenChange={(open) => {
@@ -455,7 +372,6 @@ export default function SavingsShow({
                 userCurrency={userCurrency}
             />
 
-            {/* Modals */}
             <SavingsGoalFormModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
@@ -474,10 +390,7 @@ export default function SavingsShow({
                 defaultSavingsGoalId={goal.id}
             />
 
-            <AlertDialog
-                open={isDeleteDialogOpen}
-                onOpenChange={(open) => !open && setIsDeleteDialogOpen(false)}
-            >
+            <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => !open && setIsDeleteDialogOpen(false)}>
                 <AlertDialogContent className="max-w-[90vw] sm:max-w-lg rounded-lg">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="text-base sm:text-lg">Delete this savings goal?</AlertDialogTitle>
@@ -488,10 +401,7 @@ export default function SavingsShow({
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2">
                         <AlertDialogCancel className="mt-0 text-xs sm:text-sm">Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                            onClick={handleDelete}
-                            className="bg-rose-600 hover:bg-rose-700 text-xs sm:text-sm"
-                        >
+                        <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700 text-xs sm:text-sm">
                             Delete Goal
                         </AlertDialogAction>
                     </AlertDialogFooter>
