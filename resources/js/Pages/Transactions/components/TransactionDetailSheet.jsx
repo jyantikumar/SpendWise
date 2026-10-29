@@ -1,4 +1,3 @@
-// resources/js/Pages/Transactions/components/TransactionDetailSheet.jsx
 import React from 'react';
 import { FileText, Pencil, Trash2 } from 'lucide-react';
 
@@ -12,22 +11,22 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 
-export function TransactionDetailSheet({ 
-    open, 
-    onOpenChange, 
-    transaction, 
-    onEdit, 
+export function TransactionDetailSheet({
+    open,
+    onOpenChange,
+    transaction,
+    onEdit,
     onDelete,
     currentDate,
-    userCurrency = 'PHP' // Accept user currency prop with fallback[cite: 22]
+    userCurrency = 'PHP'
 }) {
     if (!transaction) return null;
 
-    const formatCurrency = (val) => 
-        new Intl.NumberFormat('en-US', { 
-            style: 'currency', 
-            currency: userCurrency, 
-            minimumFractionDigits: 2 
+    const formatCurrency = (val) =>
+        new Intl.NumberFormat('en-US', {
+            style: 'currency',
+            currency: userCurrency,
+            minimumFractionDigits: 2
         }).format(val || 0);
 
     const getAmountColor = (type) => {
@@ -35,12 +34,18 @@ export function TransactionDetailSheet({
             case 'income':
                 return 'text-emerald-400';
             case 'expense':
+            case 'savings':
                 return 'text-rose-400';
             case 'transfer':
                 return 'text-blue-400';
             default:
                 return 'text-zinc-200';
         }
+    };
+
+    const getTypeLabel = (type) => {
+        if (type === 'savings') return 'Savings Deposit';
+        return type;
     };
 
     return (
@@ -60,7 +65,7 @@ export function TransactionDetailSheet({
                         <div className="flex justify-between py-2 border-b border-zinc-800/60 items-center">
                             <span className="text-zinc-400">Type</span>
                             <span className="font-semibold uppercase tracking-wider text-zinc-200">
-                                {transaction.type}
+                                {getTypeLabel(transaction.type)}
                             </span>
                         </div>
 
@@ -68,7 +73,7 @@ export function TransactionDetailSheet({
                             <span className="text-zinc-400">Amount</span>
                             <span className={`font-bold text-sm ${getAmountColor(transaction.type)}`}>
                                 {transaction.type === 'income' && '+'}
-                                {transaction.type === 'expense' && '-'}
+                                {(transaction.type === 'expense' || transaction.type === 'savings') && '-'}
                                 {formatCurrency(transaction.amount)}
                             </span>
                         </div>
@@ -108,9 +113,9 @@ export function TransactionDetailSheet({
 
                 <SheetFooter className="pt-4 border-t border-zinc-800 flex flex-row items-center justify-between gap-2">
                     {onDelete ? (
-                        <Button 
-                            variant="outline" 
-                            size="sm" 
+                        <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => {
                                 onOpenChange(false);
                                 onDelete(transaction);
@@ -123,8 +128,8 @@ export function TransactionDetailSheet({
 
                     <div className="flex items-center gap-2">
                         {onEdit && (
-                            <Button 
-                                size="sm" 
+                            <Button
+                                size="sm"
                                 onClick={() => {
                                     onOpenChange(false);
                                     onEdit(transaction);

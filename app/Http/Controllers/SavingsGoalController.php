@@ -2,7 +2,9 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Account;
 use App\Models\SavingsGoal;
+use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -80,17 +82,22 @@ class SavingsGoalController extends Controller
         $user = $request->user();
 
         $deposits = $savingsGoal->transactions()
-            ->with(['account'])
+            ->with(['account', 'category'])
             ->orderBy('transaction_date', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(15)
             ->withQueryString()
             ->through(fn ($t) => [
                 'id'               => $t->id,
+                'type'             => $t->type,
                 'amount'           => (float) $t->amount,
                 'description'      => $t->description,
                 'transaction_date' => $t->transaction_date?->format('Y-m-d'),
+                'account_id'       => $t->account_id,
                 'account_name'     => $t->account?->name,
+                'category_id'      => $t->category_id,
+                'category_name'    => $t->category?->name,
+                'savings_goal_id'  => $t->savings_goal_id,
             ]);
 
         return Inertia::render('Savings/SavingsShow', [
@@ -137,13 +144,70 @@ class SavingsGoalController extends Controller
         $this->authorizeGoal($request, $savingsGoal);
 
         DB::transaction(function () use ($savingsGoal) {
-            $savingsGoal->transactions()->update(['savings_goal_id' => null]);
+            // Load every deposit linked to this goal
+            $deposits = $savingsGoal->transactions()->get();
+
+            foreach ($deposits as $tx) {
+                // 1. Reverse side-effects: refund funding account, undo savings increment
+                $this->reverseTransactionEffects($tx);
+
+                // 2. Delete the transaction record
+                $tx->delete();
+            }
+
+            // 3. Delete the goal itself
             $savingsGoal->delete();
         });
 
         return redirect()
             ->route('savings.index')
-            ->with('success', 'Savings goal deleted.');
+            ->with('success', 'Savings goal and its deposits deleted.');
+    }
+
+    /**
+     * Reverse the balance / savings side-effects of a transaction
+     * without deleting it. Mirrors TransactionController::applyEffects().
+     */
+    private function reverseTransactionEffects(Transaction $tx): void
+    {
+        $amount  = (float) $tx->amount;
+        $account = Account::find($tx->account_id);
+
+        if (!$account) {
+            return; // account already gone; nothing to refund
+        }
+
+        switch ($tx->type) {
+            case 'income':
+                $account->decrement('balance', $amount);
+                break;
+
+            case 'expense':
+                $account->increment('balance', $amount);
+                break;
+
+            case 'transfer':
+                $account->increment('balance', $amount);
+
+                if (!empty($tx->destination_account_id)) {
+                    Account::find($tx->destination_account_id)?->decrement('balance', $amount);
+                }
+                break;
+
+            case 'savings':
+                // Refund the funding account
+                $account->increment('balance', $amount);
+
+                // Roll back the goal's saved amount
+                if (!empty($tx->savings_goal_id)) {
+                    $goal = SavingsGoal::find($tx->savings_goal_id);
+                    if ($goal) {
+                        $goal->decrement('current_amount', $amount);
+                        $goal->refresh()->syncStatus();
+                    }
+                }
+                break;
+        }
     }
 
     private function authorizeGoal(Request $request, SavingsGoal $goal): void

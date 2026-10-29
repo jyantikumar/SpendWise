@@ -39,12 +39,12 @@ export default function TransactionFormModal({
         return isActive || isCurrentlySelected;
     });
 
-    const availableSavingsGoals = savingsGoals.filter((goal) => {
-        const isActive = goal.status === 'active';
-        const isCurrentlySelected = isEditing && String(goal.id) === String(editingTransaction?.savings_goal_id);
-        const isDefault = defaultSavingsGoalId && String(goal.id) === String(defaultSavingsGoalId);
-        return isActive || isCurrentlySelected || isDefault;
-    });
+        const availableSavingsGoals = savingsGoals.filter((goal) => {
+            const isActive = goal.status === 'active';
+            const isCurrentlySelected = isEditing && String(goal.id) === String(editingTransaction?.savings_goal_id);
+            const isDefault = defaultSavingsGoalId && String(goal.id) === String(defaultSavingsGoalId);
+            return isActive || isCurrentlySelected || isDefault;
+        });
 
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         account_id: '',

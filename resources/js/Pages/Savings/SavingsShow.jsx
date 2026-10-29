@@ -53,6 +53,9 @@ export default function SavingsShow({
     const [selectedDeposit, setSelectedDeposit] = useState(null);
     const [isDetailSheetOpen, setIsDetailSheetOpen] = useState(false);
 
+    const [editingDeposit, setEditingDeposit] = useState(null);
+    const [deletingDeposit, setDeletingDeposit] = useState(null);
+
     const userCurrency = auth?.user?.currency || 'PHP';
 
     const formatCurrency = (val) =>
@@ -74,7 +77,7 @@ export default function SavingsShow({
 
     const toTransactionShape = (dep) => ({
         ...dep,
-        type: 'income',
+        type: 'savings',
         date: dep.transaction_date,
         account: dep.account_name ? { name: dep.account_name } : null,
         category: dep.category_name ? { name: dep.category_name } : null,
@@ -86,6 +89,35 @@ export default function SavingsShow({
         setIsDetailSheetOpen(true);
     };
 
+    const openDepositModal = () => {
+        setEditingDeposit(null);
+        setIsDepositModalOpen(true);
+    };
+
+    const handleEditDeposit = (deposit) => {
+        setSelectedDeposit(null);
+        setIsDetailSheetOpen(false);
+        setEditingDeposit(deposit);
+        setIsDepositModalOpen(true);
+    };
+
+    const handleDeleteDeposit = (deposit) => {
+        setSelectedDeposit(null);
+        setIsDetailSheetOpen(false);
+        setDeletingDeposit(deposit);
+    };
+
+    const confirmDeleteDeposit = () => {
+        if (!deletingDeposit) return;
+        router.delete(route('transactions.destroy', deletingDeposit.id), {
+            onSuccess: () => {
+                toast.success('Deposit deleted.');
+                setDeletingDeposit(null);
+            },
+            onError: () => toast.error('Failed to delete deposit.'),
+        });
+    };
+
     const handleDelete = () => {
         router.delete(route('savings.destroy', goal.id), {
             onSuccess: () => toast.success('Savings goal deleted.'),
@@ -95,7 +127,6 @@ export default function SavingsShow({
 
     const isCompleted = goal.status === 'completed';
     const depositCount = totalRecords;
-    const openDepositModal = () => setIsDepositModalOpen(true);
 
     return (
         <AppLayout title={goal.title} headerTitle="Savings Goal">
@@ -361,6 +392,7 @@ export default function SavingsShow({
                 </Card>
             </div>
 
+            {/* Deposit Detail Sheet — with Edit + Delete */}
             <TransactionDetailSheet
                 open={isDetailSheetOpen}
                 onOpenChange={(open) => {
@@ -370,39 +402,71 @@ export default function SavingsShow({
                 transaction={selectedDeposit ? toTransactionShape(selectedDeposit) : null}
                 currentDate={formatDate(new Date().toISOString())}
                 userCurrency={userCurrency}
+                onEdit={handleEditDeposit}
+                onDelete={handleDeleteDeposit}
             />
 
+            {/* Goal Edit Modal */}
             <SavingsGoalFormModal
                 isOpen={isEditModalOpen}
                 onClose={() => setIsEditModalOpen(false)}
                 editingGoal={goal}
             />
 
+            {/* Deposit Form Modal — handles both create and edit */}
             <TransactionFormModal
                 isOpen={isDepositModalOpen}
-                onClose={() => setIsDepositModalOpen(false)}
-                editingTransaction={null}
+                onClose={() => {
+                    setIsDepositModalOpen(false);
+                    setEditingDeposit(null);
+                }}
+                editingTransaction={editingDeposit}
                 accounts={accounts}
                 categories={categories}
                 accountTypes={accountTypes}
                 savingsGoals={savingsGoals}
-                defaultType="savings"
-                defaultSavingsGoalId={goal.id}
+                defaultType={editingDeposit ? null : 'savings'}
+                defaultSavingsGoalId={editingDeposit ? null : goal.id}
             />
 
+            {/* Goal Delete Confirmation */}
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={(open) => !open && setIsDeleteDialogOpen(false)}>
                 <AlertDialogContent className="max-w-[90vw] sm:max-w-lg rounded-lg">
                     <AlertDialogHeader>
                         <AlertDialogTitle className="text-base sm:text-lg">Delete this savings goal?</AlertDialogTitle>
                         <AlertDialogDescription className="text-xs sm:text-sm">
-                            This will permanently remove <strong>{goal.title}</strong>.
-                            Your deposit transactions will be preserved but unlinked from this goal.
+                            This will permanently remove <strong>{goal.title}</strong> and all its linked deposits.
+                            Account balances will be adjusted to reverse the deposits.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2">
                         <AlertDialogCancel className="mt-0 text-xs sm:text-sm">Cancel</AlertDialogCancel>
                         <AlertDialogAction onClick={handleDelete} className="bg-rose-600 hover:bg-rose-700 text-xs sm:text-sm">
                             Delete Goal
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+
+            {/* Deposit Delete Confirmation */}
+            <AlertDialog open={!!deletingDeposit} onOpenChange={(open) => !open && setDeletingDeposit(null)}>
+                <AlertDialogContent className="max-w-[90vw] sm:max-w-lg rounded-lg">
+                    <AlertDialogHeader>
+                        <AlertDialogTitle className="text-base sm:text-lg">Delete this deposit?</AlertDialogTitle>
+                        <AlertDialogDescription className="text-xs sm:text-sm">
+                            This will permanently remove the{' '}
+                            <strong>{formatCurrency(deletingDeposit?.amount)}</strong> deposit from{' '}
+                            <strong>{formatDate(deletingDeposit?.transaction_date)}</strong>.
+                            The funding account balance will be restored and this goal's saved amount reduced.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-col-reverse sm:flex-row gap-2">
+                        <AlertDialogCancel className="mt-0 text-xs sm:text-sm">Cancel</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={confirmDeleteDeposit}
+                            className="bg-rose-600 hover:bg-rose-700 text-xs sm:text-sm"
+                        >
+                            Delete Deposit
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
