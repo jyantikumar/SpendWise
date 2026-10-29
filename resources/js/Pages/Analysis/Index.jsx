@@ -3,8 +3,10 @@ import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
 
 import AppLayout from '@/Layouts/AuthenticatedLayout';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DateTransactionsDialog } from '@/Pages/Analysis/components/DateTransactionsDialog';
 import ExpensePieChart from '@/Pages/DashboardComponents/ExpensePieChart';
+import CategoryTransactionsModal from '@/Pages/Categories/components/CategoryTransactionsModal';
 import { AccountsBreakdownCard } from '@/components/AccountsBreakdownCard';
 
 import { AnalysisFilterSheet } from '@/Pages/Analysis/components/AnalysisFilterSheet';
@@ -43,7 +45,11 @@ export default function AnalysisIndex({
 
     const [isMobile, setIsMobile] = useState(false);
 
-    // Get user's preferred currency from auth props (defaults to PHP if not set)[cite: 19]
+    // 👇 NEW: Category transactions modal state
+    const [selectedCategory, setSelectedCategory] = useState(null);
+    const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
+    // Get user's preferred currency from auth props (defaults to PHP if not set)
     const userCurrency = auth?.user?.currency || 'PHP';
 
     useEffect(() => {
@@ -218,7 +224,7 @@ export default function AnalysisIndex({
         }
     };
 
-   const handlePrevMonth = () => {
+    const handlePrevMonth = () => {
         const currentVal = calendar.month || calendarMonth;
         const [year, month] = currentVal.split('-').map(Number);
         const prevDate = new Date(year, month - 2, 1); 
@@ -242,6 +248,53 @@ export default function AnalysisIndex({
         const val = e.target.value;
         setCalendarMonth(val);
         applyFilters({ calendar_month: val });
+    };
+
+    // 👇 NEW: derive date boundaries for the category transactions modal
+    const getModalDateBoundaries = () => {
+        // Prefer explicit custom range from active filters
+        if (filters.start_date && filters.end_date) {
+            return { startDate: filters.start_date, endDate: filters.end_date };
+        }
+
+        const today = new Date();
+        const fmt = (d) => d.toISOString().split('T')[0];
+
+        switch (filters.range) {
+            case '1_week': {
+                const past = new Date();
+                past.setDate(today.getDate() - 7);
+                return { startDate: fmt(past), endDate: fmt(today) };
+            }
+            case '6_months': {
+                const past = new Date();
+                past.setMonth(today.getMonth() - 6);
+                return { startDate: fmt(past), endDate: fmt(today) };
+            }
+            case 'yearly':
+            case 'this_year': {
+                return { startDate: fmt(new Date(today.getFullYear(), 0, 1)), endDate: fmt(today) };
+            }
+            case 'this_month': {
+                const [y, m] = (filters.calendar_month || calendarMonth).split('-').map(Number);
+                const start = new Date(y, m - 1, 1);
+                const end = new Date(y, m, 0);
+                return { startDate: fmt(start), endDate: fmt(end) };
+            }
+            case 'monthly':
+            default: {
+                const start = new Date(today.getFullYear(), today.getMonth(), 1);
+                return { startDate: fmt(start), endDate: fmt(today) };
+            }
+        }
+    };
+
+    const { startDate: modalStart, endDate: modalEnd } = getModalDateBoundaries();
+
+    // 👇 NEW: category click handler — opens transactions drill-down modal
+    const handleCategoryClick = (category) => {
+        setSelectedCategory(category);
+        setIsCategoryModalOpen(true);
     };
 
     const incomeVal = kpis?.totalIncome || 0;
@@ -343,13 +396,20 @@ export default function AnalysisIndex({
 
                 {/* Bottom Section: Side-by-Side Distribution Cards */}
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
-                    <div className="p-4 sm:p-6 rounded-xl border border-zinc-800 bg-background flex flex-col">
-                        <h3 className="text-sm font-semibold text-zinc-200 mb-4">Expense Categories</h3>
-                        <ExpensePieChart 
-                            data={categoryData} 
-                            formatCurrency={formatCurrency}
-                        />
-                    </div>
+                    <Card className="border-zinc-800 flex flex-col">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-semibold text-zinc-200">
+                                Expense Categories
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-1">
+                            <ExpensePieChart 
+                                data={categoryData} 
+                                formatCurrency={formatCurrency}
+                                onCategoryClick={handleCategoryClick}
+                            />
+                        </CardContent>
+                    </Card>
 
                     <AccountsBreakdownCard 
                         accounts={accounts} 
@@ -362,6 +422,17 @@ export default function AnalysisIndex({
                     open={!!selectedDayObj}
                     onOpenChange={(open) => !open && setSelectedDayObj(null)}
                     dayData={selectedDayObj}
+                    userCurrency={userCurrency}
+                />
+
+                {/* 👇 NEW: Category transactions drill-down modal */}
+                <CategoryTransactionsModal
+                    isOpen={isCategoryModalOpen}
+                    onClose={() => setIsCategoryModalOpen(false)}
+                    category={selectedCategory}
+                    accounts={accounts}
+                    initialStartDate={modalStart}
+                    initialEndDate={modalEnd}
                     userCurrency={userCurrency}
                 />
             </div>
