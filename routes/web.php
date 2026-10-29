@@ -120,7 +120,14 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{savingsGoal}', [SavingsGoalController::class, 'update'])->name('update');
         Route::delete('/{savingsGoal}', [SavingsGoalController::class, 'destroy'])->name('destroy');
     });
-
+// Budgets
+Route::prefix('budgets')->name('budgets.')->group(function () {
+    Route::get('/', [\App\Http\Controllers\BudgetController::class, 'index'])->name('index');
+    Route::post('/', [\App\Http\Controllers\BudgetController::class, 'store'])->name('store');
+    Route::get('/{budget}', [\App\Http\Controllers\BudgetController::class, 'show'])->name('show');
+    Route::put('/{budget}', [\App\Http\Controllers\BudgetController::class, 'update'])->name('update');
+    Route::delete('/{budget}', [\App\Http\Controllers\BudgetController::class, 'destroy'])->name('destroy');
+});
     // Data Export, Import, Templates & Clear Data
     Route::prefix('settings/data')->name('settings.data.')->group(function () {
         Route::get('/', [DataExportImportController::class, 'index'])->name('index');

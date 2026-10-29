@@ -13,7 +13,8 @@ import {
     ArrowLeftRight,
     Gift,
     Target,
-Users
+    Users,
+    PiggyBank
 } from 'lucide-react';
 import { Link, router, usePage } from '@inertiajs/react';
 
@@ -46,6 +47,7 @@ const navGroups = [
             { title: 'Recurring Payments', url: '/subscriptions', icon: Calendar },
             { title: 'Wishlist', url: '/wishlist', icon: Gift },
             { title: 'Savings Goals', url: '/savings', icon: Target },
+            { title: 'Budgets', url: '/budgets', icon: PiggyBank },
             { title: 'Analysis', url: '/analysis', icon: ChartLine },
         ],
     },
@@ -55,7 +57,7 @@ const navGroups = [
             { title: 'Accounts', url: '/accounts', icon: Wallet },
             { title: 'Account Types', url: '/account-types', icon: Layers },
             { title: 'Categories', url: '/categories', icon: Tags },
-            { title: 'Data Management', url: '/settings/data', icon: ArrowLeftRight }, // 👈 2. Added here!
+            { title: 'Data Management', url: '/settings/data', icon: ArrowLeftRight },
         ],
     },
 ];
