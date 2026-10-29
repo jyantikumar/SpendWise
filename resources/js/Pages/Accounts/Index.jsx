@@ -1,7 +1,7 @@
 // resources/js/Pages/Accounts/Index.jsx
 import { useState } from 'react';
-import { router } from '@inertiajs/react';
-import { Plus } from 'lucide-react';
+import { Link, router } from '@inertiajs/react';
+import { Plus, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 
 import AppLayout from '@/Layouts/AuthenticatedLayout';
@@ -30,14 +30,11 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
     const [editingAccount, setEditingAccount] = useState(null);
     const [deletingAccount, setDeletingAccount] = useState(null);
 
-    // Status Filter State (Default: active)
     const [statusFilter, setStatusFilter] = useState('active');
 
-    // Account Transactions Modal State
     const [selectedAccount, setSelectedAccount] = useState(null);
     const [isTxModalOpen, setIsTxModalOpen] = useState(false);
 
-    // Get user's preferred currency from auth props (defaults to PHP if not set)[cite: 27]
     const userCurrency = auth?.user?.currency || 'PHP';
 
     const formatCurrency = (val, currency = userCurrency) => 
@@ -88,29 +85,40 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
         0
     );
 
-    // Filter accounts list based on status filter
     const filteredAccounts = accounts.filter((acc) => {
         if (statusFilter === 'active') return acc.is_active;
         if (statusFilter === 'inactive') return !acc.is_active;
-        return true; // 'all'
+        return true;
     });
 
     return (
         <AppLayout title="Accounts" headerTitle="Account Management">
             <div className="space-y-6">
                 {/* Top Action Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-zinc-100"></h2>
-                        <p className="text-sm text-zinc-400">
-                            Manage your bank accounts, wallets, credit cards, and custom liquidity sources.
-                        </p>
-                    </div>
+               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+        <h2 className="text-2xl font-bold tracking-tight text-zinc-100"></h2>
+        <p className="text-sm text-zinc-400">
+            Manage your bank accounts, wallets, credit cards, and custom liquidity sources.
+        </p>
+    </div>
 
-                    <Button onClick={openCreateModal} className="w-full sm:w-auto gap-2">
-                        <Plus className="h-4 w-4" /> Add Account
-                    </Button>
-                </div>
+    <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
+        <Button
+            asChild
+            variant="outline"
+            className="gap-2 border-zinc-800 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-900 h-9 text-xs w-full sm:w-auto"
+        >
+            <Link href={route('account-types.index')}>
+                <Layers className="h-3.5 w-3.5" /> Manage Account Types
+            </Link>
+        </Button>
+
+        <Button onClick={openCreateModal} className="gap-2 h-9 text-xs w-full sm:w-auto">
+            <Plus className="h-3.5 w-3.5" /> Add Account
+        </Button>
+    </div>
+</div>
 
                 {/* KPI Summary Grid */}
                 <AccountKpiGrid 
@@ -130,7 +138,6 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                             </CardDescription>
                         </div>
 
-                        {/* Segmented Status Filter Tabs */}
                         <AccountFilterTabs 
                             statusFilter={statusFilter}
                             setStatusFilter={setStatusFilter}
@@ -146,13 +153,12 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                             handleToggleActive={handleToggleActive}
                             setDeletingAccount={setDeletingAccount}
                             formatCurrency={formatCurrency}
-                            userCurrency={userCurrency} // 👈 Pass userCurrency down here!
+                            userCurrency={userCurrency}
                         />
                     </CardContent>
                 </Card>
             </div>
 
-            {/* Account Transactions Modal */}
             <AccountTransactionsModal
                 isOpen={isTxModalOpen}
                 onClose={() => setIsTxModalOpen(false)}
@@ -161,7 +167,6 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                 userCurrency={userCurrency}
             />
 
-            {/* Reusable Account Form Modal */}
             <AccountFormModal
                 isOpen={isModalOpen}
                 onClose={() => setIsModalOpen(false)}
@@ -170,7 +175,6 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                 userCurrency={userCurrency}
             />
 
-            {/* Delete Confirmation Alert */}
             <AlertDialog open={!!deletingAccount} onOpenChange={() => setDeletingAccount(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>

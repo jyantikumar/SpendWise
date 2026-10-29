@@ -55,7 +55,6 @@ const navGroups = [
         label: 'Configuration',
         items: [
             { title: 'Accounts', url: '/accounts', icon: Wallet },
-            { title: 'Account Types', url: '/account-types', icon: Layers },
             { title: 'Categories', url: '/categories', icon: Tags },
             { title: 'Data Management', url: '/settings/data', icon: ArrowLeftRight },
         ],
