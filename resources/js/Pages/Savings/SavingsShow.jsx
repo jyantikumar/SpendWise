@@ -12,6 +12,8 @@ import {
     Plus,
     FileText,
     MoreHorizontal,
+    ChevronLeft,
+    ChevronRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -23,6 +25,7 @@ import {
     CardHeader,
     CardTitle,
     CardDescription,
+    CardFooter,
 } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import {
@@ -57,7 +60,7 @@ import { TransactionDetailSheet } from '@/Pages/Transactions/components/Transact
 export default function SavingsShow({
     auth,
     goal,
-    deposits = [],
+    deposits,
     accounts = [],
     categories = [],
     accountTypes = [],
@@ -86,6 +89,16 @@ export default function SavingsShow({
         });
     };
 
+    // Pagination metadata
+    const depositRows = deposits?.data || [];
+    const prevLink = deposits?.prev_page_url;
+    const nextLink = deposits?.next_page_url;
+    const currentPage = deposits?.current_page || 1;
+    const lastPage = deposits?.last_page || 1;
+    const fromRecord = deposits?.from || 0;
+    const toRecord = deposits?.to || 0;
+    const totalRecords = deposits?.total || 0;
+
     const toTransactionShape = (dep) => ({
         ...dep,
         type: 'income',
@@ -112,7 +125,7 @@ export default function SavingsShow({
     };
 
     const isCompleted = goal.status === 'completed';
-    const depositCount = deposits.length;
+    const depositCount = totalRecords;
 
     const openDepositModal = () => setIsDepositModalOpen(true);
 
@@ -134,14 +147,10 @@ export default function SavingsShow({
                         </Link>
                     </Button>
 
-                    {/* Desktop actions — Add Deposit + ellipsis menu */}
+                    {/* Desktop actions */}
                     <div className="hidden sm:flex items-center gap-2">
                         {!isCompleted && (
-                            <Button
-                                size="sm"
-                                onClick={openDepositModal}
-                                className="gap-1.5"
-                            >
+                            <Button size="sm" onClick={openDepositModal} className="gap-1.5">
                                 <Plus className="h-3.5 w-3.5" /> Add Deposit
                             </Button>
                         )}
@@ -163,14 +172,10 @@ export default function SavingsShow({
                         </DropdownMenu>
                     </div>
 
-                    {/* Mobile dropdown ellipsis menu */}
+                    {/* Mobile actions */}
                     <div className="flex sm:hidden items-center gap-1.5">
                         {!isCompleted && (
-                            <Button
-                                size="sm"
-                                onClick={openDepositModal}
-                                className="gap-1 text-xs h-8 px-2.5"
-                            >
+                            <Button size="sm" onClick={openDepositModal} className="gap-1 text-xs h-8 px-2.5">
                                 <Plus className="h-3.5 w-3.5" /> Deposit
                             </Button>
                         )}
@@ -222,7 +227,6 @@ export default function SavingsShow({
                     </CardHeader>
 
                     <CardContent className="p-4 sm:p-4 pt-0 sm:pt-0 space-y-2 sm:space-y-2.5">
-                        {/* Big numbers */}
                         <div className="grid grid-cols-2 gap-2 sm:flex sm:items-end sm:justify-between">
                             <div>
                                 <p className="text-[11px] sm:text-xs text-zinc-500">Saved so far</p>
@@ -241,7 +245,6 @@ export default function SavingsShow({
                             </div>
                         </div>
 
-                        {/* Progress bar */}
                         <div>
                             <Progress value={goal.progress_percentage} className="h-2 sm:h-2.5" />
                             <div className="flex justify-between text-[10px] sm:text-[11px] text-zinc-500 mt-0.5">
@@ -250,7 +253,6 @@ export default function SavingsShow({
                             </div>
                         </div>
 
-                        {/* Meta row */}
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5 pt-1.5 sm:pt-2 border-t border-zinc-800">
                             <div className="flex items-center gap-1.5 text-xs">
                                 <Calendar className="h-3.5 w-3.5 text-zinc-500 shrink-0" />
@@ -298,9 +300,9 @@ export default function SavingsShow({
                     <CardContent className="p-0">
                         {/* Mobile list */}
                         <div className="md:hidden">
-                            {deposits.length > 0 ? (
+                            {depositRows.length > 0 ? (
                                 <div className="divide-y divide-zinc-800/70 px-3.5">
-                                    {deposits.map((dep) => (
+                                    {depositRows.map((dep) => (
                                         <div
                                             key={dep.id}
                                             onClick={() => openDepositDetail(dep)}
@@ -354,8 +356,8 @@ export default function SavingsShow({
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {deposits.length > 0 ? (
-                                        deposits.map((dep) => (
+                                    {depositRows.length > 0 ? (
+                                        depositRows.map((dep) => (
                                             <TableRow
                                                 key={dep.id}
                                                 onClick={() => openDepositDetail(dep)}
@@ -381,10 +383,7 @@ export default function SavingsShow({
                                         ))
                                     ) : (
                                         <TableRow className="border-b border-zinc-800/70">
-                                            <TableCell
-                                                colSpan={4}
-                                                className="h-24 text-center text-zinc-400"
-                                            >
+                                            <TableCell colSpan={4} className="h-24 text-center text-zinc-400">
                                                 No deposits recorded yet.
                                                 {!isCompleted && (
                                                     <div className="mt-3">
@@ -405,6 +404,42 @@ export default function SavingsShow({
                             </Table>
                         </div>
                     </CardContent>
+
+                    {totalRecords > 0 && (
+                        <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-zinc-800/70 p-4 sm:px-4 text-xs text-zinc-400">
+                            <div>
+                                Showing <span className="font-medium text-zinc-200">{fromRecord}</span> to{' '}
+                                <span className="font-medium text-zinc-200">{toRecord}</span> of{' '}
+                                <span className="font-medium text-zinc-200">{totalRecords}</span> records
+                            </div>
+
+                            <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={!prevLink}
+                                    onClick={() => prevLink && router.visit(prevLink, { preserveState: true, preserveScroll: true })}
+                                    className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
+                                >
+                                    <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
+                                </Button>
+
+                                <span className="text-xs font-medium text-zinc-300 px-1">
+                                    {currentPage} / {lastPage}
+                                </span>
+
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    disabled={!nextLink}
+                                    onClick={() => nextLink && router.visit(nextLink, { preserveState: true, preserveScroll: true })}
+                                    className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
+                                >
+                                    Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
+                                </Button>
+                            </div>
+                        </CardFooter>
+                    )}
                 </Card>
             </div>
 
@@ -435,6 +470,8 @@ export default function SavingsShow({
                 categories={categories}
                 accountTypes={accountTypes}
                 savingsGoals={savingsGoals}
+                defaultType="savings"
+                defaultSavingsGoalId={goal.id}
             />
 
             <AlertDialog

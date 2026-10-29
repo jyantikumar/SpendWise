@@ -35,7 +35,7 @@ export default function Dashboard({
     accounts = [], 
     accountTypes = [],
     categories = [], 
-    savingsGoals = [],          // 👈 ADDED
+    savingsGoals = [],
     currentFilter = 'this_day',
     customDates = {}
 }) {
@@ -217,7 +217,7 @@ export default function Dashboard({
                     accounts={accounts}
                     categories={categories}
                     accountTypes={accountTypes}
-                    savingsGoals={savingsGoals}          // 👈 ADDED
+                    savingsGoals={savingsGoals}
                 />
             )}
 

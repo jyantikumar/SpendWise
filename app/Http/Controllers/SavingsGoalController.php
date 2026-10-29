@@ -22,8 +22,9 @@ class SavingsGoalController extends Controller
             ->withCount('transactions')
             ->orderByRaw("FIELD(status, 'active', 'completed')")
             ->orderBy('target_date', 'asc')
-            ->get()
-            ->map(fn (SavingsGoal $g) => [
+            ->paginate(12)
+            ->withQueryString()
+            ->through(fn (SavingsGoal $g) => [
                 'id'                  => $g->id,
                 'title'               => $g->title,
                 'description'         => $g->description,
@@ -82,8 +83,9 @@ class SavingsGoalController extends Controller
             ->with(['account'])
             ->orderBy('transaction_date', 'desc')
             ->orderBy('id', 'desc')
-            ->get()
-            ->map(fn ($t) => [
+            ->paginate(15)
+            ->withQueryString()
+            ->through(fn ($t) => [
                 'id'               => $t->id,
                 'amount'           => (float) $t->amount,
                 'description'      => $t->description,
@@ -104,7 +106,6 @@ class SavingsGoalController extends Controller
                 'remaining_amount'    => $savingsGoal->remaining_amount,
             ],
             'deposits' => $deposits,
-            // Props required by TransactionFormModal for the "Add Deposit" flow
             'accounts' => $user->accounts()->orderBy('name')->get(),
             'categories' => $user->categories()->orderBy('name')->get(),
             'accountTypes' => $user->accountTypes()->orderBy('name')->get(),
@@ -136,7 +137,6 @@ class SavingsGoalController extends Controller
         $this->authorizeGoal($request, $savingsGoal);
 
         DB::transaction(function () use ($savingsGoal) {
-            // Preserve deposit transactions and balance history — just unlink them.
             $savingsGoal->transactions()->update(['savings_goal_id' => null]);
             $savingsGoal->delete();
         });
