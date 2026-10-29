@@ -29,19 +29,19 @@ export function TransactionDetailSheet({
             minimumFractionDigits: 2
         }).format(val || 0);
 
-    const getAmountColor = (type) => {
-        switch (type) {
-            case 'income':
-                return 'text-emerald-400';
-            case 'expense':
-            case 'savings':
-                return 'text-rose-400';
-            case 'transfer':
-                return 'text-blue-400';
-            default:
-                return 'text-zinc-200';
-        }
-    };
+   const getAmountColor = (type) => {
+    switch (type) {
+        case 'income':
+            return 'text-emerald-400';
+        case 'expense':
+            return 'text-rose-400';
+        case 'transfer':
+        case 'savings':
+            return 'text-blue-400';
+        default:
+            return 'text-zinc-200';
+    }
+};
 
     const getTypeLabel = (type) => {
         if (type === 'savings') return 'Savings Deposit';
@@ -72,10 +72,10 @@ export function TransactionDetailSheet({
                         <div className="flex justify-between py-2 border-b border-zinc-800/60 items-center">
                             <span className="text-zinc-400">Amount</span>
                             <span className={`font-bold text-sm ${getAmountColor(transaction.type)}`}>
-                                {transaction.type === 'income' && '+'}
-                                {(transaction.type === 'expense' || transaction.type === 'savings') && '-'}
-                                {formatCurrency(transaction.amount)}
-                            </span>
+    {transaction.type === 'income' && '+'}
+    {transaction.type === 'expense' && '-'}
+    {formatCurrency(transaction.amount)}
+</span>
                         </div>
 
                         <div className="flex justify-between py-2 border-b border-zinc-800/60 items-center">
@@ -87,6 +87,15 @@ export function TransactionDetailSheet({
                             <span className="text-zinc-400">Account</span>
                             <span className="text-zinc-200 font-medium">{transaction.account?.name || '—'}</span>
                         </div>
+
+                        {transaction.type === 'savings' && (
+                            <div className="flex justify-between py-2 border-b border-zinc-800/60 items-center">
+                                <span className="text-zinc-400">Savings Goal</span>
+                                <span className="text-emerald-400 font-medium">
+                                    {transaction.savings_goal?.title || '—'}
+                                </span>
+                            </div>
+                        )}
 
                         {transaction.type === 'transfer' && (
                             <div className="flex justify-between py-2 border-b border-zinc-800/60 items-center">

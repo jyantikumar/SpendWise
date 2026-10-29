@@ -91,6 +91,7 @@ export default function TransactionFilterSheet({
                                         <SelectItem value="expense">Expense</SelectItem>
                                         <SelectItem value="income">Income</SelectItem>
                                         <SelectItem value="transfer">Transfer</SelectItem>
+                                        <SelectItem value="savings">Savings</SelectItem>
                                     </SelectContent>
                                 </Select>
                             </div>
