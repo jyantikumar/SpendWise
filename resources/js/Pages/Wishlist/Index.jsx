@@ -10,9 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, Gift, ArrowRight, Pencil, Trash2, MoreVertical, Search, CircleCheckBig,Power } from 'lucide-react';
+import { Plus, Gift, ArrowRight, Pencil, Trash2, MoreHorizontal, Search, CircleCheckBig, Power, Filter } from 'lucide-react';
 
 export default function WishlistIndex({ items }) {
     const [openModal, setOpenModal] = useState(false);
@@ -74,11 +73,11 @@ export default function WishlistIndex({ items }) {
 
     // Filter items based on active tab and search query
     const filteredItems = items.filter((item) => {
-        const matchesTab = 
+        const matchesTab =
             statusTab === 'active' ? item.status !== 'purchased' :
             statusTab === 'acquired' ? item.status === 'purchased' : true;
 
-        const matchesSearch = 
+        const matchesSearch =
             item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
             (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
             item.prices.some(p => p.site_name.toLowerCase().includes(searchQuery.toLowerCase()));
@@ -86,72 +85,89 @@ export default function WishlistIndex({ items }) {
         return matchesTab && matchesSearch;
     });
 
+    const activeCount = items.filter(i => i.status !== 'purchased').length;
+    const acquiredCount = items.filter(i => i.status === 'purchased').length;
+
     return (
         <AppLayout title="Wishlist" headerTitle="Product Wishlist & Comparison">
-            <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    <div>
-                        <h2 className="text-lg font-bold tracking-tight text-zinc-100">Saved Wants & Goals</h2>
-                        <p className="text-xs text-zinc-400">Track target items and compare prices across different sites.</p>
-                    </div>
+            <div className="space-y-4 sm:space-y-6">
+                {/* Header: subtitle + Add (desktop gets filter/search inline) */}
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                    <p className="text-xs sm:text-sm text-zinc-400 line-clamp-1">
+                        Track target items and compare prices across different sites.
+                    </p>
 
-                    <Button onClick={openCreateModal} className="w-full sm:w-auto bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium h-8 text-xs px-3">
-                        <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Wishlist Item
+                    {/* Mobile: Full-width white Add button below subtitle */}
+                    <Button
+                        onClick={openCreateModal}
+                        className="w-full sm:hidden bg-white hover:bg-zinc-200 text-zinc-900 font-medium h-9 text-xs gap-1.5"
+                    >
+                        <Plus className="h-4 w-4" /> Add Wishlist Item
                     </Button>
+
+                    {/* Desktop: status filter + search + Add inline */}
+                    <div className="hidden sm:flex sm:items-center sm:gap-2 sm:shrink-0">
+                        
+                        <div className="relative">
+                            <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-zinc-500" />
+                            <Input
+                                type="text"
+                                placeholder="Search wishlist..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="h-9 w-[200px] lg:w-[240px] pl-9 border-zinc-800 bg-zinc-900 text-xs text-zinc-200 placeholder:text-zinc-500"
+                            />
+                        </div>
+<Select value={statusTab} onValueChange={setStatusTab}>
+                            <SelectTrigger className="h-9 w-[150px] border-zinc-800 bg-zinc-900 text-xs text-zinc-300 shrink-0">
+                                <Filter className="mr-1.5 h-3.5 w-3.5 text-zinc-400" />
+                                <SelectValue placeholder="Filter status" />
+                            </SelectTrigger>
+                            <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
+                                <SelectItem value="all" className="text-xs">All ({items.length})</SelectItem>
+                                <SelectItem value="active" className="text-xs">Active ({activeCount})</SelectItem>
+                                <SelectItem value="acquired" className="text-xs">Acquired ({acquiredCount})</SelectItem>
+                            </SelectContent>
+                        </Select>
+                        <Button onClick={openCreateModal} size="sm" className="gap-1.5 h-9 text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium">
+                            <Plus className="h-3.5 w-3.5" /> Add Item
+                        </Button>
+                    </div>
                 </div>
 
-                {/* Tabs & Search Filter Header Section */}
-<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-zinc-800">
-    <div className="bg-zinc-900 border border-zinc-800 text-zinc-400 p-1 grid grid-cols-3 w-full sm:w-auto rounded-lg gap-1">
-        <button
-            type="button"
-            onClick={() => setStatusTab('all')}
-            className={`text-[11px] px-3 h-6 rounded font-medium transition-all flex items-center justify-center ${
-                statusTab === 'all' ? 'bg-zinc-800 text-zinc-100 shadow-sm' : 'hover:text-zinc-200'
-            }`}
-        >
-            All ({items.length})
-        </button>
-        <button
-            type="button"
-            onClick={() => setStatusTab('active')}
-            className={`text-[11px] px-3 h-6 rounded font-medium transition-all flex items-center justify-center ${
-                statusTab === 'active' ? 'bg-zinc-800 text-zinc-100 shadow-sm' : 'hover:text-zinc-200'
-            }`}
-        >
-            Active ({items.filter(i => i.status !== 'purchased').length})
-        </button>
-        <button
-            type="button"
-            onClick={() => setStatusTab('acquired')}
-            className={`text-[11px] px-3 h-6 rounded font-medium transition-all flex items-center justify-center ${
-                statusTab === 'acquired' ? 'bg-zinc-800 text-zinc-100 shadow-sm' : 'hover:text-zinc-200'
-            }`}
-        >
-            Acquired ({items.filter(i => i.status === 'purchased').length})
-        </button>
-    </div>
+                {/* Mobile: Status filter & Search above cards */}
+                <div className="flex flex-row items-center gap-2 sm:hidden">
+                    <div className="relative flex-1">
+                        <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-zinc-500" />
+                        <Input
+                            type="text"
+                            placeholder="Search wishlist..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="h-9 w-full pl-9 border-zinc-800 bg-zinc-900 text-xs text-zinc-200 placeholder:text-zinc-500"
+                        />
+                    </div>
 
-    {/* Search Bar matching the smaller height */}
-    <div className="relative w-full sm:w-72">
-        <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-zinc-500" />
-        <Input
-            type="text"
-            placeholder="Search wishlist..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="border-zinc-800 bg-zinc-900 text-zinc-100 pl-8 h-7 text-xs focus-visible:ring-zinc-600"
-        />
-    </div>
-</div>
+                    <Select value={statusTab} onValueChange={setStatusTab}>
+                        <SelectTrigger className="h-9 w-[130px] border-zinc-800 bg-zinc-900 text-xs text-zinc-300 shrink-0">
+                            <Filter className="mr-1.5 h-3.5 w-3.5 text-zinc-400" />
+                            <SelectValue placeholder="Filter status" />
+                        </SelectTrigger>
+                        <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
+                            <SelectItem value="all" className="text-xs">All ({items.length})</SelectItem>
+                            <SelectItem value="active" className="text-xs">Active ({activeCount})</SelectItem>
+                            <SelectItem value="acquired" className="text-xs">Acquired ({acquiredCount})</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
 
-                {/* Cards Grid Placed Strictly Below */}
+                {/* Cards Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
                     {filteredItems.length === 0 ? (
                         <Card className="col-span-full border-zinc-800 p-8 text-center shadow-none">
                             <Gift className="mx-auto h-10 w-10 text-zinc-600 mb-2" />
                             <h3 className="text-sm font-medium text-zinc-200">No wishlist items found</h3>
-                            <p className="text-xs text-zinc-500 mt-0.5">Try adjusting your search query or tab filter.</p>
+                            <p className="text-xs text-zinc-500 mt-0.5">Try adjusting your search query or status filter.</p>
                         </Card>
                     ) : (
                         filteredItems.map((item) => {
@@ -159,8 +175,8 @@ export default function WishlistIndex({ items }) {
                             const isPurchased = item.status === 'purchased';
 
                             return (
-                                <Card 
-                                    key={item.id} 
+                                <Card
+                                    key={item.id}
                                     className={`border-zinc-800 hover:border-zinc-700 transition-all flex flex-col justify-between shadow-none cursor-pointer group p-2.5 sm:p-3 space-y-1.5 ${isPurchased ? 'opacity-60 bg-zinc-900/20' : ''}`}
                                     onClick={() => router.visit(route('wishlist.show', item.id))}
                                 >
@@ -171,32 +187,32 @@ export default function WishlistIndex({ items }) {
                                                     {item.priority}
                                                 </Badge>
                                                 {isPurchased && (
-                                                    <Badge className="bg-emerald-800 text-zinc-100  border-emerald-500/20 text-[8px] sm:text-[9px] px-1 py-0 h-3.5">
+                                                    <Badge className="bg-emerald-800 text-zinc-100 border-emerald-500/20 text-[8px] sm:text-[9px] px-1 py-0 h-3.5">
                                                         Acquired
                                                     </Badge>
                                                 )}
                                             </div>
-                                            
+
                                             {/* Ellipsis Menu */}
                                             <div onClick={(e) => e.stopPropagation()}>
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="ghost" size="icon" className="h-5 w-5 text-zinc-400 hover:text-zinc-100">
-                                                            <MoreVertical className="h-3 w-3" />
+                                                            <MoreHorizontal className="h-3 w-3" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-950 text-zinc-300 text-xs">
-                                                       <DropdownMenuItem onClick={() => router.patch(route('wishlist.status.toggle', item.id))} className="hover:bg-zinc-900 focus:bg-zinc-900 cursor-pointer">
-    {isPurchased ? (
-        <>
-            <Power className="mr-2 h-3 w-3 text-zinc-400" />Activate
-        </>
-    ) : (
-        <>
-            <CircleCheckBig className="mr-2 h-3 w-3 text-zinc-400" />Acquire
-        </>
-    )}
-</DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => router.patch(route('wishlist.status.toggle', item.id))} className="hover:bg-zinc-900 focus:bg-zinc-900 cursor-pointer">
+                                                            {isPurchased ? (
+                                                                <>
+                                                                    <Power className="mr-2 h-3 w-3 text-zinc-400" />Activate
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <CircleCheckBig className="mr-2 h-3 w-3 text-zinc-400" />Acquire
+                                                                </>
+                                                            )}
+                                                        </DropdownMenuItem>
                                                         <DropdownMenuItem onClick={() => openEditModal(item)} className="hover:bg-zinc-900 focus:bg-zinc-900 cursor-pointer">
                                                             <Pencil className="mr-2 h-3 w-3 text-zinc-400" /> Edit Item
                                                         </DropdownMenuItem>

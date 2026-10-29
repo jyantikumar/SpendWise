@@ -9,6 +9,7 @@ use App\Http\Controllers\AccountController;
 use App\Http\Controllers\AccountTypeController; 
 use App\Http\Controllers\AnalysisController;
 use App\Http\Controllers\RecurringTransactionController;
+use App\Http\Controllers\SavingsGoalController;
 use App\Http\Controllers\WishlistItemController;
 use App\Http\Controllers\DataExportImportController;
 use Illuminate\Support\Facades\Route;
@@ -113,6 +114,14 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{wishlist}/prices/{price}', [WishlistItemController::class, 'updatePrice'])->name('prices.update');
         Route::delete('/{wishlist}/prices/{price}', [WishlistItemController::class, 'destroyPrice'])->name('prices.destroy');
     });
+       // Savings Goals
+Route::prefix('savings')->name('savings.')->group(function () {
+    Route::get('/', [SavingsGoalController::class, 'index'])->name('index');
+    Route::post('/', [SavingsGoalController::class, 'store'])->name('store');
+    Route::get('/{savingsGoal}', [SavingsGoalController::class, 'show'])->name('show');
+    Route::put('/{savingsGoal}', [SavingsGoalController::class, 'update'])->name('update');
+    Route::delete('/{savingsGoal}', [SavingsGoalController::class, 'destroy'])->name('destroy');
+});
 
     // Data Export, Import, Templates & Clear Data
     Route::prefix('settings/data')->name('settings.data.')->group(function () {

@@ -26,7 +26,7 @@ import DashboardKpis from '@/Pages/DashboardComponents/DashboardKpis';
 import TransactionFilterSheet from '@/Pages/Transactions/components/TransactionFilterSheet';
 import ActiveFilterChips from '@/Pages/Transactions/components/ActiveFilterChips';
 
-export default function TransactionIndex({ auth, transactions, accounts = [], categories = [], filters = {}, kpis = {} }) {
+export default function TransactionIndex({ auth, transactions, accounts = [], categories = [], savingsGoals = [], filters = {}, kpis = {} }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [deletingTransaction, setDeletingTransaction] = useState(null);
@@ -387,6 +387,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                 editingTransaction={editingTransaction}
                 accounts={accounts}
                 categories={categories}
+                 savingsGoals={savingsGoals} 
             />
 
             <AlertDialog open={!!deletingTransaction} onOpenChange={(open) => !open && setDeletingTransaction(null)}>

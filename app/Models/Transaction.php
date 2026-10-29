@@ -16,6 +16,7 @@ class Transaction extends Model
         'account_id',
         'destination_account_id',
         'category_id',
+        'savings_goal_id',
         'recurring_transaction_id', // 👈 Added
         'type',
         'amount',
@@ -54,4 +55,8 @@ class Transaction extends Model
     {
         return $this->belongsTo(RecurringTransaction::class);
     }
+    public function savingsGoal(): BelongsTo
+{
+    return $this->belongsTo(SavingsGoal::class);
+}
 }

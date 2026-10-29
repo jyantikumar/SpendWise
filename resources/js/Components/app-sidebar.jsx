@@ -12,6 +12,7 @@ import {
     Calendar,
     ArrowLeftRight,
     Gift,
+    Target,
 Users
 } from 'lucide-react';
 import { Link, router, usePage } from '@inertiajs/react';
@@ -44,7 +45,7 @@ const navGroups = [
             { title: 'Split Payments', url: '/splits', icon: Users },
             { title: 'Recurring Payments', url: '/subscriptions', icon: Calendar },
             { title: 'Wishlist', url: '/wishlist', icon: Gift },
-
+            { title: 'Savings Goals', url: '/savings', icon: Target },
             { title: 'Analysis', url: '/analysis', icon: ChartLine },
         ],
     },

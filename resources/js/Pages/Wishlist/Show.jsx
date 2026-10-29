@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ArrowLeft, Plus, ExternalLink, Trash2, Pencil, MoreVertical, Wallet, FileText } from 'lucide-react';
+import { ArrowLeft, Plus, ExternalLink, Trash2, Pencil, MoreHorizontal, Wallet, FileText } from 'lucide-react';
 
 export default function WishlistShow({ wishlist, lowestPrice }) {
     const [priceModal, setPriceModal] = useState(false);
@@ -229,7 +229,7 @@ export default function WishlistShow({ wishlist, lowestPrice }) {
                                                         <DropdownMenu>
                                                             <DropdownMenuTrigger asChild>
                                                                 <Button variant="ghost" size="icon" className="h-6 w-6 text-zinc-400 hover:text-zinc-100">
-                                                                    <MoreVertical className="h-3.5 w-3.5" />
+                                                                    <MoreHorizontal className="h-3.5 w-3.5" />
                                                                 </Button>
                                                             </DropdownMenuTrigger>
                                                             <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-950 text-zinc-300 text-xs">
@@ -283,7 +283,7 @@ export default function WishlistShow({ wishlist, lowestPrice }) {
                                                 <DropdownMenu>
                                                     <DropdownMenuTrigger asChild>
                                                         <Button variant="ghost" size="icon" className="h-7 w-7 text-zinc-400 hover:text-zinc-100">
-                                                            <MoreVertical className="h-3.5 w-3.5" />
+                                                            <MoreHorizontal className="h-3.5 w-3.5" />
                                                         </Button>
                                                     </DropdownMenuTrigger>
                                                     <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-950 text-zinc-300 text-xs">

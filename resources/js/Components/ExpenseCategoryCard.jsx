@@ -105,7 +105,7 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
                     <div
                         key={slice.id || index}
                         className={`flex items-center justify-between p-2 rounded-md transition-colors cursor-pointer text-xs ${
-                            hoveredIndex === index ? 'bg-zinc-800 font-medium text-zinc-100' : 'hover:bg-zinc-800/50 text-zinc-300'
+                            hoveredIndex === index ? 'font-medium text-zinc-100' : 'hover:bg-zinc-800/50 text-zinc-300'
                         }`}
                         onMouseEnter={() => setHoveredIndex(index)}
                         onMouseLeave={() => setHoveredIndex(null)}

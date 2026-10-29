@@ -1,17 +1,17 @@
 import { useState, useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
 import { Plus } from 'lucide-react';
-import { toast } from 'sonner'; // 👈 Sonner toast imported
+import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-    Dialog, 
-    DialogContent, 
-    DialogDescription, 
-    DialogFooter, 
-    DialogHeader, 
-    DialogTitle 
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 
 import CategoryFormModal from '@/Pages/Categories/components/CategoryFormModal';
@@ -23,24 +23,34 @@ export default function TransactionFormModal({
     editingTransaction = null,
     accounts = [],
     categories = [],
-    accountTypes = []
+    accountTypes = [],
+    savingsGoals = [],
+    defaultType = null,
+    defaultSavingsGoalId = null,
 }) {
     const isEditing = Boolean(editingTransaction);
 
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
-    // Filter available active accounts (keep currently selected account if editing)
     const availableAccounts = accounts.filter((acc) => {
         const isActive = Boolean(acc.is_active);
         const isCurrentlySelected = isEditing && String(acc.id) === String(editingTransaction?.account_id);
         return isActive || isCurrentlySelected;
     });
 
+    const availableSavingsGoals = savingsGoals.filter((goal) => {
+        const isActive = goal.status === 'active';
+        const isCurrentlySelected = isEditing && String(goal.id) === String(editingTransaction?.savings_goal_id);
+        const isDefault = defaultSavingsGoalId && String(goal.id) === String(defaultSavingsGoalId);
+        return isActive || isCurrentlySelected || isDefault;
+    });
+
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         account_id: '',
         destination_account_id: '',
         category_id: '',
+        savings_goal_id: '',
         type: 'expense',
         amount: '',
         description: '',
@@ -54,14 +64,19 @@ export default function TransactionFormModal({
 
         if (editingTransaction) {
             const rawDate = editingTransaction.transaction_date || editingTransaction.date;
-            const formattedDate = rawDate 
-                ? String(rawDate).split('T')[0] 
+            const formattedDate = rawDate
+                ? String(rawDate).split('T')[0]
                 : new Date().toISOString().split('T')[0];
 
             setData({
                 account_id: editingTransaction.account_id ? String(editingTransaction.account_id) : '',
-                destination_account_id: editingTransaction.destination_account_id ? String(editingTransaction.destination_account_id) : '',
+                destination_account_id: editingTransaction.destination_account_id
+                    ? String(editingTransaction.destination_account_id)
+                    : '',
                 category_id: editingTransaction.category_id ? String(editingTransaction.category_id) : '',
+                savings_goal_id: editingTransaction.savings_goal_id
+                    ? String(editingTransaction.savings_goal_id)
+                    : '',
                 type: editingTransaction.type || 'expense',
                 amount: editingTransaction.amount ? String(editingTransaction.amount) : '',
                 description: editingTransaction.description || '',
@@ -69,20 +84,21 @@ export default function TransactionFormModal({
             });
         } else {
             reset();
-            
+
             const defaultAccount = availableAccounts[0];
 
             setData({
                 account_id: defaultAccount?.id ? String(defaultAccount.id) : '',
                 destination_account_id: '',
                 category_id: '',
-                type: 'expense',
+                savings_goal_id: defaultSavingsGoalId ? String(defaultSavingsGoalId) : '',
+                type: defaultType || 'expense',
                 amount: '',
                 description: '',
                 transaction_date: new Date().toISOString().split('T')[0],
             });
         }
-    }, [isOpen, editingTransaction, accounts]);
+    }, [isOpen, editingTransaction, accounts, defaultType, defaultSavingsGoalId]);
 
     const handleAccountCreated = (page) => {
         const updatedAccounts = page.props.accounts || [];
@@ -106,36 +122,33 @@ export default function TransactionFormModal({
         if (isEditing) {
             put(route('transactions.update', editingTransaction.id), {
                 onSuccess: () => {
-                    toast.success('Transaction updated successfully.'); // 👈 React-side Sonner Toast
+                    toast.success('Transaction updated successfully.');
                     onClose();
                     reset();
                 },
-                onError: () => {
-                    toast.error('Failed to update transaction.');
-                }
+                onError: () => toast.error('Failed to update transaction.'),
             });
         } else {
             post(route('transactions.store'), {
                 onSuccess: () => {
-                    toast.success('Transaction logged successfully.'); // 👈 React-side Sonner Toast
+                    toast.success('Transaction logged successfully.');
                     onClose();
                     reset();
                 },
-                onError: () => {
-                    toast.error('Failed to log transaction.');
-                }
+                onError: () => toast.error('Failed to log transaction.'),
             });
         }
     };
 
-    // Filter categories by transaction type AND active status
     const filteredCategories = categories.filter((c) => {
         const isSameType = c.type === data.type;
         const isActive = Boolean(c.is_active) || c.is_active === undefined;
         const isCurrentlySelected = isEditing && String(c.id) === String(editingTransaction?.category_id);
-
         return isSameType && (isActive || isCurrentlySelected);
     });
+
+    const showCategory = data.type === 'income' || data.type === 'expense';
+    const showSavingsGoal = data.type === 'savings';
 
     return (
         <>
@@ -144,19 +157,27 @@ export default function TransactionFormModal({
                     <DialogHeader>
                         <DialogTitle>{isEditing ? 'Edit Transaction' : 'New Transaction'}</DialogTitle>
                         <DialogDescription>
-                            {isEditing 
-                                ? 'Update the details for this transaction record.' 
-                                : 'Log income, expenses, or transfers directly to your accounts.'}
+                            {isEditing
+                                ? 'Update the details for this transaction record.'
+                                : 'Log income, expenses, transfers, or savings deposits.'}
                         </DialogDescription>
                     </DialogHeader>
 
                     <form onSubmit={handleSubmit} className="space-y-4 py-2">
-                        {/* Transaction Type */}
+                        {/* Type */}
                         <div className="space-y-2">
                             <label className="text-sm font-medium leading-none">Type</label>
-                            <Select 
-                                value={data.type} 
-                                onValueChange={(val) => setData((prev) => ({ ...prev, type: val, category_id: '' }))}
+                            <Select
+                                value={data.type}
+                                onValueChange={(val) =>
+                                    setData((prev) => ({
+                                        ...prev,
+                                        type: val,
+                                        category_id: val === 'income' || val === 'expense' ? prev.category_id : '',
+                                        destination_account_id: val === 'transfer' ? prev.destination_account_id : '',
+                                        savings_goal_id: val === 'savings' ? prev.savings_goal_id : '',
+                                    }))
+                                }
                             >
                                 <SelectTrigger className="w-full h-10">
                                     <SelectValue placeholder="Select type" />
@@ -165,6 +186,7 @@ export default function TransactionFormModal({
                                     <SelectItem value="expense">Expense</SelectItem>
                                     <SelectItem value="income">Income</SelectItem>
                                     <SelectItem value="transfer">Transfer</SelectItem>
+                                    <SelectItem value="savings">Savings Deposit</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>
@@ -185,13 +207,14 @@ export default function TransactionFormModal({
                                     <Plus className="h-3 w-3" /> Quick Add
                                 </Button>
                             </div>
-                            <Select 
-                                value={data.account_id} 
+                            <Select
+                                value={data.account_id}
                                 onValueChange={(val) => {
                                     setData((prev) => ({
                                         ...prev,
                                         account_id: val,
-                                        destination_account_id: prev.destination_account_id === val ? '' : prev.destination_account_id
+                                        destination_account_id:
+                                            prev.destination_account_id === val ? '' : prev.destination_account_id,
                                     }));
                                 }}
                             >
@@ -199,10 +222,11 @@ export default function TransactionFormModal({
                                     <SelectValue placeholder="Select account" />
                                 </SelectTrigger>
                                 <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                    {availableAccounts && availableAccounts.length > 0 ? (
+                                    {availableAccounts.length > 0 ? (
                                         availableAccounts.map((acc) => (
                                             <SelectItem key={acc.id} value={String(acc.id)}>
-                                                {acc.name} {acc.type ? `(${acc.type})` : ''} {!acc.is_active && acc.is_active !== undefined ? '(Inactive)' : ''}
+                                                {acc.name} {acc.type ? `(${acc.type})` : ''}{' '}
+                                                {!acc.is_active && acc.is_active !== undefined ? '(Inactive)' : ''}
                                             </SelectItem>
                                         ))
                                     ) : (
@@ -215,7 +239,7 @@ export default function TransactionFormModal({
                             {errors.account_id && <p className="text-xs text-rose-500">{errors.account_id}</p>}
                         </div>
 
-                        {/* Destination Account (Transfers) */}
+                        {/* Destination Account (Transfers only) */}
                         {data.type === 'transfer' && (
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between">
@@ -230,20 +254,21 @@ export default function TransactionFormModal({
                                         <Plus className="h-3 w-3" /> Quick Add
                                     </Button>
                                 </div>
-                                <Select 
-                                    value={data.destination_account_id} 
+                                <Select
+                                    value={data.destination_account_id}
                                     onValueChange={(val) => setData('destination_account_id', val)}
                                 >
                                     <SelectTrigger className="w-full h-10">
                                         <SelectValue placeholder="Select destination account" />
                                     </SelectTrigger>
                                     <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                        {availableAccounts && availableAccounts.length > 0 ? (
+                                        {availableAccounts.length > 0 ? (
                                             availableAccounts
                                                 .filter((acc) => String(acc.id) !== String(data.account_id))
                                                 .map((acc) => (
                                                     <SelectItem key={acc.id} value={String(acc.id)}>
-                                                        {acc.name} {acc.type ? `(${acc.type})` : ''} {!acc.is_active && acc.is_active !== undefined ? '(Inactive)' : ''}
+                                                        {acc.name} {acc.type ? `(${acc.type})` : ''}{' '}
+                                                        {!acc.is_active && acc.is_active !== undefined ? '(Inactive)' : ''}
                                                     </SelectItem>
                                                 ))
                                         ) : (
@@ -259,79 +284,121 @@ export default function TransactionFormModal({
                             </div>
                         )}
 
-                        {/* Category */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium leading-none">Category</label>
-                                <Button
-                                    type="button"
-                                    variant="ghost"
-                                    size="sm"
-                                    onClick={() => setIsCategoryModalOpen(true)}
-                                    className="h-6 px-2 text-xs text-primary gap-1"
+                        {/* Category (Income & Expense only) */}
+                        {showCategory && (
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-sm font-medium leading-none">Category</label>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="sm"
+                                        onClick={() => setIsCategoryModalOpen(true)}
+                                        className="h-6 px-2 text-xs text-primary gap-1"
+                                    >
+                                        <Plus className="h-3 w-3" /> Quick Add
+                                    </Button>
+                                </div>
+                                <Select
+                                    value={data.category_id}
+                                    onValueChange={(val) => setData('category_id', val)}
                                 >
-                                    <Plus className="h-3 w-3" /> Quick Add
-                                </Button>
+                                    <SelectTrigger className="w-full h-10">
+                                        <SelectValue placeholder="Select category (optional)" />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                        {filteredCategories.length > 0 ? (
+                                            filteredCategories.map((cat) => (
+                                                <SelectItem key={cat.id} value={String(cat.id)}>
+                                                    {cat.name}{' '}
+                                                    {!cat.is_active && cat.is_active !== undefined ? '(Inactive)' : ''}
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            <div className="p-2 text-xs text-center text-muted-foreground">
+                                                No active categories available for this type.
+                                            </div>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                                {errors.category_id && <p className="text-xs text-rose-500">{errors.category_id}</p>}
                             </div>
-                            <Select 
-                                value={data.category_id} 
-                                onValueChange={(val) => setData('category_id', val)}
-                            >
-                                <SelectTrigger className="w-full h-10">
-                                    <SelectValue placeholder="Select category (optional)" />
-                                </SelectTrigger>
-                                <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                    {filteredCategories.length > 0 ? (
-                                        filteredCategories.map((cat) => (
-                                            <SelectItem key={cat.id} value={String(cat.id)}>
-                                                {cat.name} {!cat.is_active && cat.is_active !== undefined ? '(Inactive)' : ''}
-                                            </SelectItem>
-                                        ))
-                                    ) : (
-                                        <div className="p-2 text-xs text-center text-muted-foreground">
-                                            No active categories available for this type.
-                                        </div>
-                                    )}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        )}
+
+                        {/* Savings Goal (Savings Deposit only) */}
+                        {showSavingsGoal && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Deposit to Goal</label>
+                                <Select
+                                    value={data.savings_goal_id}
+                                    onValueChange={(val) => setData('savings_goal_id', val)}
+                                >
+                                    <SelectTrigger className="w-full h-10">
+                                        <SelectValue placeholder="Select savings goal" />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                        {availableSavingsGoals.length > 0 ? (
+                                            availableSavingsGoals.map((goal) => (
+                                                <SelectItem key={goal.id} value={String(goal.id)}>
+                                                    {goal.title}
+                                                    {goal.status === 'completed' ? ' (Completed)' : ''}
+                                                </SelectItem>
+                                            ))
+                                        ) : (
+                                            <div className="p-2 text-xs text-center text-muted-foreground">
+                                                No active savings goals. Create one first.
+                                            </div>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                                {errors.savings_goal_id && (
+                                    <p className="text-xs text-rose-500">{errors.savings_goal_id}</p>
+                                )}
+                            </div>
+                        )}
 
                         {/* Amount & Date */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <label className="text-sm font-medium leading-none">Amount</label>
-                                <Input 
-                                    type="number" 
-                                    step="0.01" 
-                                    placeholder="0.00" 
-                                    value={data.amount} 
-                                    onChange={(e) => setData('amount', e.target.value)} 
+                                <Input
+                                    type="number"
+                                    step="0.01"
+                                    placeholder="0.00"
+                                    value={data.amount}
+                                    onChange={(e) => setData('amount', e.target.value)}
                                 />
                                 {errors.amount && <p className="text-xs text-rose-500">{errors.amount}</p>}
                             </div>
 
                             <div className="space-y-2">
                                 <label className="text-sm font-medium leading-none">Date</label>
-                                <Input 
-                                    type="date" 
-                                    value={data.transaction_date} 
-                                    onChange={(e) => setData('transaction_date', e.target.value)} 
+                                <Input
+                                    type="date"
+                                    value={data.transaction_date}
+                                    onChange={(e) => setData('transaction_date', e.target.value)}
                                 />
-                                {errors.transaction_date && <p className="text-xs text-rose-500">{errors.transaction_date}</p>}
+                                {errors.transaction_date && (
+                                    <p className="text-xs text-rose-500">{errors.transaction_date}</p>
+                                )}
                             </div>
                         </div>
 
+                        {/* Description */}
                         <div className="space-y-2">
                             <label className="text-sm font-medium leading-none">Description</label>
-                            <Input 
-                                placeholder="e.g. Bank transfer" 
-                                value={data.description} 
-                                onChange={(e) => setData('description', e.target.value)} 
+                            <Input
+                                placeholder="e.g. Monthly deposit"
+                                value={data.description}
+                                onChange={(e) => setData('description', e.target.value)}
                             />
+                            {errors.description && <p className="text-xs text-rose-500">{errors.description}</p>}
                         </div>
 
                         <DialogFooter className="pt-4">
-                            <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
+                            <Button type="button" variant="outline" onClick={onClose}>
+                                Cancel
+                            </Button>
                             <Button type="submit" disabled={processing}>
                                 {isEditing ? 'Save Changes' : 'Create Transaction'}
                             </Button>
@@ -340,7 +407,6 @@ export default function TransactionFormModal({
                 </DialogContent>
             </Dialog>
 
-            {/* Quick Add Account Modal */}
             {isAccountModalOpen && (
                 <AccountFormModal
                     isOpen={isAccountModalOpen}
@@ -350,9 +416,8 @@ export default function TransactionFormModal({
                 />
             )}
 
-            {/* Quick Add Category Modal */}
             {isCategoryModalOpen && (
-                <CategoryFormModal 
+                <CategoryFormModal
                     isOpen={isCategoryModalOpen}
                     onClose={() => setIsCategoryModalOpen(false)}
                     defaultType={data.type}
