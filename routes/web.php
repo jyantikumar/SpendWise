@@ -12,7 +12,6 @@ use App\Http\Controllers\RecurringTransactionController;
 use App\Http\Controllers\WishlistItemController;
 use App\Http\Controllers\DataExportImportController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 // Redirect root URL directly to the login page
 Route::get('/', function () {
@@ -21,99 +20,111 @@ Route::get('/', function () {
 
 // Protected Application Routes
 Route::middleware(['auth'])->group(function () {
-    // Main Dashboard
+    
+    // Main Dashboard & Analysis
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-
-    // Transactions
-    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
-    Route::post('/transactions', [TransactionController::class, 'store'])->name('transactions.store');
-    Route::put('/transactions/{transaction}', [TransactionController::class, 'update'])->name('transactions.update');
-    Route::delete('/transactions/{transaction}', [TransactionController::class, 'destroy'])->name('transactions.destroy');
-    
-    // User Profile Routes
-    Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
-    // Category Management Routes
-    Route::get('/categories', [CategoryController::class, 'index'])->name('categories.index');
-    Route::post('/categories', [CategoryController::class, 'store'])->name('categories.store');
-    Route::put('/categories/{category}', [CategoryController::class, 'update'])->name('categories.update');
-    Route::patch('/categories/{category}/toggle-active', [CategoryController::class, 'toggleActive'])
-    ->withTrashed()
-    ->name('categories.toggle-active');
-    Route::delete('/categories/{category}', [CategoryController::class, 'destroy'])->name('categories.destroy');
-    
-    // Category Transactions Modal API Endpoint
-    Route::get('/categories/{category}/transactions', [CategoryController::class, 'categoryTransactions'])->name('categories.transactions');
-
-    // Account Routes
-    Route::get('/accounts', [AccountController::class, 'index'])->name('accounts.index');
-    Route::post('/accounts', [AccountController::class, 'store'])->name('accounts.store');
-    Route::put('/accounts/{account}', [AccountController::class, 'update'])->name('accounts.update');
-    Route::patch('/accounts/{account}/toggle-active', [AccountController::class, 'toggleActive'])->name('accounts.toggle-active');
-    Route::delete('/accounts/{account}', [AccountController::class, 'destroy'])->name('accounts.destroy');
-    
-    // Account Transactions Modal API Endpoint
-    Route::get('/accounts/{account}/transactions', [AccountController::class, 'accountTransactions'])->name('accounts.transactions');
-    
-    // Account Type Routes
-    Route::get('/account-types', [AccountTypeController::class, 'index'])->name('account-types.index');
-    Route::post('/account-types', [AccountTypeController::class, 'store'])->name('account-types.store');
-    Route::put('/account-types/{accountType}', [AccountTypeController::class, 'update'])->name('account-types.update');
-    Route::delete('/account-types/{accountType}', [AccountTypeController::class, 'destroy'])->name('account-types.destroy');
-
-    // Analysis Analytics Page
     Route::get('/analysis', [AnalysisController::class, 'index'])->name('analysis.index');
 
+    // User Profile
+    Route::prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', [ProfileController::class, 'edit'])->name('edit');
+        Route::patch('/', [ProfileController::class, 'update'])->name('update');
+        Route::delete('/', [ProfileController::class, 'destroy'])->name('destroy');
+    });
+
+    // Transactions
+    Route::prefix('transactions')->name('transactions.')->group(function () {
+        Route::get('/', [TransactionController::class, 'index'])->name('index');
+        Route::post('/', [TransactionController::class, 'store'])->name('store');
+        Route::put('/{transaction}', [TransactionController::class, 'update'])->name('update');
+        Route::delete('/{transaction}', [TransactionController::class, 'destroy'])->name('destroy');
+    });
+
+    // Categories
+    Route::prefix('categories')->name('categories.')->group(function () {
+        Route::get('/', [CategoryController::class, 'index'])->name('index');
+        Route::post('/', [CategoryController::class, 'store'])->name('store');
+        Route::put('/{category}', [CategoryController::class, 'update'])->name('update');
+        Route::delete('/{category}', [CategoryController::class, 'destroy'])->name('destroy');
+        Route::patch('/{category}/toggle-active', [CategoryController::class, 'toggleActive'])->withTrashed()->name('toggle-active');
+        Route::get('/{category}/transactions', [CategoryController::class, 'categoryTransactions'])->name('transactions');
+    });
+
+    // Accounts
+    Route::prefix('accounts')->name('accounts.')->group(function () {
+        Route::get('/', [AccountController::class, 'index'])->name('index');
+        Route::post('/', [AccountController::class, 'store'])->name('store');
+        Route::put('/{account}', [AccountController::class, 'update'])->name('update');
+        Route::delete('/{account}', [AccountController::class, 'destroy'])->name('destroy');
+        Route::patch('/{account}/toggle-active', [AccountController::class, 'toggleActive'])->name('toggle-active');
+        Route::get('/{account}/transactions', [AccountController::class, 'accountTransactions'])->name('transactions');
+    });
+
+    // Account Types
+    Route::prefix('account-types')->name('account-types.')->group(function () {
+        Route::get('/', [AccountTypeController::class, 'index'])->name('index');
+        Route::post('/', [AccountTypeController::class, 'store'])->name('store');
+        Route::put('/{accountType}', [AccountTypeController::class, 'update'])->name('update');
+        Route::delete('/{accountType}', [AccountTypeController::class, 'destroy'])->name('destroy');
+    });
+
+    // Subscriptions / Recurring Transactions
     Route::get('/subscriptions', [RecurringTransactionController::class, 'index'])->name('subscriptions.index');
-    Route::post('/recurring', [RecurringTransactionController::class, 'store'])->name('recurring.store');
-    Route::put('/recurring/{recurringTransaction}', [RecurringTransactionController::class, 'update'])->name('recurring.update');
-    Route::delete('/recurring/{recurringTransaction}', [RecurringTransactionController::class, 'destroy'])->name('recurring.destroy');
-    Route::post('/recurring/{recurringTransaction}/process', [RecurringTransactionController::class, 'process'])->name('recurring.process');
-    Route::patch('/recurring/{recurringTransaction}/toggle', [RecurringTransactionController::class, 'toggle'])->name('recurring.toggle');
-    Route::post('/recurring/{recurringTransaction}/skip', [RecurringTransactionController::class, 'skip'])->name('recurring.skip');
+    Route::prefix('recurring')->name('recurring.')->group(function () {
+        Route::post('/', [RecurringTransactionController::class, 'store'])->name('store');
+        Route::put('/{recurringTransaction}', [RecurringTransactionController::class, 'update'])->name('update');
+        Route::delete('/{recurringTransaction}', [RecurringTransactionController::class, 'destroy'])->name('destroy');
+        Route::post('/{recurringTransaction}/process', [RecurringTransactionController::class, 'process'])->name('process');
+        Route::patch('/{recurringTransaction}/toggle', [RecurringTransactionController::class, 'toggle'])->name('toggle');
+        Route::post('/{recurringTransaction}/skip', [RecurringTransactionController::class, 'skip'])->name('skip');
+    });
 
-    Route::get('/splits', [SplitEventController::class, 'index'])->name('splits.index');
-    Route::post('/splits', [SplitEventController::class, 'store'])->name('splits.store');
-    Route::put('splits/{splitEvent}', [SplitEventController::class, 'update'])->name('splits.update');
-Route::delete('splits/{splitEvent}', [SplitEventController::class, 'destroy'])->name('splits.destroy');
-    Route::get('/splits/{splitEvent}', [SplitEventController::class, 'show'])->name('splits.show');
-    
-Route::put('/splits/{splitEvent}/expenses/{expense}', [SplitEventController::class, 'updateExpense'])->name('splits.expenses.update');
-    Route::delete('/splits/{splitEvent}/expenses/{expense}', [SplitEventController::class, 'destroyExpense'])->name('splits.expenses.destroy');
-    
-    Route::post('/splits/{splitEvent}/expenses', [SplitEventController::class, 'storeExpense'])->name('splits.expenses.store');
-    Route::post('/splits/{splitEvent}/settlements', [SplitEventController::class, 'storeSettlement'])->name('splits.settlements.store');
-    Route::patch('/splits/{splitEvent}/status', [SplitEventController::class, 'updateStatus'])->name('splits.status.update');
-    // Add these inside your split event routes group:
-Route::put('splits/{splitEvent}/settlements/{settlement}', [SplitEventController::class, 'updateSettlement'])->name('splits.settlements.update');
-Route::delete('splits/{splitEvent}/settlements/{settlement}', [SplitEventController::class, 'destroySettlement'])->name('splits.settlements.destroy');
-    Route::get('/settings/data', [DataExportImportController::class, 'index'])->name('settings.data');
-    
-    // JSON routes
-    Route::get('/settings/data/export/json', [DataExportImportController::class, 'exportJson'])->name('settings.data.export.json');
-    Route::post('/settings/data/import/json', [DataExportImportController::class, 'importJson'])->name('settings.data.import.json');
+    // Split Events, Expenses & Settlements
+    Route::prefix('splits')->name('splits.')->group(function () {
+        Route::get('/', [SplitEventController::class, 'index'])->name('index');
+        Route::post('/', [SplitEventController::class, 'store'])->name('store');
+        Route::get('/{splitEvent}', [SplitEventController::class, 'show'])->name('show');
+        Route::put('/{splitEvent}', [SplitEventController::class, 'update'])->name('update');
+        Route::delete('/{splitEvent}', [SplitEventController::class, 'destroy'])->name('destroy');
+        Route::patch('/{splitEvent}/status', [SplitEventController::class, 'updateStatus'])->name('status.update');
 
-    // 👇 ADDED: Clear data route
-    Route::delete('/settings/data/clear', [DataExportImportController::class, 'clearData'])->name('settings.data.clear');
+        // Nested Expenses
+        Route::post('/{splitEvent}/expenses', [SplitEventController::class, 'storeExpense'])->name('expenses.store');
+        Route::put('/{splitEvent}/expenses/{expense}', [SplitEventController::class, 'updateExpense'])->name('expenses.update');
+        Route::delete('/{splitEvent}/expenses/{expense}', [SplitEventController::class, 'destroyExpense'])->name('expenses.destroy');
 
-    Route::get('/settings/data/template/{format}', [DataExportImportController::class, 'downloadTemplate'])->name('settings.data.template');
-    
-    // CSV routes
-    Route::get('/settings/data/export/csv', [DataExportImportController::class, 'exportCsv'])->name('settings.data.export.csv');
-    Route::post('/settings/data/import/csv', [DataExportImportController::class, 'importCsv'])->name('settings.data.import.csv');
+        // Nested Settlements
+        Route::post('/{splitEvent}/settlements', [SplitEventController::class, 'storeSettlement'])->name('settlements.store');
+        Route::put('/{splitEvent}/settlements/{settlement}', [SplitEventController::class, 'updateSettlement'])->name('settlements.update');
+        Route::delete('/{splitEvent}/settlements/{settlement}', [SplitEventController::class, 'destroySettlement'])->name('settlements.destroy');
+    });
 
-    Route::get('/wishlist', [WishlistItemController::class, 'index'])->name('wishlist.index');
-Route::post('/wishlist', [WishlistItemController::class, 'store'])->name('wishlist.store');
-Route::get('/wishlist/{wishlist}', [WishlistItemController::class, 'show'])->name('wishlist.show');
-Route::put('/wishlist/{wishlist}', [WishlistItemController::class, 'update'])->name('wishlist.update');
-Route::delete('/wishlist/{wishlist}', [WishlistItemController::class, 'destroy'])->name('wishlist.destroy');
-Route::patch('/wishlist/{wishlist}/status', [WishlistItemController::class, 'toggleStatus'])->name('wishlist.status.toggle');
+    // Wishlist Items & Prices
+    Route::prefix('wishlist')->name('wishlist.')->group(function () {
+        Route::get('/', [WishlistItemController::class, 'index'])->name('index');
+        Route::post('/', [WishlistItemController::class, 'store'])->name('store');
+        Route::get('/{wishlist}', [WishlistItemController::class, 'show'])->name('show');
+        Route::put('/{wishlist}', [WishlistItemController::class, 'update'])->name('update');
+        Route::delete('/{wishlist}', [WishlistItemController::class, 'destroy'])->name('destroy');
+        Route::patch('/{wishlist}/status', [WishlistItemController::class, 'toggleStatus'])->name('status.toggle');
 
-Route::post('/wishlist/{wishlist}/prices', [WishlistItemController::class, 'storePrice'])->name('wishlist.prices.store');
-Route::put('/wishlist/{wishlist}/prices/{price}', [WishlistItemController::class, 'updatePrice'])->name('wishlist.prices.update');
-Route::delete('/wishlist/{wishlist}/prices/{price}', [WishlistItemController::class, 'destroyPrice'])->name('wishlist.prices.destroy');
+        // Nested Prices
+        Route::post('/{wishlist}/prices', [WishlistItemController::class, 'storePrice'])->name('prices.store');
+        Route::put('/{wishlist}/prices/{price}', [WishlistItemController::class, 'updatePrice'])->name('prices.update');
+        Route::delete('/{wishlist}/prices/{price}', [WishlistItemController::class, 'destroyPrice'])->name('prices.destroy');
+    });
+
+    // Data Export, Import, Templates & Clear Data
+    Route::prefix('settings/data')->name('settings.data.')->group(function () {
+        Route::get('/', [DataExportImportController::class, 'index'])->name('index');
+        Route::delete('/clear', [DataExportImportController::class, 'clearData'])->name('clear');
+        Route::get('/template/{format}', [DataExportImportController::class, 'downloadTemplate'])->name('template');
+        
+        Route::get('/export/json', [DataExportImportController::class, 'exportJson'])->name('export.json');
+        Route::post('/import/json', [DataExportImportController::class, 'importJson'])->name('import.json');
+        
+        Route::get('/export/csv', [DataExportImportController::class, 'exportCsv'])->name('export.csv');
+        Route::post('/import/csv', [DataExportImportController::class, 'importCsv'])->name('import.csv');
+    });
 });
-
 require __DIR__.'/auth.php';
