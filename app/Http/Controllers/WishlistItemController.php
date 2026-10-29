@@ -79,31 +79,31 @@ class WishlistItemController extends Controller
         return redirect()->back()->with('success', 'Wishlist item status updated.');
     }
 
-    public function storePrice(Request $request, WishlistItem $wishlist)
-    {
-        $validated = $request->validate([
-            'site_name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0.01',
-            'product_url' => 'required|url|max:500',
-        ]);
+ public function storePrice(Request $request, WishlistItem $wishlist)
+{
+    $validated = $request->validate([
+        'site_name'   => 'required|string|max:255',
+        'price'       => 'required|numeric|min:0.01',
+        'product_url' => 'required|url|max:2000',
+    ]);
 
-        $wishlist->prices()->create($validated);
+    $wishlist->prices()->create($validated);
 
-        return redirect()->back()->with('success', 'Price comparison link added.');
-    }
+    return redirect()->back()->with('success', 'Price comparison link added.');
+}
 
-    public function updatePrice(Request $request, WishlistItem $wishlist, WishlistPrice $price)
-    {
-        $validated = $request->validate([
-            'site_name' => 'required|string|max:255',
-            'price' => 'required|numeric|min:0.01',
-            'product_url' => 'required|url|max:500',
-        ]);
+public function updatePrice(Request $request, WishlistItem $wishlist, WishlistPrice $price)
+{
+    $validated = $request->validate([
+        'site_name'   => 'required|string|max:255',
+        'price'       => 'required|numeric|min:0.01',
+        'product_url' => 'required|url|max:2000',
+    ]);
 
-        $price->update($validated);
+    $price->update($validated);
 
-        return redirect()->back()->with('success', 'Price comparison link updated.');
-    }
+    return redirect()->back()->with('success', 'Price comparison link updated.');
+}
 
     public function destroyPrice(WishlistItem $wishlist, WishlistPrice $price)
 {
