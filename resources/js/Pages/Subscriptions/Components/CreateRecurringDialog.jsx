@@ -22,13 +22,13 @@ import {
 import { Switch } from '@/components/ui/switch';
 
 const WEEKDAYS = [
-    { value: 0, short: 'Sun', label: 'Sunday' },
-    { value: 1, short: 'Mon', label: 'Monday' },
-    { value: 2, short: 'Tue', label: 'Tuesday' },
-    { value: 3, short: 'Wed', label: 'Wednesday' },
-    { value: 4, short: 'Thu', label: 'Thursday' },
-    { value: 5, short: 'Fri', label: 'Friday' },
-    { value: 6, short: 'Sat', label: 'Saturday' },
+    { value: 0, short: 'Su', label: 'Sunday' },
+    { value: 1, short: 'M', label: 'Monday' },
+    { value: 2, short: 'T', label: 'Tuesday' },
+    { value: 3, short: 'W', label: 'Wednesday' },
+    { value: 4, short: 'Th', label: 'Thursday' },
+    { value: 5, short: 'F', label: 'Friday' },
+    { value: 6, short: 'S', label: 'Saturday' },
 ];
 
 export function CreateRecurringDialog({
@@ -173,11 +173,7 @@ export function CreateRecurringDialog({
                             ? 'Edit Recurring Rule'
                             : 'Add Recurring Transaction'}
                     </DialogTitle>
-                    <DialogDescription className="text-xs text-zinc-400">
-                        {isEditing
-                            ? 'Update schedule, amounts, or auto-posting parameters.'
-                            : 'Configure a repeating bill, subscription, or automated income source.'}
-                    </DialogDescription>
+                    
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-3.5 pt-1">
@@ -330,7 +326,7 @@ export function CreateRecurringDialog({
                                             onClick={() => toggleWeekday(day.value)}
                                             className={`h-9 rounded-md text-[11px] font-medium border transition-all ${
                                                 selected
-                                                    ? 'bg-zinc-800 border-zinc-600 text-zinc-100'
+                                                    ? 'bg-zinc-100 border-zinc-100 text-zinc-900 shadow-sm'
                                                     : 'bg-zinc-900 border-zinc-800 text-zinc-400 hover:text-zinc-200 hover:border-zinc-700'
                                             }`}
                                         >
@@ -413,22 +409,7 @@ export function CreateRecurringDialog({
                         </div>
                     </div>
 
-                    {/* Auto-create */}
-                    <div className="flex items-center justify-between rounded-lg border border-zinc-800 p-2.5 bg-zinc-900/50">
-                        <div className="space-y-0.5 pr-2">
-                            <Label className="text-xs font-medium text-zinc-200">
-                                Auto-post Transaction
-                            </Label>
-                            <p className="text-[10px] text-zinc-400 leading-tight">
-                                Automatically post entry on due date via background
-                                scheduler.
-                            </p>
-                        </div>
-                        <Switch
-                            checked={data.auto_create}
-                            onCheckedChange={(val) => setData('auto_create', val)}
-                        />
-                    </div>
+                  
 
                     <DialogFooter className="pt-2 flex-row justify-end gap-2">
                         <Button
