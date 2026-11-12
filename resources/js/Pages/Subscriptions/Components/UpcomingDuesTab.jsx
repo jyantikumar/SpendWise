@@ -2,6 +2,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { dueDateLabel } from './dateHelpers';
 
 export function UpcomingDuesTab({ 
     dateFilter, 
@@ -55,7 +56,10 @@ export function UpcomingDuesTab({
                                         </div>
 
                                         <div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800/60 text-[10px]">
-                                            <span className="font-medium text-zinc-300">Due {item.due_date}</span>
+                                            <div className="flex items-center gap-1.5 text-zinc-400 flex-wrap">
+                                                <span className="font-medium text-zinc-300">Due {dueDateLabel(item.due_date)}</span>
+                                                <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-medium capitalize">{item.frequency}</span>
+                                            </div>
                                             <div className="flex items-center gap-1.5 shrink-0">
                                                 <Button size="sm" variant="outline" className="h-6 text-[10px] px-2.5 border-zinc-800 text-zinc-300" onClick={() => setPayingInstance(item)}>
                                                     Pay
@@ -76,6 +80,7 @@ export function UpcomingDuesTab({
                                 <TableHeader>
                                     <TableRow className="border-b border-zinc-800 hover:bg-transparent">
                                         <TableHead className="text-zinc-400">Title</TableHead>
+                                        <TableHead className="text-zinc-400">Frequency</TableHead>
                                         <TableHead className="text-zinc-400">Due Date</TableHead>
                                         <TableHead className="text-zinc-400">Account</TableHead>
                                         <TableHead className="text-right text-zinc-400">Amount</TableHead>
@@ -86,7 +91,8 @@ export function UpcomingDuesTab({
                                     {paginatedUpcoming.map((item, idx) => (
                                         <TableRow key={`${item.rule_id}-${item.due_date}-${idx}`} className="border-b border-zinc-800 hover:bg-zinc-800/40">
                                             <TableCell className="font-medium text-zinc-200 text-xs">{item.title}</TableCell>
-                                            <TableCell className="text-xs text-zinc-400">{item.due_date}</TableCell>
+                                            <TableCell className="text-xs text-zinc-400 capitalize">{item.frequency}</TableCell>
+                                            <TableCell className="text-xs text-zinc-400">{dueDateLabel(item.due_date)}</TableCell>
                                             <TableCell className="text-xs text-zinc-400">{item.account?.name || '—'}</TableCell>
                                             <TableCell className={`text-right font-semibold text-xs ${item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}`}>
                                                 {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}

@@ -9,6 +9,17 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { dueDateLabel } from './dateHelpers';
+
+const WEEKDAY_SHORT   = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEKDAY_COMPACT = ['Su',  'M',   'Tu',  'W',   'Th',  'F',   'Sa'];
+
+function formatWeekdayList(weekdays, compact = false) {
+    if (!Array.isArray(weekdays) || weekdays.length === 0) return null;
+    const sorted = [...weekdays].map(Number).sort((a, b) => a - b);
+    const labels = compact ? WEEKDAY_COMPACT : WEEKDAY_SHORT;
+    return sorted.map((d) => labels[d]).join(compact ? ' ' : ', ');
+}
 
 export function MasterRulesTab({ 
     filteredRules, 
@@ -29,11 +40,9 @@ export function MasterRulesTab({
         <Card className="border-zinc-800">
             <CardHeader className="p-4 sm:p-6 pb-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                    {/* Header Title & Quick Filter Pills */}
                     <div className="flex items-center gap-3 flex-wrap">
                         <CardTitle className="text-sm sm:text-base text-zinc-200">Scheduled Rules</CardTitle>
 
-                        {/* Inline Status Filter Pills */}
                         <div className="flex items-center gap-1 bg-zinc-900/80 p-0.5 rounded-lg border border-zinc-800 text-xs">
                             {[
                                 { id: 'all', label: 'All' },
@@ -73,62 +82,75 @@ export function MasterRulesTab({
                             No recurring rules found matching your filters.
                         </div>
                     ) : (
-                        paginatedRules.map((item) => (
-                            <div 
-                                key={item.id} 
-                                className={`relative p-3 rounded-lg border bg-zinc-900/40 transition-all ${
-                                    !item.is_active ? 'border-zinc-800/60 opacity-50' : 'border-zinc-800 hover:border-zinc-700'
-                                }`}
-                            >
-                                <div className={`absolute left-0 top-3 bottom-3 w-1 rounded-r-full ${
-                                    item.is_active ? (item.type === 'income' ? 'bg-emerald-500' : 'bg-rose-500') : 'bg-zinc-600'
-                                }`} />
+                        paginatedRules.map((item) => {
+                            const weekdayList = item.frequency === 'weekly'
+                                ? formatWeekdayList(item.weekdays, true)
+                                : null;
 
-                                <div className="pl-2 space-y-2">
-                                    <div className="flex items-start justify-between gap-2">
-                                        <div className="min-w-0 flex-1">
-                                            <p className={`text-xs font-semibold truncate ${!item.is_active ? 'line-through text-zinc-400' : 'text-zinc-100'}`}>
-                                                {item.title}
-                                            </p>
-                                            <p className="text-[11px] text-zinc-400 truncate mt-0.5">{item.account?.name || 'No account'}</p>
+                            return (
+                                <div 
+                                    key={item.id} 
+                                    className={`relative p-3 rounded-lg border bg-zinc-900/40 transition-all ${
+                                        !item.is_active ? 'border-zinc-800/60 opacity-50' : 'border-zinc-800 hover:border-zinc-700'
+                                    }`}
+                                >
+                                    <div className={`absolute left-0 top-3 bottom-3 w-1 rounded-r-full ${
+                                        item.is_active ? (item.type === 'income' ? 'bg-emerald-500' : 'bg-rose-500') : 'bg-zinc-600'
+                                    }`} />
+
+                                    <div className="pl-2 space-y-2">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="min-w-0 flex-1">
+                                                <p className={`text-xs font-semibold truncate ${!item.is_active ? 'line-through text-zinc-400' : 'text-zinc-100'}`}>
+                                                    {item.title}
+                                                </p>
+                                                <p className="text-[11px] text-zinc-400 truncate mt-0.5">{item.account?.name || 'No account'}</p>
+                                            </div>
+
+                                            <span className={`text-sm font-bold shrink-0 ${
+                                                !item.is_active ? 'text-zinc-500' : item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'
+                                            }`}>
+                                                {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
+                                            </span>
                                         </div>
 
-                                        <span className={`text-sm font-bold shrink-0 ${
-                                            !item.is_active ? 'text-zinc-500' : item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'
-                                        }`}>
-                                            {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
-                                        </span>
-                                    </div>
+                                        <div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800/60 text-[10px]">
+                                            <div className="flex items-center gap-1.5 text-zinc-400 flex-wrap">
+                                                <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-medium capitalize">
+                                                    {item.frequency}
+                                                </span>
+                                                {weekdayList && (
+                                                    <span className="px-1.5 py-0.5 rounded bg-zinc-800/60 text-zinc-300 font-medium tracking-wide">
+                                                        {weekdayList}
+                                                    </span>
+                                                )}
+                                                <span>Next: {dueDateLabel(item.next_due_date)}</span>
+                                            </div>
 
-                                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800/60 text-[10px]">
-                                        <div className="flex items-center gap-1.5 text-zinc-400 flex-wrap">
-                                            <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-medium capitalize">{item.frequency}</span>
-                                            <span>Next: {item.next_due_date ? String(item.next_due_date).split('T')[0] : '—'}</span>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button size="icon" variant="ghost" className="h-6 w-6 text-zinc-400">
+                                                        <MoreHorizontal className="h-3.5 w-3.5" />
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-900 text-zinc-200">
+                                                    <DropdownMenuItem onClick={() => { setEditingItem(item); setIsCreateOpen(true); }} className="text-xs">
+                                                        <Pencil className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleToggleActive(item)} className="text-xs">
+                                                        <Power className="mr-2 h-3.5 w-3.5 text-zinc-400" /> {item.is_active ? 'Pause' : 'Activate'}
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSeparator className="bg-zinc-800" />
+                                                    <DropdownMenuItem onClick={() => setDeletingItem(item)} className="text-xs text-rose-400">
+                                                        <Trash2 className="mr-2 h-3.5 w-3.5 text-rose-400" /> Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </div>
-
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button size="icon" variant="ghost" className="h-6 w-6 text-zinc-400">
-                                                    <MoreHorizontal className="h-3.5 w-3.5" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                                                <DropdownMenuItem onClick={() => { setEditingItem(item); setIsCreateOpen(true); }} className="text-xs">
-                                                    <Pencil className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Edit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => handleToggleActive(item)} className="text-xs">
-                                                    <Power className="mr-2 h-3.5 w-3.5 text-zinc-400" /> {item.is_active ? 'Pause' : 'Activate'}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuSeparator className="bg-zinc-800" />
-                                                <DropdownMenuItem onClick={() => setDeletingItem(item)} className="text-xs text-rose-400">
-                                                    <Trash2 className="mr-2 h-3.5 w-3.5 text-rose-400" /> Delete
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
                                     </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
 
@@ -147,38 +169,53 @@ export function MasterRulesTab({
                         </TableHeader>
                         <TableBody>
                             {paginatedRules.length > 0 ? (
-                                paginatedRules.map((item) => (
-                                    <TableRow key={item.id} className="border-b border-zinc-800 hover:bg-zinc-800/40">
-                                        <TableCell className="font-medium text-zinc-200 text-xs">{item.title}</TableCell>
-                                        <TableCell className="text-xs text-zinc-400 capitalize">{item.frequency}</TableCell>
-                                        <TableCell className="text-xs text-zinc-400">{item.account?.name || '—'}</TableCell>
-                                        <TableCell className="text-xs text-zinc-400">{item.next_due_date ? String(item.next_due_date).split('T')[0] : '—'}</TableCell>
-                                        <TableCell className={`text-right font-semibold text-xs ${item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}`}>
-                                            {formatCurrency(item.amount)}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-400">
-                                                        <MoreHorizontal className="h-3.5 w-3.5" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                                                    <DropdownMenuItem onClick={() => { setEditingItem(item); setIsCreateOpen(true); }} className="text-xs">
-                                                        <Pencil className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleToggleActive(item)} className="text-xs">
-                                                        <Power className="mr-2 h-3.5 w-3.5 text-zinc-400" /> {item.is_active ? 'Pause' : 'Activate'}
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator className="bg-zinc-800" />
-                                                    <DropdownMenuItem onClick={() => setDeletingItem(item)} className="text-xs text-rose-400">
-                                                        <Trash2 className="mr-2 h-3.5 w-3.5 text-rose-400" /> Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                paginatedRules.map((item) => {
+                                    const weekdayList = item.frequency === 'weekly'
+                                        ? formatWeekdayList(item.weekdays, false)
+                                        : null;
+
+                                    return (
+                                        <TableRow key={item.id} className="border-b border-zinc-800 hover:bg-zinc-800/40">
+                                            <TableCell className="font-medium text-zinc-200 text-xs">{item.title}</TableCell>
+                                            <TableCell className="text-xs text-zinc-400">
+                                                <div className="flex items-center gap-1.5 flex-wrap">
+                                                    <span className="capitalize">{item.frequency}</span>
+                                                    {weekdayList && (
+                                                        <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 text-[10px] font-medium">
+                                                            {weekdayList}
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-xs text-zinc-400">{item.account?.name || '—'}</TableCell>
+                                            <TableCell className="text-xs text-zinc-400">{dueDateLabel(item.next_due_date)}</TableCell>
+                                            <TableCell className={`text-right font-semibold text-xs ${item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                                {formatCurrency(item.amount)}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button size="icon" variant="ghost" className="h-7 w-7 text-zinc-400">
+                                                            <MoreHorizontal className="h-3.5 w-3.5" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-900 text-zinc-200">
+                                                        <DropdownMenuItem onClick={() => { setEditingItem(item); setIsCreateOpen(true); }} className="text-xs">
+                                                            <Pencil className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Edit
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem onClick={() => handleToggleActive(item)} className="text-xs">
+                                                            <Power className="mr-2 h-3.5 w-3.5 text-zinc-400" /> {item.is_active ? 'Pause' : 'Activate'}
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuSeparator className="bg-zinc-800" />
+                                                        <DropdownMenuItem onClick={() => setDeletingItem(item)} className="text-xs text-rose-400">
+                                                            <Trash2 className="mr-2 h-3.5 w-3.5 text-rose-400" /> Delete
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={6} className="py-8 text-center text-xs text-zinc-500">

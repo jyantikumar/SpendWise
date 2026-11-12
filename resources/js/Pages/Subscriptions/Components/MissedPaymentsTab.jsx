@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { dueDateLabel } from './dateHelpers';
 
 export function MissedPaymentsTab({ 
     overdueInstances, 
@@ -40,7 +41,7 @@ export function MissedPaymentsTab({
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <span className="text-xs font-semibold text-zinc-200">{item.title}</span>
                                                 <Badge variant="outline" className="text-[10px] border-rose-900/80 bg-rose-950/20 text-rose-400">
-                                                    Due {item.due_date}
+                                                    Due {dueDateLabel(item.due_date)}
                                                 </Badge>
                                             </div>
                                             <p className="text-[11px] text-zinc-400">
@@ -80,6 +81,7 @@ export function MissedPaymentsTab({
                                 <TableHeader>
                                     <TableRow className="border-b border-zinc-800 hover:bg-transparent">
                                         <TableHead className="text-zinc-400">Title</TableHead>
+                                        <TableHead className="text-zinc-400">Frequency</TableHead>
                                         <TableHead className="text-zinc-400">Due Date</TableHead>
                                         <TableHead className="text-zinc-400">Account</TableHead>
                                         <TableHead className="text-right text-zinc-400">Amount</TableHead>
@@ -90,7 +92,8 @@ export function MissedPaymentsTab({
                                     {paginatedMissed.map((item, idx) => (
                                         <TableRow key={`${item.rule_id}-${item.due_date}-${idx}`} className="border-b border-zinc-800 hover:bg-zinc-800/40">
                                             <TableCell className="font-medium text-zinc-200 text-xs">{item.title}</TableCell>
-                                            <TableCell className="text-xs text-rose-400 font-medium">{item.due_date}</TableCell>
+                                            <TableCell className="text-xs text-zinc-400 capitalize">{item.frequency}</TableCell>
+                                            <TableCell className="text-xs text-rose-400 font-medium">{dueDateLabel(item.due_date)}</TableCell>
                                             <TableCell className="text-xs text-zinc-400">{item.account?.name || '—'}</TableCell>
                                             <TableCell className="text-right font-semibold text-xs text-rose-500">
                                                 -{formatCurrency(item.amount)}
