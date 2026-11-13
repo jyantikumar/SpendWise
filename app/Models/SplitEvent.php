@@ -10,7 +10,7 @@ class SplitEvent extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'description', 'event_date', 'status'];
+    protected $fillable = ['user_id','title', 'description', 'event_date', 'status'];
     protected $casts = ['event_date' => 'date'];
 
     public function expenses(): HasMany
@@ -22,4 +22,8 @@ class SplitEvent extends Model
     {
         return $this->hasMany(SplitSettlement::class);
     }
+    public function user()
+{
+    return $this->belongsTo(User::class);
+}
 }

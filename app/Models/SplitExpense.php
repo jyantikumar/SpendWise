@@ -11,12 +11,8 @@ class SplitExpense extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'split_event_id',
-        'paid_by',
-        'amount',
-        'description',
-    ];
+    protected $fillable = ['user_id', 'split_event_id', 'paid_by', 'amount', 'description'];
+
 
     protected $casts = [
         'amount' => 'decimal:2',
@@ -31,4 +27,8 @@ class SplitExpense extends Model
     {
         return $this->hasMany(SplitExpenseShare::class);
     }
+    public function user()
+{
+    return $this->belongsTo(User::class);
+}
 }

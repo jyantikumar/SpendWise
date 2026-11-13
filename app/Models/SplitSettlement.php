@@ -10,11 +10,16 @@ class SplitSettlement extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['split_event_id', 'payer_name', 'payee_name', 'amount', 'paid_at'];
+protected $fillable = ['user_id', 'split_event_id', 'payer_name', 'payee_name', 'amount', 'paid_at'];
     protected $casts = ['amount' => 'decimal:2', 'paid_at' => 'date'];
 
     public function event(): BelongsTo
     {
         return $this->belongsTo(SplitEvent::class, 'split_event_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }
