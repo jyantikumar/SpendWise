@@ -101,14 +101,22 @@ export function CreateRecurringDialog({
     const editingCategoryId =
         editingItem?.category_id ?? editingItem?.category?.id;
 
-    // Include transfer categories so the dropdown is never mysteriously empty.
-    const filteredCategories = categories.filter(
-        (cat) =>
-            !cat.type ||
-            cat.type === data.type ||
-            cat.type === 'transfer' ||
-            String(cat.id) === String(editingCategoryId)
-    );
+    /**
+     * Only allow categories whose `type` matches the rule's type.
+     * The currently-edited category is always kept so it can render,
+     * even if it is a legacy/mismatched record (e.g. created before
+     * this restriction was added).
+     *
+     * Previously this list also allowed categories with no type and
+     * transfer categories, which let mismatched categories get attached
+     * to a rule. Those then produced transactions whose category could
+     * not render in the edit modal.
+     */
+    const filteredCategories = categories.filter((cat) => {
+        if (String(cat.id) === String(editingCategoryId)) return true;
+        if (!cat.type) return false;
+        return cat.type === data.type;
+    });
 
     const handleTypeChange = (newType) => {
         setData((prev) => ({ ...prev, type: newType, category_id: '' }));
@@ -173,7 +181,6 @@ export function CreateRecurringDialog({
                             ? 'Edit Recurring Rule'
                             : 'Add Recurring Transaction'}
                     </DialogTitle>
-                    
                 </DialogHeader>
 
                 <form onSubmit={handleSubmit} className="space-y-3.5 pt-1">
@@ -408,8 +415,6 @@ export function CreateRecurringDialog({
                             )}
                         </div>
                     </div>
-
-                  
 
                     <DialogFooter className="pt-2 flex-row justify-end gap-2">
                         <Button

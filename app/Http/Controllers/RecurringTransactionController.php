@@ -3,11 +3,14 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\Category;
 use App\Models\RecurringTransaction;
 use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 
 class RecurringTransactionController extends Controller
@@ -152,16 +155,29 @@ class RecurringTransactionController extends Controller
 
         $validated = $request->validate([
             'due_date'     => 'required|date',
-            'account_id'   => 'required|exists:accounts,id',
+            'account_id'   => [
+                'required',
+                Rule::exists('accounts', 'id')->where('user_id', $request->user()->id),
+            ],
             'amount'       => 'required|numeric|min:0.01',
             'payment_date' => 'required|date',
         ]);
 
-        DB::transaction(function () use ($recurringTransaction, $validated) {
+        // Guard: if the rule's stored category is missing, owned by another
+        // user, or its `type` doesn't match the rule's type, drop it rather
+        // than writing a category onto the transaction that the edit modal
+        // would be unable to render (which was the original bug).
+        $categoryId = $this->resolveSafeCategoryId(
+            $recurringTransaction->user_id,
+            $recurringTransaction->category_id,
+            $recurringTransaction->type
+        );
+
+        DB::transaction(function () use ($recurringTransaction, $validated, $categoryId) {
             Transaction::create([
                 'user_id'                  => $recurringTransaction->user_id,
                 'account_id'               => $validated['account_id'],
-                'category_id'              => $recurringTransaction->category_id,
+                'category_id'              => $categoryId,
                 'recurring_transaction_id' => $recurringTransaction->id,
                 'amount'                   => $validated['amount'],
                 'type'                     => $recurringTransaction->type,
@@ -251,6 +267,8 @@ class RecurringTransactionController extends Controller
 
     private function validatePayload(Request $request): array
     {
+        $userId = $request->user()->id;
+
         $validated = $request->validate([
             'title'       => 'required|string|max:255',
             'amount'      => 'required|numeric|min:0.01',
@@ -258,8 +276,14 @@ class RecurringTransactionController extends Controller
             'frequency'   => 'required|in:daily,weekly,monthly,yearly',
             'weekdays'    => 'nullable|array|required_if:frequency,weekly',
             'weekdays.*'  => 'integer|between:0,6',
-            'account_id'  => 'required|exists:accounts,id',
-            'category_id' => 'nullable|exists:categories,id',
+            'account_id'  => [
+                'required',
+                Rule::exists('accounts', 'id')->where('user_id', $userId),
+            ],
+            'category_id' => [
+                'nullable',
+                Rule::exists('categories', 'id')->where('user_id', $userId),
+            ],
             'start_date'  => 'required|date',
             'end_date'    => 'nullable|date|after_or_equal:start_date',
             'auto_create' => 'boolean',
@@ -270,6 +294,48 @@ class RecurringTransactionController extends Controller
         }
 
         return $validated;
+    }
+
+    /**
+     * Return a category_id that is safe to attach to a generated transaction,
+     * or null if the rule's stored category is invalid / mismatched.
+     *
+     * A mismatched category would later be filtered out of the edit modal's
+     * dropdown (because the modal only offers categories whose type matches
+     * the transaction type), causing the Select to render empty even though
+     * category_id is set — the original bug.
+     */
+    private function resolveSafeCategoryId(int $userId, $categoryId, string $ruleType): ?int
+    {
+        if (empty($categoryId)) {
+            return null;
+        }
+
+        $category = Category::where('user_id', $userId)
+            ->where('id', $categoryId)
+            ->first();
+
+        if (!$category) {
+            Log::warning('Recurring rule references missing/foreign category', [
+                'user_id'     => $userId,
+                'category_id' => $categoryId,
+            ]);
+            return null;
+        }
+
+        // Categories with no type are treated as "neutral" and allowed.
+        // A typed category must match the rule's type.
+        if (!empty($category->type) && $category->type !== $ruleType) {
+            Log::warning('Dropping mismatched category on recurring process', [
+                'user_id'         => $userId,
+                'category_id'     => $categoryId,
+                'category_type'   => $category->type,
+                'rule_type'       => $ruleType,
+            ]);
+            return null;
+        }
+
+        return (int) $category->id;
     }
 
     private function normalizeWeekdays($value): array

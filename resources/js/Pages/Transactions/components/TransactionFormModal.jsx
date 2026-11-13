@@ -39,12 +39,12 @@ export default function TransactionFormModal({
         return isActive || isCurrentlySelected;
     });
 
-        const availableSavingsGoals = savingsGoals.filter((goal) => {
-            const isActive = goal.status === 'active';
-            const isCurrentlySelected = isEditing && String(goal.id) === String(editingTransaction?.savings_goal_id);
-            const isDefault = defaultSavingsGoalId && String(goal.id) === String(defaultSavingsGoalId);
-            return isActive || isCurrentlySelected || isDefault;
-        });
+    const availableSavingsGoals = savingsGoals.filter((goal) => {
+        const isActive = goal.status === 'active';
+        const isCurrentlySelected = isEditing && String(goal.id) === String(editingTransaction?.savings_goal_id);
+        const isDefault = defaultSavingsGoalId && String(goal.id) === String(defaultSavingsGoalId);
+        return isActive || isCurrentlySelected || isDefault;
+    });
 
     const { data, setData, post, put, processing, errors, reset, clearErrors } = useForm({
         account_id: '',
@@ -140,14 +140,43 @@ export default function TransactionFormModal({
         }
     };
 
+    /**
+     * Filter categories for the dropdown.
+     *
+     * IMPORTANT: the currently-attached category must ALWAYS be kept in the
+     * options list so Radix's <Select> can render its label. Otherwise the
+     * Select falls back to the placeholder and looks "empty" even though
+     * data.category_id is set — which is exactly what happened for
+     * transactions generated from recurring rules whose stored category had
+     * a mismatched (or missing) `type`.
+     */
     const filteredCategories = categories.filter((c) => {
+        const isCurrentlySelected =
+            isEditing && String(c.id) === String(editingTransaction?.category_id);
+
+        if (isCurrentlySelected) return true;
+
         const isSameType = c.type === data.type;
         const isActive = Boolean(c.is_active) || c.is_active === undefined;
-        const isCurrentlySelected = isEditing && String(c.id) === String(editingTransaction?.category_id);
-        return isSameType && (isActive || isCurrentlySelected);
+        return isSameType && isActive;
     });
 
-    const showCategory = data.type === 'income' || data.type === 'expense';
+    // Flag whether the currently-selected category has a type that doesn't
+    // match the current transaction type — so we can hint to the user.
+    const selectedCategory = categories.find(
+        (c) => String(c.id) === String(data.category_id)
+    );
+    const selectedCategoryTypeMismatch =
+        showCategoryForType(data.type) &&
+        selectedCategory &&
+        selectedCategory.type &&
+        selectedCategory.type !== data.type;
+
+    function showCategoryForType(type) {
+        return type === 'income' || type === 'expense';
+    }
+
+    const showCategory = showCategoryForType(data.type);
     const showSavingsGoal = data.type === 'savings';
 
     return (
@@ -308,12 +337,21 @@ export default function TransactionFormModal({
                                     </SelectTrigger>
                                     <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
                                         {filteredCategories.length > 0 ? (
-                                            filteredCategories.map((cat) => (
-                                                <SelectItem key={cat.id} value={String(cat.id)}>
-                                                    {cat.name}{' '}
-                                                    {!cat.is_active && cat.is_active !== undefined ? '(Inactive)' : ''}
-                                                </SelectItem>
-                                            ))
+                                            filteredCategories.map((cat) => {
+                                                const isSelected =
+                                                    String(cat.id) === String(data.category_id);
+                                                const typeMismatch =
+                                                    isSelected &&
+                                                    cat.type &&
+                                                    cat.type !== data.type;
+                                                return (
+                                                    <SelectItem key={cat.id} value={String(cat.id)}>
+                                                        {cat.name}{' '}
+                                                        {!cat.is_active && cat.is_active !== undefined ? '(Inactive)' : ''}
+                                                        {typeMismatch ? ' (different type)' : ''}
+                                                    </SelectItem>
+                                                );
+                                            })
                                         ) : (
                                             <div className="p-2 text-xs text-center text-muted-foreground">
                                                 No active categories available for this type.
@@ -321,6 +359,12 @@ export default function TransactionFormModal({
                                         )}
                                     </SelectContent>
                                 </Select>
+                                {selectedCategoryTypeMismatch && (
+                                    <p className="text-[11px] text-amber-500">
+                                        The selected category has a different type than this transaction.
+                                        Pick a matching category or leave it blank.
+                                    </p>
+                                )}
                                 {errors.category_id && <p className="text-xs text-rose-500">{errors.category_id}</p>}
                             </div>
                         )}
