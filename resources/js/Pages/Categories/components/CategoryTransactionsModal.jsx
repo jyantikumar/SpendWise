@@ -1,3 +1,4 @@
+// resources/js/Pages/Categories/components/CategoryTransactionsModal.jsx
 import { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { 
@@ -5,7 +6,9 @@ import {
     Loader2, 
     Tag, 
     ChevronLeft, 
-    ChevronRight 
+    ChevronRight,
+    Filter,
+    X
 } from 'lucide-react';
 
 import { 
@@ -18,10 +21,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 import { TransactionDetailSheet } from '@/Pages/Transactions/components/TransactionDetailSheet';
+import { CategoryTransactionsFilterSheet } from '@/Pages/Categories/components/CategoryTransactionsFilterSheet';
 
 export default function CategoryTransactionsModal({ 
     isOpen, 
@@ -30,17 +33,24 @@ export default function CategoryTransactionsModal({
     accounts = [], 
     initialStartDate = '', 
     initialEndDate = '',
-    userCurrency = 'PHP' // 👈 Accept userCurrency prop with fallback
+    userCurrency = 'PHP'
 }) {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [totalAmount, setTotalAmount] = useState(0);
 
-    // Filter States
+    // Filter States (Applied)
     const [search, setSearch] = useState('');
     const [selectedAccount, setSelectedAccount] = useState('all');
     const [startDate, setStartDate] = useState(initialStartDate);
     const [endDate, setEndDate] = useState(initialEndDate);
+
+    // Temporary Filter States inside Sheet before applying
+    const [tempStartDate, setTempStartDate] = useState(initialStartDate);
+    const [tempEndDate, setTempEndDate] = useState(initialEndDate);
+    const [tempSelectedAccount, setTempSelectedAccount] = useState('all');
+
+    const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -66,15 +76,54 @@ export default function CategoryTransactionsModal({
         if (isOpen) {
             setStartDate(initialStartDate);
             setEndDate(initialEndDate);
+            setTempStartDate(initialStartDate);
+            setTempEndDate(initialEndDate);
             setSearch('');
             setSelectedAccount('all');
+            setTempSelectedAccount('all');
             setCurrentPage(1);
         }
     }, [isOpen, initialStartDate, initialEndDate]);
 
-    // Reset page back to 1 whenever search, account, or dates change
-    const handleFilterChange = (setter, value) => {
-        setter(value);
+    // Active filter calculation
+    const activeFilterCount = [
+        startDate !== initialStartDate || endDate !== initialEndDate,
+        selectedAccount !== 'all'
+    ].filter(Boolean).length;
+
+    const handleSheetOpenChange = (open) => {
+        if (open) {
+            setTempStartDate(startDate);
+            setTempEndDate(endDate);
+            setTempSelectedAccount(selectedAccount);
+        }
+        setIsFilterSheetOpen(open);
+    };
+
+    const handleApplyFilters = () => {
+        setStartDate(tempStartDate);
+        setEndDate(tempEndDate);
+        setSelectedAccount(tempSelectedAccount);
+        setCurrentPage(1);
+        setIsFilterSheetOpen(false);
+    };
+
+    const handleResetFilters = () => {
+        setTempStartDate(initialStartDate);
+        setTempEndDate(initialEndDate);
+        setTempSelectedAccount('all');
+    };
+
+    const handleClearSingleFilter = (filterType) => {
+        if (filterType === 'date') {
+            setStartDate(initialStartDate);
+            setEndDate(initialEndDate);
+            setTempStartDate(initialStartDate);
+            setTempEndDate(initialEndDate);
+        } else if (filterType === 'account') {
+            setSelectedAccount('all');
+            setTempSelectedAccount('all');
+        }
         setCurrentPage(1);
     };
 
@@ -136,6 +185,8 @@ export default function CategoryTransactionsModal({
         setIsDetailSheetOpen(true);
     };
 
+    const selectedAccountName = accounts.find(a => String(a.id) === String(selectedAccount))?.name;
+
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onClose}>
@@ -166,56 +217,61 @@ export default function CategoryTransactionsModal({
                         </div>
                     </DialogHeader>
 
-                    {/* Filter Controls Bar */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 py-3 border-b border-zinc-800 bg-zinc-900/40 -mx-4 px-4 sm:-mx-6 sm:px-6 shrink-0">
-                        {/* Search Input */}
-                        <div className="relative col-span-2 sm:col-span-2">
+                    {/* Search & Filter Trigger Bar */}
+                    <div className="flex items-center gap-2 py-3 border-b border-zinc-800 bg-zinc-900/40 -mx-4 px-4 sm:-mx-6 sm:px-6 shrink-0">
+                        <div className="relative flex-1">
                             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
                             <Input
                                 placeholder="Search description..."
                                 value={search}
-                                onChange={(e) => handleFilterChange(setSearch, e.target.value)}
-                                className="pl-8 h-8 text-xs w-full border-zinc-800 text-zinc-300"
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                className="pl-8 h-9 text-xs w-full border-zinc-800 text-zinc-300 bg-background"
                             />
                         </div>
 
-                        {/* Start Date */}
-                        <div className="w-full col-span-1">
-                            <Input
-                                type="date"
-                                value={startDate}
-                                onChange={(e) => handleFilterChange(setStartDate, e.target.value)}
-                                className="h-8 text-xs w-full border-zinc-800 text-zinc-300"
-                            />
-                        </div>
-
-                        {/* End Date */}
-                        <div className="w-full col-span-1">
-                            <Input
-                                type="date"
-                                value={endDate}
-                                onChange={(e) => handleFilterChange(setEndDate, e.target.value)}
-                                className="h-8 text-xs w-full border-zinc-800 text-zinc-300"
-                            />
-                        </div>
-
-                        {/* Account Filter */}
-                        <div className="w-full col-span-2 sm:col-span-4">
-                            <Select value={selectedAccount} onValueChange={(val) => handleFilterChange(setSelectedAccount, val)}>
-                                <SelectTrigger className="h-8 text-xs w-full border-zinc-800 text-zinc-300">
-                                    <SelectValue placeholder="All Accounts" />
-                                </SelectTrigger>
-                                <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                    <SelectItem value="all">All Accounts</SelectItem>
-                                    {accounts.map((acc) => (
-                                        <SelectItem key={acc.id} value={String(acc.id)}>
-                                            {acc.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSheetOpenChange(true)}
+                            className="h-9 px-3 border-zinc-800 text-zinc-300 hover:bg-zinc-800 text-xs gap-2 shrink-0 bg-background"
+                        >
+                            <Filter className="h-3.5 w-3.5" />
+                            <span>Filters</span>
+                            {activeFilterCount > 0 && (
+                                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                                    {activeFilterCount}
+                                </span>
+                            )}
+                        </Button>
                     </div>
+
+                    {/* Active Filter Chips Bar */}
+                    {(startDate !== initialStartDate || endDate !== initialEndDate || selectedAccount !== 'all') && (
+                        <div className="flex items-center gap-1.5 py-2 px-1 shrink-0 flex-wrap">
+                            <span className="text-[11px] text-zinc-400 font-medium mr-1">Active filters:</span>
+                            
+                            {(startDate !== initialStartDate || endDate !== initialEndDate) && (
+                                <Badge variant="outline" className="text-[11px] py-0.5 px-2 border-zinc-800 bg-zinc-900 text-zinc-300 gap-1.5">
+                                    {startDate} to {endDate}
+                                    <button onClick={() => handleClearSingleFilter('date')} className="hover:text-zinc-100">
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </Badge>
+                            )}
+
+                            {selectedAccount !== 'all' && (
+                                <Badge variant="outline" className="text-[11px] py-0.5 px-2 border-zinc-800 bg-zinc-900 text-zinc-300 gap-1.5">
+                                    Account: {selectedAccountName}
+                                    <button onClick={() => handleClearSingleFilter('account')} className="hover:text-zinc-100">
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </Badge>
+                            )}
+                        </div>
+                    )}
 
                     {/* Transactions Table Container (Hidden Scrollbar) */}
                     <div className="flex-1 overflow-y-auto min-h-[200px] my-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
@@ -308,6 +364,22 @@ export default function CategoryTransactionsModal({
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* Filter Sheet */}
+            <CategoryTransactionsFilterSheet 
+                isOpen={isFilterSheetOpen}
+                onOpenChange={handleSheetOpenChange}
+                startDate={tempStartDate}
+                setStartDate={setTempStartDate}
+                endDate={tempEndDate}
+                setEndDate={setTempEndDate}
+                selectedAccount={tempSelectedAccount}
+                setSelectedAccount={setTempSelectedAccount}
+                accounts={accounts}
+                handleResetFilters={handleResetFilters}
+                handleApplyFilters={handleApplyFilters}
+                activeFilterCount={activeFilterCount}
+            />
 
             {/* Transaction Detail Sheet */}
             <TransactionDetailSheet 

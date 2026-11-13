@@ -6,7 +6,9 @@ import {
     Loader2, 
     Wallet, 
     ChevronLeft,
-    ChevronRight
+    ChevronRight,
+    Filter,
+    X
 } from 'lucide-react';
 
 import { 
@@ -19,10 +21,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 import { TransactionDetailSheet } from '@/Pages/Transactions/components/TransactionDetailSheet';
+import { AccountTransactionsFilterSheet } from '@/Pages/Accounts/components/AccountTransactionsFilterSheet';
 
 export default function AccountTransactionsModal({ 
     isOpen, 
@@ -31,18 +33,25 @@ export default function AccountTransactionsModal({
     categories = [], 
     initialStartDate = '', 
     initialEndDate = '',
-    userCurrency = 'PHP' // Accept global userCurrency prop
+    userCurrency = 'PHP' 
 }) {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(false);
     const [summaryAmount, setSummaryAmount] = useState(0);
 
-    // Filter States
+    // Filter States (Applied)
     const [search, setSearch] = useState('');
-    const [selectedType, setSelectedType] = useState('all'); // Default: 'all'
+    const [selectedType, setSelectedType] = useState('all'); 
     const [selectedCategory, setSelectedCategory] = useState('all');
     const [startDate, setStartDate] = useState(initialStartDate);
     const [endDate, setEndDate] = useState(initialEndDate);
+
+    // Temporary Filter States inside Sheet before applying
+    const [tempStartDate, setTempStartDate] = useState(initialStartDate);
+    const [tempEndDate, setTempEndDate] = useState(initialEndDate);
+    const [tempSelectedCategory, setTempSelectedCategory] = useState('all');
+
+    const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
 
     // Pagination State
     const [currentPage, setCurrentPage] = useState(1);
@@ -60,7 +69,6 @@ export default function AccountTransactionsModal({
 
     const abortControllerRef = useRef(null);
 
-    // Use global userCurrency directly instead of checking account.currency
     const formatCurrency = (val, currency = userCurrency) => 
         new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || userCurrency }).format(val || 0);
 
@@ -69,16 +77,55 @@ export default function AccountTransactionsModal({
         if (isOpen) {
             setStartDate(initialStartDate || '');
             setEndDate(initialEndDate || '');
+            setTempStartDate(initialStartDate || '');
+            setTempEndDate(initialEndDate || '');
             setSearch('');
             setSelectedType('all');
             setSelectedCategory('all');
+            setTempSelectedCategory('all');
             setCurrentPage(1);
         }
     }, [isOpen, initialStartDate, initialEndDate]);
 
-    // Reset page back to 1 whenever generic filters change
-    const handleFilterChange = (setter, value) => {
-        setter(value);
+    // Active filter calculation (dates + category)
+    const activeFilterCount = [
+        startDate !== (initialStartDate || '') || endDate !== (initialEndDate || ''),
+        selectedCategory !== 'all'
+    ].filter(Boolean).length;
+
+    const handleSheetOpenChange = (open) => {
+        if (open) {
+            setTempStartDate(startDate);
+            setTempEndDate(endDate);
+            setTempSelectedCategory(selectedCategory);
+        }
+        setIsFilterSheetOpen(open);
+    };
+
+    const handleApplyFilters = () => {
+        setStartDate(tempStartDate);
+        setEndDate(tempEndDate);
+        setSelectedCategory(tempSelectedCategory);
+        setCurrentPage(1);
+        setIsFilterSheetOpen(false);
+    };
+
+    const handleResetFilters = () => {
+        setTempStartDate(initialStartDate || '');
+        setTempEndDate(initialEndDate || '');
+        setTempSelectedCategory('all');
+    };
+
+    const handleClearSingleFilter = (filterType) => {
+        if (filterType === 'date') {
+            setStartDate(initialStartDate || '');
+            setEndDate(initialEndDate || '');
+            setTempStartDate(initialStartDate || '');
+            setTempEndDate(initialEndDate || '');
+        } else if (filterType === 'category') {
+            setSelectedCategory('all');
+            setTempSelectedCategory('all');
+        }
         setCurrentPage(1);
     };
 
@@ -86,14 +133,9 @@ export default function AccountTransactionsModal({
     const handleTypeChange = (newType) => {
         setSelectedType(newType);
         setSelectedCategory('all');
+        setTempSelectedCategory('all');
         setCurrentPage(1);
     };
-
-    // Filter categories dynamically based on selected transaction type
-    const filteredCategories = categories.filter((cat) => {
-        if (selectedType === 'all') return false;
-        return cat.type === selectedType;
-    });
 
     // Fetch account transactions on filter / page change
     const fetchTransactions = async (searchTerm, page = 1) => {
@@ -192,6 +234,8 @@ export default function AccountTransactionsModal({
         );
     };
 
+    const selectedCategoryName = categories.find(c => String(c.id) === String(selectedCategory))?.name;
+
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onClose}>
@@ -218,9 +262,9 @@ export default function AccountTransactionsModal({
                     </DialogHeader>
 
                     {/* Filter Controls Bar */}
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 py-3 border-b border-zinc-800 bg-zinc-900/40 -mx-4 px-4 sm:-mx-6 sm:px-6 shrink-0">
-                        {/* Left Group: Pilled Segmented Filter */}
-                        <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs w-full sm:w-64 shrink-0">
+                    <div className="flex items-center gap-2.5 py-3 border-b border-zinc-800 bg-zinc-900/40 -mx-4 px-4 sm:-mx-6 sm:px-6 shrink-0">
+                        {/* Segmented Type Filter */}
+                        <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs w-56 shrink-0">
                             {[
                                 { label: 'All', value: 'all' },
                                 { label: 'Expenses', value: 'expense' },
@@ -241,55 +285,61 @@ export default function AccountTransactionsModal({
                             ))}
                         </div>
 
-                        {/* Right Group: Search, Dynamic Category Filter, and Side-by-Side Dates */}
-                        <div className="flex flex-col sm:flex-row gap-2 flex-1 items-stretch sm:items-center">
-                            {/* Search Input */}
-                            <div className="relative flex-1">
-                                <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
-                                <Input
-                                    placeholder="Search description..."
-                                    value={search}
-                                    onChange={(e) => handleFilterChange(setSearch, e.target.value)}
-                                    className="pl-8 h-8 text-xs w-full border-zinc-800 text-zinc-300"
-                                />
-                            </div>
+                        {/* Search Input */}
+                        <div className="relative flex-1">
+                            <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
+                            <Input
+                                placeholder="Search description..."
+                                value={search}
+                                onChange={(e) => {
+                                    setSearch(e.target.value);
+                                    setCurrentPage(1);
+                                }}
+                                className="pl-8 h-9 text-xs w-full border-zinc-800 text-zinc-300 bg-background"
+                            />
+                        </div>
 
-                            {/* Category Filter - Hidden when selectedType === 'all' */}
-                            {selectedType !== 'all' && (
-                                <div className="flex-1">
-                                    <Select value={selectedCategory} onValueChange={(val) => handleFilterChange(setSelectedCategory, val)}>
-                                        <SelectTrigger className="h-8 text-xs w-full border-zinc-800 text-zinc-300">
-                                            <SelectValue placeholder="All Categories" />
-                                        </SelectTrigger>
-                                        <SelectContent className="border-zinc-800 bg-background text-zinc-300">
-                                            <SelectItem value="all">All Categories</SelectItem>
-                                            {filteredCategories.map((cat) => (
-                                                <SelectItem key={cat.id} value={String(cat.id)}>
-                                                    {cat.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+                        {/* Filter Trigger Button */}
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleSheetOpenChange(true)}
+                            className="h-9 px-3 border-zinc-800 text-zinc-300 hover:bg-zinc-800 text-xs gap-2 shrink-0 bg-background"
+                        >
+                            <Filter className="h-3.5 w-3.5" />
+                            <span>Filters</span>
+                            {activeFilterCount > 0 && (
+                                <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                                    {activeFilterCount}
+                                </span>
+                            )}
+                        </Button>
+                    </div>
+
+                    {/* Active Filter Chips Bar */}
+                    {(startDate !== (initialStartDate || '') || endDate !== (initialEndDate || '') || selectedCategory !== 'all') && (
+                        <div className="flex items-center gap-1.5 py-2 px-1 shrink-0 flex-wrap">
+                            <span className="text-[11px] text-zinc-400 font-medium mr-1">Active filters:</span>
+                            
+                            {(startDate !== (initialStartDate || '') || endDate !== (initialEndDate || '')) && (
+                                <Badge variant="outline" className="text-[11px] py-0.5 px-2 border-zinc-800 bg-zinc-900 text-zinc-300 gap-1.5">
+                                    {startDate} to {endDate}
+                                    <button onClick={() => handleClearSingleFilter('date')} className="hover:text-zinc-100">
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </Badge>
                             )}
 
-                            {/* Side-by-Side Dates */}
-                            <div className="grid grid-cols-2 gap-2 sm:w-auto shrink-0">
-                                <Input
-                                    type="date"
-                                    value={startDate}
-                                    onChange={(e) => handleFilterChange(setStartDate, e.target.value)}
-                                    className="h-8 text-xs w-full sm:w-[125px] border-zinc-800 text-zinc-300"
-                                />
-                                <Input
-                                    type="date"
-                                    value={endDate}
-                                    onChange={(e) => handleFilterChange(setEndDate, e.target.value)}
-                                    className="h-8 text-xs w-full sm:w-[125px] border-zinc-800 text-zinc-300"
-                                />
-                            </div>
+                            {selectedCategory !== 'all' && (
+                                <Badge variant="outline" className="text-[11px] py-0.5 px-2 border-zinc-800 bg-zinc-900 text-zinc-300 gap-1.5">
+                                    Category: {selectedCategoryName}
+                                    <button onClick={() => handleClearSingleFilter('category')} className="hover:text-zinc-100">
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </Badge>
+                            )}
                         </div>
-                    </div>
+                    )}
 
                     {/* Transactions Table Container */}
                     <div className="flex-1 overflow-y-auto min-h-[200px] my-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
@@ -382,6 +432,23 @@ export default function AccountTransactionsModal({
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* Filter Sheet */}
+            <AccountTransactionsFilterSheet 
+                isOpen={isFilterSheetOpen}
+                onOpenChange={handleSheetOpenChange}
+                startDate={tempStartDate}
+                setStartDate={setTempStartDate}
+                endDate={tempEndDate}
+                setEndDate={setTempEndDate}
+                selectedCategory={tempSelectedCategory}
+                setSelectedCategory={setTempSelectedCategory}
+                categories={categories}
+                selectedType={selectedType}
+                handleResetFilters={handleResetFilters}
+                handleApplyFilters={handleApplyFilters}
+                activeFilterCount={activeFilterCount}
+            />
 
             {/* Transaction Detail Sheet */}
             <TransactionDetailSheet 
