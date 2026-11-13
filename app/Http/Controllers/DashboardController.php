@@ -132,7 +132,7 @@ class DashboardController extends Controller
             'latestTransactions' => $latestTransactions,
             'accounts' => Account::where('user_id', $userId)
                 ->orderBy('name')
-                ->get(['id', 'name', 'type', 'balance', 'is_active']),
+                ->get(['id', 'name', 'type', 'balance', 'is_active','color']),
             'accountTypes' => AccountType::where('user_id', $userId)
                 ->orderBy('name')
                 ->get(['id', 'name', 'color', 'icon']),

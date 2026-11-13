@@ -3,16 +3,25 @@ import { useState } from 'react';
 import { Wallet, DollarSign, PieChart as PieChartIcon, Eye, EyeOff } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import NetFlowSparkline from '@/Pages/DashboardComponents/NetFlowSparkline';
 
-export default function DashboardKpis({ kpis = {}, formatCurrency }) {
+export default function DashboardKpis({ kpis = {}, dailyTrends = [], formatCurrency }) {
     const [showTotalBalance, setShowTotalBalance] = useState(false);
 
-    // Use the formatCurrency passed from Dashboard.jsx (which uses user's currency)
     const currencyFormatter = formatCurrency;
 
     const income = parseFloat(kpis?.totalIncome) || 0;
     const expense = parseFloat(kpis?.totalExpense) || 0;
     const totalFlow = income + expense;
+
+    // Format dailyTrends data for NetFlowSparkline
+    const sparklineData = (dailyTrends || []).map((d) => ({
+        date: d.transaction_date,
+        rawDate: d.rawDate,
+        income: d.income,
+        expense: d.expense,
+        net: (d.income || 0) - (d.expense || 0),
+    }));
 
     return (
         <div className="grid gap-3 grid-cols-2 lg:grid-cols-3">
@@ -41,17 +50,21 @@ export default function DashboardKpis({ kpis = {}, formatCurrency }) {
                 </CardContent>
             </Card>
 
-            {/* Net Cash Flow Card */}
+            {/* Net Cash Flow Card with Sparkline */}
             <Card className="border-zinc-800 flex flex-col justify-between py-1">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 pt-3 px-4">
+                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 pt-3 px-4">
                     <CardTitle className="text-xs font-medium text-zinc-400">Net Cash Flow</CardTitle>
                     <DollarSign className="h-3.5 w-3.5 text-zinc-400" />
                 </CardHeader>
-                <CardContent className="pb-3 pt-0 px-4">
-                    <div className={`text-xl font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
-                        {currencyFormatter(kpis?.netCashFlow)}
+                <CardContent className="pb-2 pt-0 px-4">
+                    <div className="flex items-baseline justify-between">
+                        <div className={`text-lg font-bold ${kpis?.netCashFlow >= 0 ? 'text-emerald-500' : 'text-rose-500'}`}>
+                            {currencyFormatter(kpis?.netCashFlow)}
+                        </div>
                     </div>
-                    <p className="text-[11px] text-zinc-400 mt-0.5">Income minus expenses</p>
+                    <div className="h-[36px] w-full mt-1">
+                        <NetFlowSparkline data={sparklineData} formatCurrency={currencyFormatter} />
+                    </div>
                 </CardContent>
             </Card>
 

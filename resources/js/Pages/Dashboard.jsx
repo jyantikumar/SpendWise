@@ -1,11 +1,14 @@
+// resources/js/Pages/Dashboard.jsx
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
 import { 
-    PieChart as PieChartIcon
+    PieChart as PieChartIcon,
+    Wallet
 } from 'lucide-react';
 
 import AppLayout from '@/Layouts/AuthenticatedLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
     AlertDialog, 
     AlertDialogAction, 
@@ -26,10 +29,12 @@ import { TransactionDetailSheet } from '@/Pages/Transactions/components/Transact
 import DashboardHeaderControls from './DashboardComponents/DashboardHeaderControls';
 import DashboardActivitySection from './DashboardComponents/DashboardActivitySection';
 import ExpensePieChart from './DashboardComponents/ExpensePieChart';
+import AccountPieChartCard from './DashboardComponents/AccountPieChartCard';
 
 export default function Dashboard({ 
     auth, 
     kpis, 
+    dailyTrends = [],
     categoryBreakdown, 
     latestTransactions = [], 
     accounts = [], 
@@ -44,7 +49,7 @@ export default function Dashboard({
     const [deletingTransaction, setDeletingTransaction] = useState(null);
     const [selectedDetailTransaction, setSelectedDetailTransaction] = useState(null);
 
-    const [activeView, setActiveView] = useState('transactions');
+    const [chartTab, setChartTab] = useState('expenses'); // 'expenses' | 'accounts'
 
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -55,7 +60,6 @@ export default function Dashboard({
     const [startDateInput, setStartDateInput] = useState(customDates.startDate || '');
     const [endDateInput, setEndDateInput] = useState(customDates.endDate || '');
 
-    // Get user's preferred currency from auth props (defaults to PHP if not set)
     const userCurrency = auth?.user?.currency || 'PHP';
 
     const formatCurrency = (val) => 
@@ -156,36 +160,69 @@ export default function Dashboard({
                 openCreateModal={openCreateModal}
             />
 
-            {/* KPI Cards Grid */}
-            <DashboardKpis kpis={kpis} formatCurrency={formatCurrency} />
+            {/* KPI Cards Grid with Sparkline */}
+            <DashboardKpis kpis={kpis} dailyTrends={dailyTrends} formatCurrency={formatCurrency} />
 
             {/* Main Table & Chart Layout */}
             <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 items-start">
                 <DashboardActivitySection 
-                    activeView={activeView}
-                    setActiveView={setActiveView}
                     latestTransactions={latestTransactions}
-                    accounts={accounts}
                     formatCurrency={formatCurrency}
                     formatDateOnly={formatDateOnly}
                     setSelectedDetailTransaction={setSelectedDetailTransaction}
-                    handleAccountClick={handleAccountClick}
                 />
 
                 <Card className="border-zinc-800 flex flex-col justify-between min-h-[420px] lg:h-[520px]">
-                    <CardHeader className="p-4 sm:p-6 shrink-0">
-                        <CardTitle className="flex items-center gap-2 text-zinc-200">
-                            <PieChartIcon className="h-5 w-5 text-zinc-400" />
-                            Expense Categories
-                        </CardTitle>
-                        <CardDescription className="text-zinc-400">Tap or click a category to view transactions.</CardDescription>
+                    <CardHeader className="p-4 sm:p-6 pb-3 shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                        <div>
+                            <CardTitle className="flex items-center gap-2 text-zinc-200">
+                                {chartTab === 'expenses' ? (
+                                    <>
+                                        <PieChartIcon className="h-5 w-5 text-zinc-400" />
+                                        Expense
+                                    </>
+                                ) : (
+                                    <>
+                                        <Wallet className="h-5 w-5 text-emerald-500" />
+                                        Accounts
+                                    </>
+                                )}
+                            </CardTitle>
+                            <CardDescription className="text-zinc-400 text-xs mt-0.5">
+                                {chartTab === 'expenses' 
+                                    ? 'Tap or click a category to view transactions.' 
+                                    : 'Overview of individual account balances.'}
+                            </CardDescription>
+                        </div>
+
+                        {/* Full Width / Flexible Dropdown Selector */}
+                        <div className="w-full sm:w-[140px] shrink-0">
+                            <Select value={chartTab} onValueChange={setChartTab}>
+                                <SelectTrigger className="w-full h-8 text-xs border-zinc-800 bg-zinc-900 text-zinc-200">
+                                    <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent className="border-zinc-800 bg-background text-zinc-300 w-[var(--radix-select-trigger-width)]">
+                                    <SelectItem value="expenses">Expense</SelectItem>
+                                    <SelectItem value="accounts">Accounts</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </CardHeader>
+
                     <CardContent className="p-4 sm:p-6 sm:pt-0 flex-1 flex flex-col min-h-0 overflow-hidden">
-                        <ExpensePieChart 
-                            data={categoryBreakdown?.expense || []} 
-                            formatCurrency={formatCurrency} 
-                            onCategoryClick={handleCategoryClick}
-                        />
+                        {chartTab === 'expenses' ? (
+                            <ExpensePieChart 
+                                data={categoryBreakdown?.expense || []} 
+                                formatCurrency={formatCurrency} 
+                                onCategoryClick={handleCategoryClick}
+                            />
+                        ) : (
+                            <AccountPieChartCard 
+                                data={accounts} 
+                                formatCurrency={formatCurrency} 
+                                onAccountClick={handleAccountClick}
+                            />
+                        )}
                     </CardContent>
                 </Card>
             </div>
