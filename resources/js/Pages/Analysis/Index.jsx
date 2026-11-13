@@ -5,7 +5,7 @@ import { router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AuthenticatedLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DateTransactionsDialog } from '@/Pages/Analysis/components/DateTransactionsDialog';
-import ExpensePieChart from '@/Pages/DashboardComponents/ExpensePieChart';
+import ExpenseAnalysisPieChart from '@/Pages/Analysis/components/ExpenseAnalysisPieChart'; // 👈 Import new component
 import CategoryTransactionsModal from '@/Pages/Categories/components/CategoryTransactionsModal';
 import { AccountsBreakdownCard } from '@/components/AccountsBreakdownCard';
 
@@ -45,11 +45,9 @@ export default function AnalysisIndex({
 
     const [isMobile, setIsMobile] = useState(false);
 
-    // 👇 NEW: Category transactions modal state
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
-    // Get user's preferred currency from auth props (defaults to PHP if not set)
     const userCurrency = auth?.user?.currency || 'PHP';
 
     useEffect(() => {
@@ -250,9 +248,7 @@ export default function AnalysisIndex({
         applyFilters({ calendar_month: val });
     };
 
-    // 👇 NEW: derive date boundaries for the category transactions modal
     const getModalDateBoundaries = () => {
-        // Prefer explicit custom range from active filters
         if (filters.start_date && filters.end_date) {
             return { startDate: filters.start_date, endDate: filters.end_date };
         }
@@ -291,7 +287,6 @@ export default function AnalysisIndex({
 
     const { startDate: modalStart, endDate: modalEnd } = getModalDateBoundaries();
 
-    // 👇 NEW: category click handler — opens transactions drill-down modal
     const handleCategoryClick = (category) => {
         setSelectedCategory(category);
         setIsCategoryModalOpen(true);
@@ -309,7 +304,6 @@ export default function AnalysisIndex({
     return (
         <AppLayout title="Financial Analysis" headerTitle="Visual Analytics">
             <div className="space-y-6">
-                {/* Header Actions */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                         <h2 className="text-xl sm:text-2xl font-bold tracking-tight flex items-center gap-2 text-zinc-100"></h2>
@@ -340,7 +334,6 @@ export default function AnalysisIndex({
                     />
                 </div>
 
-                {/* Active Filter Bar */}
                 {hasActiveFilters && (
                     <AnalysisActiveFiltersBar 
                         activeFilterCount={activeFilterCount}
@@ -361,7 +354,6 @@ export default function AnalysisIndex({
                     />
                 )}
 
-                {/* KPI Summary Grid */}
                 <AnalysisKpiGrid 
                     kpis={kpis}
                     formatCurrency={formatCurrency}
@@ -371,7 +363,6 @@ export default function AnalysisIndex({
                     incomeVsExpenseData={incomeVsExpenseData}
                 />
 
-                {/* Main Charts & Calendar Section */}
                 <AnalysisChartSection 
                     isChartLoading={isChartLoading}
                     range={range}
@@ -394,7 +385,6 @@ export default function AnalysisIndex({
                     type={type}
                 />
 
-                {/* Bottom Section: Side-by-Side Distribution Cards */}
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
                     <Card className="border-zinc-800 flex flex-col">
                         <CardHeader className="pb-3">
@@ -403,7 +393,8 @@ export default function AnalysisIndex({
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="flex-1">
-                            <ExpensePieChart 
+                            {/* 👇 Uses the dedicated side-by-side analysis chart */}
+                            <ExpenseAnalysisPieChart 
                                 data={categoryData} 
                                 formatCurrency={formatCurrency}
                                 onCategoryClick={handleCategoryClick}
@@ -425,7 +416,6 @@ export default function AnalysisIndex({
                     userCurrency={userCurrency}
                 />
 
-                {/* 👇 NEW: Category transactions drill-down modal */}
                 <CategoryTransactionsModal
                     isOpen={isCategoryModalOpen}
                     onClose={() => setIsCategoryModalOpen(false)}
