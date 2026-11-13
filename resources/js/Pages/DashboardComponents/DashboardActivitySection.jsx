@@ -73,7 +73,7 @@ export default function DashboardActivitySection({
 
                 <div className="hidden md:block relative">
                     <Table>
-                        <TableHeader className="sticky top-0 z-20 bg-zinc-950/95 backdrop-blur-md shadow-sm">
+                        <TableHeader className="sticky top-0 z-20 backdrop-blur-md shadow-sm">
                             <TableRow className="border-b border-zinc-800">
                                 <TableHead className="text-zinc-400">Date</TableHead>
                                 <TableHead className="text-zinc-400">Description</TableHead>
