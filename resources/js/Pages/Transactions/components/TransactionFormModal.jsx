@@ -17,6 +17,16 @@ import {
 import CategoryFormModal from '@/Pages/Categories/components/CategoryFormModal';
 import AccountFormModal from '@/Pages/Accounts/components/AccountFormModal';
 
+// Helper to safely get today's local date in YYYY-MM-DD format
+// without shifting backward due to UTC conversion.
+const getTodayLocal = () => {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 export default function TransactionFormModal({
     isOpen,
     onClose,
@@ -54,7 +64,7 @@ export default function TransactionFormModal({
         type: 'expense',
         amount: '',
         description: '',
-        transaction_date: new Date().toISOString().split('T')[0],
+        transaction_date: getTodayLocal(),
     });
 
     useEffect(() => {
@@ -66,7 +76,7 @@ export default function TransactionFormModal({
             const rawDate = editingTransaction.transaction_date || editingTransaction.date;
             const formattedDate = rawDate
                 ? String(rawDate).split('T')[0]
-                : new Date().toISOString().split('T')[0];
+                : getTodayLocal();
 
             setData({
                 account_id: editingTransaction.account_id ? String(editingTransaction.account_id) : '',
@@ -95,7 +105,7 @@ export default function TransactionFormModal({
                 type: defaultType || 'expense',
                 amount: '',
                 description: '',
-                transaction_date: new Date().toISOString().split('T')[0],
+                transaction_date: getTodayLocal(),
             });
         }
     }, [isOpen, editingTransaction, accounts, defaultType, defaultSavingsGoalId]);
@@ -140,16 +150,6 @@ export default function TransactionFormModal({
         }
     };
 
-    /**
-     * Filter categories for the dropdown.
-     *
-     * IMPORTANT: the currently-attached category must ALWAYS be kept in the
-     * options list so Radix's <Select> can render its label. Otherwise the
-     * Select falls back to the placeholder and looks "empty" even though
-     * data.category_id is set — which is exactly what happened for
-     * transactions generated from recurring rules whose stored category had
-     * a mismatched (or missing) `type`.
-     */
     const filteredCategories = categories.filter((c) => {
         const isCurrentlySelected =
             isEditing && String(c.id) === String(editingTransaction?.category_id);
@@ -161,8 +161,6 @@ export default function TransactionFormModal({
         return isSameType && isActive;
     });
 
-    // Flag whether the currently-selected category has a type that doesn't
-    // match the current transaction type — so we can hint to the user.
     const selectedCategory = categories.find(
         (c) => String(c.id) === String(data.category_id)
     );

@@ -27,7 +27,7 @@ class Transaction extends Model
 
     protected $casts = [
         'amount' => 'decimal:2',
-        'transaction_date' => 'datetime',
+        'transaction_date' => 'date',
     ];
 
     public function user(): BelongsTo
