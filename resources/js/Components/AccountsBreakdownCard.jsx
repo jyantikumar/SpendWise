@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { Wallet } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AccountTransactionsModal from '@/Pages/Accounts/components/AccountTransactionsModal';
 
 // Color Palette for Account Donut Slices
@@ -177,6 +177,7 @@ export function AccountsBreakdownCard({ accounts = [], categories = [], classNam
                 onClose={() => setSelectedAccount(null)}
                 account={selectedAccount}
                 categories={categories}
+                userCurrency={userCurrency}
             />
         </>
     );

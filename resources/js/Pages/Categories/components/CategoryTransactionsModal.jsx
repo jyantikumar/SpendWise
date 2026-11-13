@@ -7,7 +7,7 @@ import {
     Tag, 
     ChevronLeft, 
     ChevronRight,
-    Filter,
+    SlidersHorizontal,
     X
 } from 'lucide-react';
 
@@ -238,7 +238,7 @@ export default function CategoryTransactionsModal({
                             onClick={() => handleSheetOpenChange(true)}
                             className="h-9 px-3 border-zinc-800 text-zinc-300 hover:bg-zinc-800 text-xs gap-2 shrink-0 bg-background"
                         >
-                            <Filter className="h-3.5 w-3.5" />
+                            <SlidersHorizontal className="h-3.5 w-3.5" />
                             <span>Filters</span>
                             {activeFilterCount > 0 && (
                                 <span className="flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">

@@ -5,8 +5,6 @@ import {
     Search, 
     Loader2, 
     Wallet, 
-    ChevronLeft,
-    ChevronRight,
     Filter,
     X
 } from 'lucide-react';
@@ -47,21 +45,12 @@ export default function AccountTransactionsModal({
     const [endDate, setEndDate] = useState(initialEndDate);
 
     // Temporary Filter States inside Sheet before applying
+    const [tempSelectedType, setTempSelectedType] = useState('all');
     const [tempStartDate, setTempStartDate] = useState(initialStartDate);
     const [tempEndDate, setTempEndDate] = useState(initialEndDate);
     const [tempSelectedCategory, setTempSelectedCategory] = useState('all');
 
     const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
-
-    // Pagination State
-    const [currentPage, setCurrentPage] = useState(1);
-    const [paginationData, setPaginationData] = useState({
-        current_page: 1,
-        last_page: 1,
-        from: 0,
-        to: 0,
-        total: 0,
-    });
 
     // Transaction Detail Sheet State
     const [selectedTransaction, setSelectedTransaction] = useState(null);
@@ -81,20 +70,22 @@ export default function AccountTransactionsModal({
             setTempEndDate(initialEndDate || '');
             setSearch('');
             setSelectedType('all');
+            setTempSelectedType('all');
             setSelectedCategory('all');
             setTempSelectedCategory('all');
-            setCurrentPage(1);
         }
     }, [isOpen, initialStartDate, initialEndDate]);
 
-    // Active filter calculation (dates + category)
+    // Active filter calculation
     const activeFilterCount = [
+        selectedType !== 'all',
         startDate !== (initialStartDate || '') || endDate !== (initialEndDate || ''),
         selectedCategory !== 'all'
     ].filter(Boolean).length;
 
     const handleSheetOpenChange = (open) => {
         if (open) {
+            setTempSelectedType(selectedType);
             setTempStartDate(startDate);
             setTempEndDate(endDate);
             setTempSelectedCategory(selectedCategory);
@@ -103,21 +94,25 @@ export default function AccountTransactionsModal({
     };
 
     const handleApplyFilters = () => {
+        setSelectedType(tempSelectedType);
         setStartDate(tempStartDate);
         setEndDate(tempEndDate);
         setSelectedCategory(tempSelectedCategory);
-        setCurrentPage(1);
         setIsFilterSheetOpen(false);
     };
 
     const handleResetFilters = () => {
+        setTempSelectedType('all');
         setTempStartDate(initialStartDate || '');
         setTempEndDate(initialEndDate || '');
         setTempSelectedCategory('all');
     };
 
     const handleClearSingleFilter = (filterType) => {
-        if (filterType === 'date') {
+        if (filterType === 'type') {
+            setSelectedType('all');
+            setTempSelectedType('all');
+        } else if (filterType === 'date') {
             setStartDate(initialStartDate || '');
             setEndDate(initialEndDate || '');
             setTempStartDate(initialStartDate || '');
@@ -126,19 +121,10 @@ export default function AccountTransactionsModal({
             setSelectedCategory('all');
             setTempSelectedCategory('all');
         }
-        setCurrentPage(1);
     };
 
-    // Handle segmented type change & reset selected category back to 'all'
-    const handleTypeChange = (newType) => {
-        setSelectedType(newType);
-        setSelectedCategory('all');
-        setTempSelectedCategory('all');
-        setCurrentPage(1);
-    };
-
-    // Fetch account transactions on filter / page change
-    const fetchTransactions = async (searchTerm, page = 1) => {
+    // Fetch account transactions (scrollable)
+    const fetchTransactions = async (searchTerm) => {
         if (!account?.id) return;
 
         if (abortControllerRef.current) {
@@ -159,16 +145,12 @@ export default function AccountTransactionsModal({
                     category_id: parsedCategoryId,
                     start_date: startDate,
                     end_date: endDate,
-                    page,
                 },
                 signal: abortControllerRef.current.signal,
             });
 
             setTransactions(response.data.transactions || []);
             setSummaryAmount(response.data.summaryAmount || 0);
-            if (response.data.pagination) {
-                setPaginationData(response.data.pagination);
-            }
         } catch (err) {
             if (!axios.isCancel(err)) {
                 console.error('Failed to load account transactions:', err);
@@ -182,11 +164,11 @@ export default function AccountTransactionsModal({
         if (!isOpen || !account?.id) return;
 
         const timer = setTimeout(() => {
-            fetchTransactions(search, currentPage);
+            fetchTransactions(search);
         }, search ? 200 : 0);
 
         return () => clearTimeout(timer);
-    }, [isOpen, account?.id, search, selectedType, selectedCategory, startDate, endDate, currentPage]);
+    }, [isOpen, account?.id, search, selectedType, selectedCategory, startDate, endDate]);
 
     const handleRowClick = (tx) => {
         setSelectedTransaction({
@@ -263,38 +245,13 @@ export default function AccountTransactionsModal({
 
                     {/* Filter Controls Bar */}
                     <div className="flex items-center gap-2.5 py-3 border-b border-zinc-800 bg-zinc-900/40 -mx-4 px-4 sm:-mx-6 sm:px-6 shrink-0">
-                        {/* Segmented Type Filter */}
-                        <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs w-56 shrink-0">
-                            {[
-                                { label: 'All', value: 'all' },
-                                { label: 'Expenses', value: 'expense' },
-                                { label: 'Income', value: 'income' },
-                            ].map((pill) => (
-                                <button
-                                    key={pill.value}
-                                    type="button"
-                                    onClick={() => handleTypeChange(pill.value)}
-                                    className={`w-full py-1 rounded-md font-medium text-xs text-center transition-all whitespace-nowrap ${
-                                        selectedType === pill.value
-                                            ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                                            : 'text-zinc-400 hover:text-zinc-200'
-                                    }`}
-                                >
-                                    {pill.label}
-                                </button>
-                            ))}
-                        </div>
-
                         {/* Search Input */}
                         <div className="relative flex-1">
                             <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-zinc-400" />
                             <Input
                                 placeholder="Search description..."
                                 value={search}
-                                onChange={(e) => {
-                                    setSearch(e.target.value);
-                                    setCurrentPage(1);
-                                }}
+                                onChange={(e) => setSearch(e.target.value)}
                                 className="pl-8 h-9 text-xs w-full border-zinc-800 text-zinc-300 bg-background"
                             />
                         </div>
@@ -317,10 +274,19 @@ export default function AccountTransactionsModal({
                     </div>
 
                     {/* Active Filter Chips Bar */}
-                    {(startDate !== (initialStartDate || '') || endDate !== (initialEndDate || '') || selectedCategory !== 'all') && (
+                    {activeFilterCount > 0 && (
                         <div className="flex items-center gap-1.5 py-2 px-1 shrink-0 flex-wrap">
                             <span className="text-[11px] text-zinc-400 font-medium mr-1">Active filters:</span>
                             
+                            {selectedType !== 'all' && (
+                                <Badge variant="outline" className="text-[11px] py-0.5 px-2 border-zinc-800 bg-zinc-900 text-zinc-300 gap-1.5 capitalize">
+                                    Type: {selectedType}
+                                    <button onClick={() => handleClearSingleFilter('type')} className="hover:text-zinc-100">
+                                        <X className="h-3 w-3" />
+                                    </button>
+                                </Badge>
+                            )}
+
                             {(startDate !== (initialStartDate || '') || endDate !== (initialEndDate || '')) && (
                                 <Badge variant="outline" className="text-[11px] py-0.5 px-2 border-zinc-800 bg-zinc-900 text-zinc-300 gap-1.5">
                                     {startDate} to {endDate}
@@ -341,16 +307,16 @@ export default function AccountTransactionsModal({
                         </div>
                     )}
 
-                    {/* Transactions Table Container */}
-                    <div className="flex-1 overflow-y-auto min-h-[200px] my-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                    {/* Scrollable Transactions Table Container */}
+                    <div className="flex-1 overflow-y-auto min-h-[250px] my-2 pr-1">
                         {loading ? (
                             <div className="flex flex-col items-center justify-center h-48 gap-2 text-zinc-400">
                                 <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                                <span className="text-xs">Loading page {currentPage}...</span>
+                                <span className="text-xs">Loading transactions...</span>
                             </div>
                         ) : transactions.length > 0 ? (
                             <Table>
-                                <TableHeader className="sticky top-0 bg-background z-10">
+                                <TableHeader className="sticky top-0 bg-background z-10 shadow-sm">
                                     <TableRow className="border-b border-zinc-800">
                                         <TableHead className="text-zinc-400">Date</TableHead>
                                         <TableHead className="text-zinc-400">Description</TableHead>
@@ -393,43 +359,6 @@ export default function AccountTransactionsModal({
                             </div>
                         )}
                     </div>
-
-                    {/* Pagination Footer */}
-                    {paginationData.total > 0 && (
-                        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 border-t border-zinc-800 pt-3 text-xs text-zinc-400 shrink-0">
-                            <div>
-                                Showing <span className="font-medium text-zinc-200">{paginationData.from || 0}</span> to{' '}
-                                <span className="font-medium text-zinc-200">{paginationData.to || 0}</span> of{' '}
-                                <span className="font-medium text-zinc-200">{paginationData.total}</span> records
-                            </div>
-
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={currentPage <= 1 || loading}
-                                    onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
-                                    className="h-7 px-2 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
-                                >
-                                    <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
-                                </Button>
-
-                                <span className="text-xs font-medium text-zinc-300 px-1">
-                                    {currentPage} / {paginationData.last_page || 1}
-                                </span>
-
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    disabled={currentPage >= paginationData.last_page || loading}
-                                    onClick={() => setCurrentPage((prev) => Math.min(prev + 1, paginationData.last_page))}
-                                    className="h-7 px-2 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs"
-                                >
-                                    Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
-                                </Button>
-                            </div>
-                        </div>
-                    )}
                 </DialogContent>
             </Dialog>
 
@@ -441,10 +370,11 @@ export default function AccountTransactionsModal({
                 setStartDate={setTempStartDate}
                 endDate={tempEndDate}
                 setEndDate={setTempEndDate}
+                selectedType={tempSelectedType}
+                setSelectedType={setTempSelectedType}
                 selectedCategory={tempSelectedCategory}
                 setSelectedCategory={setTempSelectedCategory}
                 categories={categories}
-                selectedType={selectedType}
                 handleResetFilters={handleResetFilters}
                 handleApplyFilters={handleApplyFilters}
                 activeFilterCount={activeFilterCount}
