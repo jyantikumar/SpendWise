@@ -13,7 +13,6 @@ use App\Http\Controllers\SavingsGoalController;
 use App\Http\Controllers\WishlistItemController;
 use App\Http\Controllers\DataExportImportController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\DashboardWidgetController;
 
 // Redirect root URL directly to the login page
 Route::get('/', function () {
@@ -141,11 +140,6 @@ Route::prefix('budgets')->name('budgets.')->group(function () {
         Route::get('/export/csv', [DataExportImportController::class, 'exportCsv'])->name('export.csv');
         Route::post('/import/csv', [DataExportImportController::class, 'importCsv'])->name('import.csv');
     });
-    Route::prefix('dashboard/widgets')->name('dashboard.widgets.')->group(function () {
-    Route::get('/', [DashboardWidgetController::class, 'index'])->name('index');
-    Route::put('/', [DashboardWidgetController::class, 'update'])->name('update');
-    Route::delete('/', [DashboardWidgetController::class, 'reset'])->name('reset');
-}); 
 
 });
 

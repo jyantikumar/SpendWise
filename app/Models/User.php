@@ -86,8 +86,4 @@ public function budgets()
 {
     return $this->hasMany(\App\Models\Budget::class);
 }
-public function dashboardWidgets(): HasMany
-{
-    return $this->hasMany(UserDashboardWidget::class);
-}
 }
