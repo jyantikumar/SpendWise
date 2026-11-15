@@ -25,7 +25,7 @@ import CategoryTransactionsModal from '@/Pages/Categories/components/CategoryTra
 import AccountTransactionsModal from '@/Pages/Accounts/components/AccountTransactionsModal';
 import TransactionFormModal from '@/Pages/Transactions/components/TransactionFormModal';
 import { TransactionDetailSheet } from '@/Pages/Transactions/components/TransactionDetailSheet';
-
+import CashFlowTrendCollapsible from '@/Pages/DashboardComponents/CashFlowTrendCollapsible';
 import DashboardHeaderControls from './DashboardComponents/DashboardHeaderControls';
 import DashboardActivitySection from './DashboardComponents/DashboardActivitySection';
 import ExpensePieChart from './DashboardComponents/ExpensePieChart';
@@ -174,10 +174,10 @@ export default function Dashboard({
             <DashboardKpis kpis={kpis} formatCurrency={formatCurrency} />
 
             {/* Toggleable Cash Flow Trend (collapsible, hidden on phone by default) */}
-            <CashFlowTrendCard
-                data={sparklineData}
-                formatCurrency={formatCurrency}
-            />
+            <CashFlowTrendCollapsible
+    data={sparklineData}
+    formatCurrency={formatCurrency}
+/>
 
             {/* Main Table & Chart Layout */}
             <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 items-start">
