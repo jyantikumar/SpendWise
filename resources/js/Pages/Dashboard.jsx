@@ -1,10 +1,7 @@
 // resources/js/Pages/Dashboard.jsx
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import {
-    PieChart as PieChartIcon,
-    Wallet
-} from 'lucide-react';
+import { PieChart as PieChartIcon, Wallet } from 'lucide-react';
 
 import AppLayout from '@/Layouts/AuthenticatedLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -25,12 +22,11 @@ import CategoryTransactionsModal from '@/Pages/Categories/components/CategoryTra
 import AccountTransactionsModal from '@/Pages/Accounts/components/AccountTransactionsModal';
 import TransactionFormModal from '@/Pages/Transactions/components/TransactionFormModal';
 import { TransactionDetailSheet } from '@/Pages/Transactions/components/TransactionDetailSheet';
-import CashFlowTrendCollapsible from '@/Pages/DashboardComponents/CashFlowTrendCollapsible';
+
 import DashboardHeaderControls from './DashboardComponents/DashboardHeaderControls';
 import DashboardActivitySection from './DashboardComponents/DashboardActivitySection';
 import ExpensePieChart from './DashboardComponents/ExpensePieChart';
 import AccountPieChartCard from './DashboardComponents/AccountPieChartCard';
-import CashFlowTrendCard from './DashboardComponents/CashFlowTrendCard';
 
 export default function Dashboard({
     auth,
@@ -50,7 +46,7 @@ export default function Dashboard({
     const [deletingTransaction, setDeletingTransaction] = useState(null);
     const [selectedDetailTransaction, setSelectedDetailTransaction] = useState(null);
 
-    const [chartTab, setChartTab] = useState('expenses'); // 'expenses' | 'accounts'
+    const [chartTab, setChartTab] = useState('expenses');
 
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
@@ -147,102 +143,93 @@ export default function Dashboard({
         });
     };
 
-    // Shape dailyTrends once for the trend chart
-    const sparklineData = (dailyTrends || []).map((d) => ({
-        date: d.transaction_date,
-        rawDate: d.rawDate,
-        income: d.income,
-        expense: d.expense,
-        net: (d.income || 0) - (d.expense || 0),
-    }));
-
     return (
         <AppLayout title="Dashboard" headerTitle="Personal Dashboard">
-            {/* Header Controls */}
-            <DashboardHeaderControls
-                currentFilter={currentFilter}
-                handleFilterChange={handleFilterChange}
-                startDateInput={startDateInput}
-                setStartDateInput={setStartDateInput}
-                endDateInput={endDateInput}
-                setEndDateInput={setEndDateInput}
-                handleApplyCustomDates={handleApplyCustomDates}
-                openCreateModal={openCreateModal}
-            />
-
-            {/* KPI Cards Grid */}
-            <DashboardKpis kpis={kpis} formatCurrency={formatCurrency} />
-
-            {/* Toggleable Cash Flow Trend (collapsible, hidden on phone by default) */}
-            <CashFlowTrendCollapsible
-    data={sparklineData}
-    formatCurrency={formatCurrency}
-/>
-
-            {/* Main Table & Chart Layout */}
-            <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 items-start">
-                <DashboardActivitySection
-                    latestTransactions={latestTransactions}
-                    formatCurrency={formatCurrency}
-                    formatDateOnly={formatDateOnly}
-                    setSelectedDetailTransaction={setSelectedDetailTransaction}
+            <div className="space-y-6">
+                {/* Header Controls */}
+                <DashboardHeaderControls
+                    currentFilter={currentFilter}
+                    handleFilterChange={handleFilterChange}
+                    startDateInput={startDateInput}
+                    setStartDateInput={setStartDateInput}
+                    endDateInput={endDateInput}
+                    setEndDateInput={setEndDateInput}
+                    handleApplyCustomDates={handleApplyCustomDates}
+                    openCreateModal={openCreateModal}
                 />
 
-                <Card className="border-zinc-800 flex flex-col justify-between min-h-[420px] lg:h-[520px]">
-                    <CardHeader className="p-4 sm:p-6 pb-3 shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                        <div>
-                            <CardTitle className="flex items-center gap-2 text-zinc-200">
-                                {chartTab === 'expenses' ? (
-                                    <>
-                                        <PieChartIcon className="h-5 w-5 text-zinc-400" />
-                                        Expense
-                                    </>
-                                ) : (
-                                    <>
-                                        <Wallet className="h-5 w-5 text-emerald-500" />
-                                        Accounts
-                                    </>
-                                )}
-                            </CardTitle>
-                            <CardDescription className="text-zinc-400 text-xs mt-0.5">
-                                {chartTab === 'expenses'
-                                    ? 'Tap or click a category to view transactions.'
-                                    : 'Overview of individual account balances.'}
-                            </CardDescription>
-                        </div>
+                {/* KPI Cards Grid (Clicking 'Net Cash Flow' opens the Trend Sheet Drawer) */}
+                <DashboardKpis 
+                    kpis={kpis} 
+                    dailyTrends={dailyTrends} 
+                    formatCurrency={formatCurrency} 
+                />
 
-                        <div className="w-full sm:w-[140px] shrink-0">
-                            <Select value={chartTab} onValueChange={setChartTab}>
-                                <SelectTrigger className="w-full h-8 text-xs border-zinc-800 bg-zinc-900 text-zinc-200">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="border-zinc-800 bg-background text-zinc-300 w-[var(--radix-select-trigger-width)]">
-                                    <SelectItem value="expenses">Expense</SelectItem>
-                                    <SelectItem value="accounts">Accounts</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-                    </CardHeader>
+                {/* Main Table & Analytics Layout */}
+                <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 items-start">
+                    <DashboardActivitySection
+                        latestTransactions={latestTransactions}
+                        formatCurrency={formatCurrency}
+                        formatDateOnly={formatDateOnly}
+                        setSelectedDetailTransaction={setSelectedDetailTransaction}
+                    />
 
-                    <CardContent className="p-4 sm:p-6 sm:pt-0 flex-1 flex flex-col min-h-0 overflow-hidden">
-                        {chartTab === 'expenses' ? (
-                            <ExpensePieChart
-                                data={categoryBreakdown?.expense || []}
-                                formatCurrency={formatCurrency}
-                                onCategoryClick={handleCategoryClick}
-                            />
-                        ) : (
-                            <AccountPieChartCard
-                                data={accounts}
-                                formatCurrency={formatCurrency}
-                                onAccountClick={handleAccountClick}
-                            />
-                        )}
-                    </CardContent>
-                </Card>
+                    <Card className="border-zinc-800 flex flex-col justify-between min-h-[420px] lg:h-[520px]">
+                        <CardHeader className="p-4 sm:p-6 pb-3 shrink-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                            <div>
+                                <CardTitle className="flex items-center gap-2 text-zinc-200">
+                                    {chartTab === 'expenses' ? (
+                                        <>
+                                            <PieChartIcon className="h-5 w-5 text-zinc-400" />
+                                            Expense
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Wallet className="h-5 w-5 text-emerald-500" />
+                                            Accounts
+                                        </>
+                                    )}
+                                </CardTitle>
+                                <CardDescription className="text-zinc-400 text-xs mt-0.5">
+                                    {chartTab === 'expenses'
+                                        ? 'Tap or click a category to view transactions.'
+                                        : 'Overview of individual account balances.'}
+                                </CardDescription>
+                            </div>
+
+                            <div className="w-full sm:w-[140px] shrink-0">
+                                <Select value={chartTab} onValueChange={setChartTab}>
+                                    <SelectTrigger className="w-full h-8 text-xs border-zinc-800 bg-zinc-900 text-zinc-200">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="border-zinc-800 bg-background text-zinc-300 w-[var(--radix-select-trigger-width)]">
+                                        <SelectItem value="expenses">Expense</SelectItem>
+                                        <SelectItem value="accounts">Accounts</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </CardHeader>
+
+                        <CardContent className="p-4 sm:p-6 sm:pt-0 flex-1 flex flex-col min-h-0 overflow-hidden">
+                            {chartTab === 'expenses' ? (
+                                <ExpensePieChart
+                                    data={categoryBreakdown?.expense || []}
+                                    formatCurrency={formatCurrency}
+                                    onCategoryClick={handleCategoryClick}
+                                />
+                            ) : (
+                                <AccountPieChartCard
+                                    data={accounts}
+                                    formatCurrency={formatCurrency}
+                                    onAccountClick={handleAccountClick}
+                                />
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
 
-            {/* Modals */}
+            {/* Modals & Sheets */}
             <CategoryTransactionsModal
                 isOpen={isCategoryModalOpen}
                 onClose={() => setIsCategoryModalOpen(false)}
