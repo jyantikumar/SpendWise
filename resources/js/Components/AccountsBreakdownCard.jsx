@@ -159,7 +159,7 @@ export function AccountsBreakdownCard({ accounts = [], categories = [], classNam
             <Card className={`border-zinc-800 ${className}`}>
                 <CardHeader>
                     <CardTitle className="text-base font-semibold flex items-center gap-2 text-zinc-200">
-                        <Wallet className="h-4 w-4 text-emerald-500" /> Accounts Breakdown
+                       Accounts Breakdown
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
