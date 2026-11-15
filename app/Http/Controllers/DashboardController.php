@@ -10,7 +10,7 @@ use App\Models\Transaction;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Carbon\Carbon;
-
+use App\Support\DashboardWidgets;
 class DashboardController extends Controller
 {
     public function index(Request $request)
@@ -117,34 +117,39 @@ class DashboardController extends Controller
             ->orderBy('title')
             ->get(['id', 'title', 'status', 'target_amount', 'current_amount']);
 
-        return Inertia::render('Dashboard', [
-            'kpis' => [
-                'totalBalance' => (float) $totalBalance,
-                'netCashFlow'  => (float) $netCashFlow,
-                'totalIncome'  => (float) $periodIncomes,
-                'totalExpense' => (float) $periodExpenses,
-            ],
-            'dailyTrends' => $dailyTrends,
-            'categoryBreakdown' => [
-                'expense' => $categoryBreakdown->get('expense', collect())->values(),
-                'income'  => $categoryBreakdown->get('income', collect())->values(),
-            ],
-            'latestTransactions' => $latestTransactions,
-            'accounts' => Account::where('user_id', $userId)
-                ->orderBy('name')
-                ->get(['id', 'name', 'type', 'balance', 'is_active','color']),
-            'accountTypes' => AccountType::where('user_id', $userId)
-                ->orderBy('name')
-                ->get(['id', 'name', 'color', 'icon']),
-            'categories' => Category::where('user_id', $userId)
-                ->orderBy('name')
-                ->get(['id', 'name', 'type', 'color', 'icon']),
-            'savingsGoals' => $savingsGoals,                 // 👈 top-level, matches JSX destructure
-            'currentFilter' => $filter,
-            'customDates' => [
-                'startDate' => $customStartDate ?? $startDate->format('Y-m-d'),
-                'endDate'   => $customEndDate ?? $endDate->format('Y-m-d'),
-            ],
-        ]);
+       return Inertia::render('Dashboard', [
+    'kpis' => [
+        'totalBalance' => (float) $totalBalance,
+        'netCashFlow'  => (float) $netCashFlow,
+        'totalIncome'  => (float) $periodIncomes,
+        'totalExpense' => (float) $periodExpenses,
+    ],
+    'dailyTrends' => $dailyTrends,
+    'categoryBreakdown' => [
+        'expense' => $categoryBreakdown->get('expense', collect())->values(),
+        'income'  => $categoryBreakdown->get('income', collect())->values(),
+    ],
+    'latestTransactions' => $latestTransactions,
+    'accounts' => Account::where('user_id', $userId)
+        ->orderBy('name')
+        ->get(['id', 'name', 'type', 'balance', 'is_active','color']),
+    'accountTypes' => AccountType::where('user_id', $userId)
+        ->orderBy('name')
+        ->get(['id', 'name', 'color', 'icon']),
+    'categories' => Category::where('user_id', $userId)
+        ->orderBy('name')
+        ->get(['id', 'name', 'type', 'color', 'icon']),
+    'savingsGoals' => $savingsGoals,
+
+    // 👇 NEW — widget customization
+    'widgets'        => \App\Support\DashboardWidgets::resolveFor($request->user()),
+    'widgetRegistry' => \App\Support\DashboardWidgets::REGISTRY,
+
+    'currentFilter' => $filter,
+    'customDates' => [
+        'startDate' => $customStartDate ?? $startDate->format('Y-m-d'),
+        'endDate'   => $customEndDate ?? $endDate->format('Y-m-d'),
+    ],
+]);
     }
 }
