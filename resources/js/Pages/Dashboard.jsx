@@ -1,7 +1,7 @@
 // resources/js/Pages/Dashboard.jsx
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import { 
+import {
     PieChart as PieChartIcon,
     Wallet
 } from 'lucide-react';
@@ -9,15 +9,15 @@ import {
 import AppLayout from '@/Layouts/AuthenticatedLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
-    AlertDialog, 
-    AlertDialogAction, 
-    AlertDialogCancel, 
-    AlertDialogContent, 
-    AlertDialogDescription, 
-    AlertDialogFooter, 
-    AlertDialogHeader, 
-    AlertDialogTitle 
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle
 } from '@/components/ui/alert-dialog';
 
 import DashboardKpis from '@/Pages/DashboardComponents/DashboardKpis';
@@ -30,16 +30,17 @@ import DashboardHeaderControls from './DashboardComponents/DashboardHeaderContro
 import DashboardActivitySection from './DashboardComponents/DashboardActivitySection';
 import ExpensePieChart from './DashboardComponents/ExpensePieChart';
 import AccountPieChartCard from './DashboardComponents/AccountPieChartCard';
+import CashFlowTrendCard from './DashboardComponents/CashFlowTrendCard';
 
-export default function Dashboard({ 
-    auth, 
-    kpis, 
+export default function Dashboard({
+    auth,
+    kpis,
     dailyTrends = [],
-    categoryBreakdown, 
-    latestTransactions = [], 
-    accounts = [], 
+    categoryBreakdown,
+    latestTransactions = [],
+    accounts = [],
     accountTypes = [],
-    categories = [], 
+    categories = [],
     savingsGoals = [],
     currentFilter = 'this_day',
     customDates = {}
@@ -62,7 +63,7 @@ export default function Dashboard({
 
     const userCurrency = auth?.user?.currency || 'PHP';
 
-    const formatCurrency = (val) => 
+    const formatCurrency = (val) =>
         new Intl.NumberFormat('en-US', { style: 'currency', currency: userCurrency }).format(val || 0);
 
     const formatDateOnly = (dateString) => {
@@ -72,7 +73,7 @@ export default function Dashboard({
 
     const handleFilterChange = (value) => {
         if (value === 'custom') {
-            router.get('/dashboard', { 
+            router.get('/dashboard', {
                 range: 'custom',
                 start_date: startDateInput,
                 end_date: endDateInput
@@ -84,10 +85,10 @@ export default function Dashboard({
 
     const handleApplyCustomDates = () => {
         if (startDateInput && endDateInput) {
-            router.get('/dashboard', { 
-                range: 'custom', 
-                start_date: startDateInput, 
-                end_date: endDateInput 
+            router.get('/dashboard', {
+                range: 'custom',
+                start_date: startDateInput,
+                end_date: endDateInput
             }, { preserveState: true });
         }
     };
@@ -146,10 +147,19 @@ export default function Dashboard({
         });
     };
 
+    // Shape dailyTrends once for the trend chart
+    const sparklineData = (dailyTrends || []).map((d) => ({
+        date: d.transaction_date,
+        rawDate: d.rawDate,
+        income: d.income,
+        expense: d.expense,
+        net: (d.income || 0) - (d.expense || 0),
+    }));
+
     return (
         <AppLayout title="Dashboard" headerTitle="Personal Dashboard">
             {/* Header Controls */}
-            <DashboardHeaderControls 
+            <DashboardHeaderControls
                 currentFilter={currentFilter}
                 handleFilterChange={handleFilterChange}
                 startDateInput={startDateInput}
@@ -160,12 +170,18 @@ export default function Dashboard({
                 openCreateModal={openCreateModal}
             />
 
-            {/* KPI Cards Grid with Sparkline */}
-            <DashboardKpis kpis={kpis} dailyTrends={dailyTrends} formatCurrency={formatCurrency} />
+            {/* KPI Cards Grid */}
+            <DashboardKpis kpis={kpis} formatCurrency={formatCurrency} />
+
+            {/* Toggleable Cash Flow Trend (collapsible, hidden on phone by default) */}
+            <CashFlowTrendCard
+                data={sparklineData}
+                formatCurrency={formatCurrency}
+            />
 
             {/* Main Table & Chart Layout */}
             <div className="grid gap-4 md:gap-8 lg:grid-cols-2 xl:grid-cols-3 items-start">
-                <DashboardActivitySection 
+                <DashboardActivitySection
                     latestTransactions={latestTransactions}
                     formatCurrency={formatCurrency}
                     formatDateOnly={formatDateOnly}
@@ -189,13 +205,12 @@ export default function Dashboard({
                                 )}
                             </CardTitle>
                             <CardDescription className="text-zinc-400 text-xs mt-0.5">
-                                {chartTab === 'expenses' 
-                                    ? 'Tap or click a category to view transactions.' 
+                                {chartTab === 'expenses'
+                                    ? 'Tap or click a category to view transactions.'
                                     : 'Overview of individual account balances.'}
                             </CardDescription>
                         </div>
 
-                        {/* Full Width / Flexible Dropdown Selector */}
                         <div className="w-full sm:w-[140px] shrink-0">
                             <Select value={chartTab} onValueChange={setChartTab}>
                                 <SelectTrigger className="w-full h-8 text-xs border-zinc-800 bg-zinc-900 text-zinc-200">
@@ -211,15 +226,15 @@ export default function Dashboard({
 
                     <CardContent className="p-4 sm:p-6 sm:pt-0 flex-1 flex flex-col min-h-0 overflow-hidden">
                         {chartTab === 'expenses' ? (
-                            <ExpensePieChart 
-                                data={categoryBreakdown?.expense || []} 
-                                formatCurrency={formatCurrency} 
+                            <ExpensePieChart
+                                data={categoryBreakdown?.expense || []}
+                                formatCurrency={formatCurrency}
                                 onCategoryClick={handleCategoryClick}
                             />
                         ) : (
-                            <AccountPieChartCard 
-                                data={accounts} 
-                                formatCurrency={formatCurrency} 
+                            <AccountPieChartCard
+                                data={accounts}
+                                formatCurrency={formatCurrency}
                                 onAccountClick={handleAccountClick}
                             />
                         )}
@@ -247,7 +262,7 @@ export default function Dashboard({
             />
 
             {isTransactionModalOpen && (
-                <TransactionFormModal 
+                <TransactionFormModal
                     isOpen={isTransactionModalOpen}
                     onClose={() => setIsTransactionModalOpen(false)}
                     editingTransaction={editingTransaction}
@@ -258,7 +273,7 @@ export default function Dashboard({
                 />
             )}
 
-            <TransactionDetailSheet 
+            <TransactionDetailSheet
                 open={!!selectedDetailTransaction}
                 onOpenChange={(open) => !open && setSelectedDetailTransaction(null)}
                 transaction={selectedDetailTransaction ? {
