@@ -1,21 +1,29 @@
 // resources/js/Pages/Accounts/Index.jsx
 import { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { Plus, Layers } from 'lucide-react';
+import { Plus, Layers, ChevronDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 import AppLayout from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { 
-    AlertDialog, 
-    AlertDialogAction, 
-    AlertDialogCancel, 
-    AlertDialogContent, 
-    AlertDialogDescription, 
-    AlertDialogFooter, 
-    AlertDialogHeader, 
-    AlertDialogTitle 
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
 import AccountTransactionsModal from '@/Pages/Accounts/components/AccountTransactionsModal';
@@ -37,7 +45,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
 
     const userCurrency = auth?.user?.currency || 'PHP';
 
-    const formatCurrency = (val, currency = userCurrency) => 
+    const formatCurrency = (val, currency = userCurrency) =>
         new Intl.NumberFormat('en-US', { style: 'currency', currency: currency || userCurrency }).format(val || 0);
 
     const openCreateModal = () => {
@@ -63,7 +71,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
             },
             onError: () => {
                 toast.error('Failed to update account status.');
-            }
+            },
         });
     };
 
@@ -76,12 +84,12 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
             },
             onError: () => {
                 toast.error('Failed to delete account.');
-            }
+            },
         });
     };
 
     const totalPortfolioBalance = accounts.reduce(
-        (sum, acc) => sum + (acc.is_active ? parseFloat(acc.balance || 0) : 0), 
+        (sum, acc) => sum + (acc.is_active ? parseFloat(acc.balance || 0) : 0),
         0
     );
 
@@ -95,33 +103,52 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
         <AppLayout title="Accounts" headerTitle="Account Management">
             <div className="space-y-6">
                 {/* Top Action Header */}
-               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-    <div>
-        <h2 className="text-2xl font-bold tracking-tight text-zinc-100"></h2>
-        <p className="text-sm text-zinc-400">
-            Manage your bank accounts, wallets, credit cards, and custom liquidity sources.
-        </p>
-    </div>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <p className="text-sm text-zinc-400">
+                            Manage your bank accounts, wallets, credit cards, and custom liquidity sources.
+                        </p>
+                    </div>
 
-    <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
-        <Button
-            asChild
-            variant="outline"
-            className="gap-2 border-zinc-800 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-900 h-9 text-xs w-full sm:w-auto"
-        >
-            <Link href={route('account-types.index')}>
-                <Layers className="h-3.5 w-3.5" /> Manage Account Types
-            </Link>
-        </Button>
+                    {/* Split button: [ + Add Account | ▾ ] */}
+                    <div className="flex items-center w-full sm:w-auto rounded-md overflow-hidden divide-x divide-zinc-300">
+                        <Button
+                            onClick={openCreateModal}
+                            className="flex-1 sm:flex-initial rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium text-xs h-9 px-3 gap-1.5 shadow-none"
+                        >
+                            <Plus className="h-3.5 w-3.5" /> Add Account
+                        </Button>
 
-        <Button onClick={openCreateModal} className="gap-2 h-9 text-xs w-full sm:w-auto">
-            <Plus className="h-3.5 w-3.5" /> Add Account
-        </Button>
-    </div>
-</div>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    className="rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 h-9 px-2 shadow-none"
+                                    aria-label="More account options"
+                                >
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="end"
+                                className="border-zinc-800 bg-zinc-950 text-zinc-300 text-xs w-[200px]"
+                            >
+                                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium px-2 py-1.5">
+                                    Account Options
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator className="bg-zinc-800" />
+                                <DropdownMenuItem asChild className="cursor-pointer focus:bg-zinc-900 hover:bg-zinc-900">
+                                    <Link href={route('account-types.index')} className="flex items-center w-full">
+                                        <Layers className="mr-2 h-3 w-3 text-zinc-400" />
+                                        <span className="flex-1">Manage Account Types</span>
+                                    </Link>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                </div>
 
                 {/* KPI Summary Grid */}
-                <AccountKpiGrid 
+                <AccountKpiGrid
                     totalPortfolioBalance={totalPortfolioBalance}
                     accountsCount={accounts.length}
                     formatCurrency={formatCurrency}
@@ -138,14 +165,14 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                             </CardDescription>
                         </div>
 
-                        <AccountFilterTabs 
+                        <AccountFilterTabs
                             statusFilter={statusFilter}
                             setStatusFilter={setStatusFilter}
                         />
                     </CardHeader>
 
                     <CardContent className="p-0 sm:p-6 sm:pt-0">
-                        <AccountTableList 
+                        <AccountTableList
                             filteredAccounts={filteredAccounts}
                             statusFilter={statusFilter}
                             openTransactionsModal={openTransactionsModal}
@@ -180,7 +207,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                     <AlertDialogHeader>
                         <AlertDialogTitle>Delete Account?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete <strong>{deletingAccount?.name}</strong>? 
+                            Are you sure you want to delete <strong>{deletingAccount?.name}</strong>?
                             This will soft-delete the account.
                         </AlertDialogDescription>
                     </AlertDialogHeader>

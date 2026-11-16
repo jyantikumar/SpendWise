@@ -2,7 +2,7 @@ import { Search, Filter, X, SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { 
+import {
     Sheet,
     SheetContent,
     SheetDescription,
@@ -34,20 +34,24 @@ export default function TransactionFilterSheet({
     handleResetFilters,
     accounts = [],
     handleApplyFilters,
+    hideTrigger = false,
 }) {
     return (
         <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
-            <SheetTrigger asChild>
-                <Button variant="outline" className="relative flex-1 sm:flex-initial gap-2 border-zinc-800 text-zinc-300">
-                    <Filter className="h-4 w-4" />
-                    <span>Filter</span>
-                    {activeFilterCount > 0 && (
-                        <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20">
-                            {activeFilterCount}
-                        </span>
-                    )}
-                </Button>
-            </SheetTrigger>
+            {/* Render trigger only when NOT hidden (i.e. sheet is used standalone) */}
+            {!hideTrigger && (
+                <SheetTrigger asChild>
+                    <Button variant="outline" className="relative flex-1 sm:flex-initial gap-2 border-zinc-800 text-zinc-300">
+                        <Filter className="h-4 w-4" />
+                        <span>Filter</span>
+                        {activeFilterCount > 0 && (
+                            <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20">
+                                {activeFilterCount}
+                            </span>
+                        )}
+                    </Button>
+                </SheetTrigger>
+            )}
 
             <SheetContent side="right" className="w-full sm:max-w-md border-zinc-800 bg-zinc-950 text-zinc-100 flex flex-col justify-between">
                 <div>
@@ -79,8 +83,8 @@ export default function TransactionFilterSheet({
                         <div className="grid grid-cols-2 gap-3">
                             <div className="space-y-2">
                                 <label className="text-xs font-medium text-zinc-400">Type</label>
-                                <Select 
-                                    value={selectedType} 
+                                <Select
+                                    value={selectedType}
                                     onValueChange={(val) => setSelectedType(val)}
                                 >
                                     <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900">
@@ -98,8 +102,8 @@ export default function TransactionFilterSheet({
 
                             <div className="space-y-2">
                                 <label className="text-xs font-medium text-zinc-400">Account</label>
-                                <Select 
-                                    value={selectedAccount} 
+                                <Select
+                                    value={selectedAccount}
                                     onValueChange={(val) => setSelectedAccount(val)}
                                 >
                                     <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900">
@@ -142,16 +146,16 @@ export default function TransactionFilterSheet({
                             <div className="space-y-2 pt-2 border-t border-zinc-800/80">
                                 <label className="text-xs font-medium text-zinc-400">Custom Date Range</label>
                                 <div className="flex items-center gap-2">
-                                    <Input 
-                                        type="date" 
-                                        value={startDate} 
+                                    <Input
+                                        type="date"
+                                        value={startDate}
                                         onChange={(e) => setStartDate(e.target.value)}
                                         className="h-9 border-zinc-800 text-zinc-300 text-xs bg-zinc-900"
                                     />
                                     <span className="text-xs text-zinc-400">to</span>
-                                    <Input 
-                                        type="date" 
-                                        value={endDate} 
+                                    <Input
+                                        type="date"
+                                        value={endDate}
                                         onChange={(e) => setEndDate(e.target.value)}
                                         className="h-9 border-zinc-800 text-zinc-300 text-xs bg-zinc-900"
                                     />
@@ -166,9 +170,9 @@ export default function TransactionFilterSheet({
 
                 <SheetFooter className="pt-4 border-t border-zinc-800 flex flex-row items-center justify-between gap-2">
                     {hasActiveFilters ? (
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
+                        <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={handleResetFilters}
                             className="text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 gap-1 h-9"
                         >

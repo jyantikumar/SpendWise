@@ -1,22 +1,30 @@
 // resources/js/Pages/Transactions/Index.jsx
 import { useState } from 'react';
 import { router } from '@inertiajs/react';
-import { Plus, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal } from 'lucide-react';
 import { toast } from 'sonner';
 
 import AppLayout from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { 
-    AlertDialog, 
-    AlertDialogAction, 
-    AlertDialogCancel, 
-    AlertDialogContent, 
-    AlertDialogDescription, 
-    AlertDialogFooter, 
-    AlertDialogHeader, 
-    AlertDialogTitle 
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 
 import { TransactionDetailSheet } from '@/Pages/Transactions/components/TransactionDetailSheet';
@@ -26,7 +34,15 @@ import DashboardKpis from '@/Pages/DashboardComponents/DashboardKpis';
 import TransactionFilterSheet from '@/Pages/Transactions/components/TransactionFilterSheet';
 import ActiveFilterChips from '@/Pages/Transactions/components/ActiveFilterChips';
 
-export default function TransactionIndex({ auth, transactions, accounts = [], categories = [], savingsGoals = [], filters = {}, kpis = {} }) {
+export default function TransactionIndex({
+    auth,
+    transactions,
+    accounts = [],
+    categories = [],
+    savingsGoals = [],
+    filters = {},
+    kpis = {},
+}) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [deletingTransaction, setDeletingTransaction] = useState(null);
@@ -41,7 +57,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
     const [endDate, setEndDate] = useState(filters.end_date || '');
 
     const transactionList = Array.isArray(transactions) ? transactions : (transactions?.data || []);
-    
+
     // Pagination Metadata
     const prevLink = transactions?.prev_page_url || transactions?.links?.find(l => l.label.includes('Previous'))?.url;
     const nextLink = transactions?.next_page_url || transactions?.links?.find(l => l.label.includes('Next'))?.url;
@@ -51,10 +67,10 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
     const toRecord = transactions?.to || 0;
     const totalRecords = transactions?.total || 0;
 
-    // Get user's preferred currency from auth props (defaults to PHP if not set)[cite: 19]
+    // Get user's preferred currency from auth props (defaults to PHP if not set)
     const userCurrency = auth?.user?.currency || 'PHP';
 
-    const formatCurrency = (val) => 
+    const formatCurrency = (val) =>
         new Intl.NumberFormat('en-US', { style: 'currency', currency: userCurrency }).format(val || 0);
 
     const applyFilters = (overrides = {}) => {
@@ -101,9 +117,9 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
     };
 
     const hasActiveFilters = Boolean(
-        filters.search || 
-        (filters.type && filters.type !== 'all') || 
-        (filters.account_id && filters.account_id !== 'all') || 
+        filters.search ||
+        (filters.type && filters.type !== 'all') ||
+        (filters.account_id && filters.account_id !== 'all') ||
         (filters.range && filters.range !== 'this_month')
     );
 
@@ -111,7 +127,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
         Boolean(filters.search),
         Boolean(filters.type && filters.type !== 'all'),
         Boolean(filters.account_id && filters.account_id !== 'all'),
-        Boolean(filters.range && filters.range !== 'this_month')
+        Boolean(filters.range && filters.range !== 'this_month'),
     ].filter(Boolean).length;
 
     const openCreateModal = () => {
@@ -134,14 +150,14 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
             },
             onError: () => {
                 toast.error('Failed to delete transaction.');
-            }
+            },
         });
     };
 
     const handleRowClick = (tx) => {
         setSelectedDetailTransaction({
             ...tx,
-            date: tx.date || (tx.transaction_date ? String(tx.transaction_date).split('T')[0] : null)
+            date: tx.date || (tx.transaction_date ? String(tx.transaction_date).split('T')[0] : null),
         });
     };
 
@@ -151,39 +167,56 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                 {/* Header Actions */}
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
-                        <h2 className="text-2xl font-bold tracking-tight text-zinc-100"></h2>
                         <p className="text-sm text-zinc-400">
                             Log and view income, expenses, and account transfers.
                         </p>
                     </div>
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <TransactionFilterSheet 
-                            isFilterSheetOpen={isFilterSheetOpen}
-                            setIsFilterSheetOpen={setIsFilterSheetOpen}
-                            activeFilterCount={activeFilterCount}
-                            search={search}
-                            setSearch={setSearch}
-                            selectedType={selectedType}
-                            setSelectedType={setSelectedType}
-                            selectedAccount={selectedAccount}
-                            setSelectedAccount={setSelectedAccount}
-                            selectedRange={selectedRange}
-                            handleRangeChange={handleRangeChange}
-                            startDate={startDate}
-                            setStartDate={setStartDate}
-                            endDate={endDate}
-                            setEndDate={setEndDate}
-                            handleApplyCustomDates={handleApplyCustomDates}
-                            hasActiveFilters={hasActiveFilters}
-                            handleResetFilters={handleResetFilters}
-                            accounts={accounts}
-                            handleApplyFilters={handleApplyFilters}
-                        />
-
-                        <Button onClick={openCreateModal} className="flex-1 sm:flex-initial gap-2">
-                            <Plus className="h-4 w-4" /> Add Transaction
+                    {/* Split button: [ + Add Transaction | ▾ ] */}
+                    <div className="flex items-center w-full sm:w-auto rounded-md overflow-hidden divide-x divide-zinc-300">
+                        <Button
+                            onClick={openCreateModal}
+                            className="flex-1 sm:flex-initial rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium text-xs h-9 px-3 gap-1.5 shadow-none"
+                        >
+                            <Plus className="h-3.5 w-3.5" /> Add Transaction
                         </Button>
+
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    className="rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 h-9 px-2 shadow-none relative"
+                                    aria-label="More actions"
+                                >
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                    {activeFilterCount > 0 && (
+                                        <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-zinc-900 text-zinc-100 px-0.5 text-[9px] font-bold border border-zinc-100">
+                                            {activeFilterCount}
+                                        </span>
+                                    )}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent
+                                align="end"
+                                className="border-zinc-800 bg-zinc-950 text-zinc-300 text-xs w-[180px]"
+                            >
+                                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium px-2 py-1.5">
+                                    Actions
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator className="bg-zinc-800" />
+                                <DropdownMenuItem
+                                    onClick={() => setIsFilterSheetOpen(true)}
+                                    className="cursor-pointer focus:bg-zinc-900 hover:bg-zinc-900"
+                                >
+                                    <SlidersHorizontal className="mr-2 h-3 w-3 text-zinc-400" />
+                                    <span className="flex-1">Filter</span>
+                                    {activeFilterCount > 0 && (
+                                        <span className="text-[10px] text-zinc-500">
+                                            {activeFilterCount}
+                                        </span>
+                                    )}
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </div>
                 </div>
 
@@ -191,7 +224,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                 <DashboardKpis kpis={kpis} formatCurrency={formatCurrency} />
 
                 {/* Active Filter Chips Bar */}
-                <ActiveFilterChips 
+                <ActiveFilterChips
                     hasActiveFilters={hasActiveFilters}
                     activeFilterCount={activeFilterCount}
                     handleResetFilters={handleResetFilters}
@@ -224,8 +257,8 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                         <div className="divide-y divide-zinc-800 md:hidden">
                             {transactionList.length > 0 ? (
                                 transactionList.map((tx) => (
-                                    <div 
-                                        key={tx.id} 
+                                    <div
+                                        key={tx.id}
                                         className="p-4 flex items-center justify-between gap-3 active:bg-zinc-800/50 transition-colors cursor-pointer"
                                         onClick={() => handleRowClick(tx)}
                                     >
@@ -253,10 +286,10 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                         </div>
 
                                         <div className={`text-right font-semibold text-sm whitespace-nowrap shrink-0 ${
-                                            tx.type === 'income' 
-                                                ? 'text-emerald-500' 
-                                                : tx.type === 'expense' 
-                                                ? 'text-rose-500' 
+                                            tx.type === 'income'
+                                                ? 'text-emerald-500'
+                                                : tx.type === 'expense'
+                                                ? 'text-rose-500'
                                                 : 'text-blue-400'
                                         }`}>
                                             {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
@@ -285,15 +318,15 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                 <TableBody>
                                     {transactionList.length > 0 ? (
                                         transactionList.map((tx) => (
-                                            <TableRow 
-                                                key={tx.id} 
+                                            <TableRow
+                                                key={tx.id}
                                                 className="cursor-pointer hover:bg-muted/50 border-b border-zinc-800 transition-colors"
                                                 onClick={() => handleRowClick(tx)}
                                             >
                                                 <TableCell className="font-medium whitespace-nowrap text-zinc-300 text-xs">
                                                     {tx.transaction_date ? String(tx.transaction_date).split('T')[0] : (tx.date || '—')}
                                                 </TableCell>
-                                                
+
                                                 <TableCell className="max-w-[200px] truncate text-zinc-300 text-sm">
                                                     {tx.description || <span className="text-zinc-500 text-xs italic">No description</span>}
                                                 </TableCell>
@@ -311,10 +344,10 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                                                     )}
                                                 </TableCell>
                                                 <TableCell className={`text-right font-semibold text-sm whitespace-nowrap ${
-                                                    tx.type === 'income' 
-                                                        ? 'text-emerald-500' 
-                                                        : tx.type === 'expense' 
-                                                        ? 'text-rose-500' 
+                                                    tx.type === 'income'
+                                                        ? 'text-emerald-500'
+                                                        : tx.type === 'expense'
+                                                        ? 'text-rose-500'
                                                         : 'text-blue-400'
                                                 }`}>
                                                     {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
@@ -372,7 +405,32 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                 </Card>
             </div>
 
-            <TransactionDetailSheet 
+            {/* Filter Sheet — triggerless, driven by setIsFilterSheetOpen */}
+            <TransactionFilterSheet
+                isFilterSheetOpen={isFilterSheetOpen}
+                setIsFilterSheetOpen={setIsFilterSheetOpen}
+                activeFilterCount={activeFilterCount}
+                search={search}
+                setSearch={setSearch}
+                selectedType={selectedType}
+                setSelectedType={setSelectedType}
+                selectedAccount={selectedAccount}
+                setSelectedAccount={setSelectedAccount}
+                selectedRange={selectedRange}
+                handleRangeChange={handleRangeChange}
+                startDate={startDate}
+                setStartDate={setStartDate}
+                endDate={endDate}
+                setEndDate={setEndDate}
+                handleApplyCustomDates={handleApplyCustomDates}
+                hasActiveFilters={hasActiveFilters}
+                handleResetFilters={handleResetFilters}
+                accounts={accounts}
+                handleApplyFilters={handleApplyFilters}
+                hideTrigger
+            />
+
+            <TransactionDetailSheet
                 open={!!selectedDetailTransaction}
                 onOpenChange={(open) => !open && setSelectedDetailTransaction(null)}
                 transaction={selectedDetailTransaction}
@@ -387,7 +445,7 @@ export default function TransactionIndex({ auth, transactions, accounts = [], ca
                 editingTransaction={editingTransaction}
                 accounts={accounts}
                 categories={categories}
-                 savingsGoals={savingsGoals} 
+                savingsGoals={savingsGoals}
             />
 
             <AlertDialog open={!!deletingTransaction} onOpenChange={(open) => !open && setDeletingTransaction(null)}>
