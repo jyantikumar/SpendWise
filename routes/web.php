@@ -99,9 +99,13 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Wishlist Items & Prices
-    Route::prefix('wishlist')->name('wishlist.')->group(function () {
-        Route::get('/', [WishlistItemController::class, 'index'])->name('index');
-        Route::post('/', [WishlistItemController::class, 'store'])->name('store');
+   // Wishlist Items & Prices
+Route::prefix('wishlist')->name('wishlist.')->group(function () {
+    Route::get('/', [WishlistItemController::class, 'index'])->name('index');
+    Route::post('/', [WishlistItemController::class, 'store'])->name('store');
+
+    // Scope the {wishlist} parameter to the authenticated user
+    Route::scopeBindings()->group(function () {
         Route::get('/{wishlist}', [WishlistItemController::class, 'show'])->name('show');
         Route::put('/{wishlist}', [WishlistItemController::class, 'update'])->name('update');
         Route::delete('/{wishlist}', [WishlistItemController::class, 'destroy'])->name('destroy');
@@ -111,6 +115,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/{wishlist}/prices/{price}', [WishlistItemController::class, 'updatePrice'])->name('prices.update');
         Route::delete('/{wishlist}/prices/{price}', [WishlistItemController::class, 'destroyPrice'])->name('prices.destroy');
     });
+});
 
     // Savings Goals
     Route::prefix('savings')->name('savings.')->group(function () {

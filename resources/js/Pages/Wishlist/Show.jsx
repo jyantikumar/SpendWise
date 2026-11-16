@@ -3,13 +3,13 @@ import { useForm, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { ArrowLeft, Plus, ExternalLink, Trash2, Pencil, MoreHorizontal, Wallet, FileText } from 'lucide-react';
+import { ArrowLeft, Plus, ExternalLink, Trash2, Pencil, MoreHorizontal, Wallet, FileText, ChevronDown } from 'lucide-react';
 
 export default function WishlistShow({ wishlist, lowestPrice }) {
     const [priceModal, setPriceModal] = useState(false);
@@ -74,82 +74,104 @@ export default function WishlistShow({ wishlist, lowestPrice }) {
                 {/* Header Actions */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
-                        <Button asChild variant="outline" size="sm" className="border-zinc-800 text-zinc-300 hover:bg-zinc-900 hover:text-zinc-100 h-8 text-xs">
-                            <Link href={route('wishlist.index')}>
-                                <ArrowLeft className="mr-1.5 h-3.5 w-3.5" /> Back
-                            </Link>
-                        </Button>
+                        {/* Plain text back link — no border, no button chrome */}
+                        <Link
+                            href={route('wishlist.index')}
+                            className="inline-flex items-center gap-1 text-xs text-zinc-400 hover:text-zinc-100 transition-colors"
+                        >
+                            <ArrowLeft className="h-3.5 w-3.5" /> Back
+                        </Link>
                         <Badge variant="outline" className="border-zinc-800 bg-zinc-900 text-zinc-300 text-[10px] uppercase h-6">
                             {wishlist.priority} Priority
                         </Badge>
                     </div>
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto">
-                        <Button variant="outline" onClick={handleDeleteItem} className="flex-1 sm:flex-initial border-rose-900/40 text-rose-400 hover:bg-rose-950/30 text-xs h-8 px-3">
-                            <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Delete
-                        </Button>
+                    {/* Split button: [ + Add Price | ▾ ] */}
+                   {/* Split button: [ + Add Price | ▾ ] */}
+<div className="flex items-center w-full sm:w-auto rounded-md overflow-hidden divide-x divide-zinc-300">
+    <Button
+        onClick={openCreateModal}
+        className="flex-1 sm:flex-initial rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium text-xs h-8 px-3 gap-1.5 shadow-none"
+    >
+        <Plus className="h-3.5 w-3.5" /> Add Price
+    </Button>
 
-                        <Button onClick={openCreateModal} className="flex-1 sm:flex-initial bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium text-xs h-8 px-3">
-                            <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Price
-                        </Button>
+    <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+            <Button
+                className="rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 h-8 px-2 shadow-none"
+                aria-label="More actions"
+            >
+                <ChevronDown className="h-3.5 w-3.5" />
+            </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-950 text-zinc-300 text-xs">
+            <DropdownMenuItem
+                onClick={handleDeleteItem}
+                className="text-rose-400 hover:bg-rose-950/30 focus:bg-rose-950/30 cursor-pointer"
+            >
+                <Trash2 className="mr-2 h-3 w-3" /> Delete
+            </DropdownMenuItem>
+        </DropdownMenuContent>
+    </DropdownMenu>
+</div>
 
-                        {/* Add/Edit Price Modal */}
-                        <Dialog open={priceModal} onOpenChange={setPriceModal}>
-                            <DialogContent className="border-zinc-800 text-zinc-100 max-w-md w-[90vw] sm:w-full rounded-lg bg-zinc-950 p-4 sm:p-6">
-                                <DialogHeader>
-                                    <DialogTitle className="text-zinc-100 text-base">
-                                        {editingPrice ? 'Edit Price Link' : 'Add Price Comparison Link'}
-                                    </DialogTitle>
-                                </DialogHeader>
-                                <form onSubmit={handlePriceSubmit} className="space-y-3 pt-2">
-                                    <div>
-                                        <Label htmlFor="site_name" className="text-zinc-300 text-xs">Store / Site Name</Label>
-                                        <Input
-                                            id="site_name"
-                                            value={priceForm.data.site_name}
-                                            onChange={(e) => priceForm.setData('site_name', e.target.value)}
-                                            placeholder="e.g. Shopee, Lazada"
-                                            className="border-zinc-800 bg-zinc-900 text-zinc-100 mt-1 h-9 text-xs focus-visible:ring-zinc-600"
-                                        />
-                                    </div>
+                    {/* Add/Edit Price Modal */}
+                    <Dialog open={priceModal} onOpenChange={setPriceModal}>
+                        <DialogContent className="border-zinc-800 text-zinc-100 max-w-md w-[90vw] sm:w-full rounded-lg bg-zinc-950 p-4 sm:p-6">
+                            <DialogHeader>
+                                <DialogTitle className="text-zinc-100 text-base">
+                                    {editingPrice ? 'Edit Price Link' : 'Add Price Comparison Link'}
+                                </DialogTitle>
+                            </DialogHeader>
+                            <form onSubmit={handlePriceSubmit} className="space-y-3 pt-2">
+                                <div>
+                                    <Label htmlFor="site_name" className="text-zinc-300 text-xs">Store / Site Name</Label>
+                                    <Input
+                                        id="site_name"
+                                        value={priceForm.data.site_name}
+                                        onChange={(e) => priceForm.setData('site_name', e.target.value)}
+                                        placeholder="e.g. Shopee, Lazada"
+                                        className="border-zinc-800 bg-zinc-900 text-zinc-100 mt-1 h-9 text-xs focus-visible:ring-zinc-600"
+                                    />
+                                </div>
 
-                                    <div>
-                                        <Label htmlFor="price" className="text-zinc-300 text-xs">Price</Label>
-                                        <Input
-                                            id="price"
-                                            type="number"
-                                            step="0.01"
-                                            value={priceForm.data.price}
-                                            onChange={(e) => priceForm.setData('price', e.target.value)}
-                                            placeholder="2999.00"
-                                            className="border-zinc-800 bg-zinc-900 text-zinc-100 mt-1 h-9 text-xs focus-visible:ring-zinc-600"
-                                        />
-                                    </div>
+                                <div>
+                                    <Label htmlFor="price" className="text-zinc-300 text-xs">Price</Label>
+                                    <Input
+                                        id="price"
+                                        type="number"
+                                        step="0.01"
+                                        value={priceForm.data.price}
+                                        onChange={(e) => priceForm.setData('price', e.target.value)}
+                                        placeholder="2999.00"
+                                        className="border-zinc-800 bg-zinc-900 text-zinc-100 mt-1 h-9 text-xs focus-visible:ring-zinc-600"
+                                    />
+                                </div>
 
-                                    <div>
-                                        <Label htmlFor="product_url" className="text-zinc-300 text-xs">Product URL</Label>
-                                        <Input
-                                            id="product_url"
-                                            type="url"
-                                            value={priceForm.data.product_url}
-                                            onChange={(e) => priceForm.setData('product_url', e.target.value)}
-                                            placeholder="https://shopee.ph/product/..."
-                                            className="border-zinc-800 bg-zinc-900 text-zinc-100 mt-1 h-9 text-xs focus-visible:ring-zinc-600"
-                                        />
-                                    </div>
+                                <div>
+                                    <Label htmlFor="product_url" className="text-zinc-300 text-xs">Product URL</Label>
+                                    <Input
+                                        id="product_url"
+                                        type="url"
+                                        value={priceForm.data.product_url}
+                                        onChange={(e) => priceForm.setData('product_url', e.target.value)}
+                                        placeholder="https://shopee.ph/product/..."
+                                        className="border-zinc-800 bg-zinc-900 text-zinc-100 mt-1 h-9 text-xs focus-visible:ring-zinc-600"
+                                    />
+                                </div>
 
-                                    <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
-                                        <Button type="button" variant="outline" onClick={() => setPriceModal(false)} className="border-zinc-800 bg-zinc-900 text-zinc-300 h-8 text-xs">
-                                            Cancel
-                                        </Button>
-                                        <Button type="submit" disabled={priceForm.processing} className="bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium h-8 text-xs">
-                                            {editingPrice ? 'Save Changes' : 'Save Link'}
-                                        </Button>
-                                    </DialogFooter>
-                                </form>
-                            </DialogContent>
-                        </Dialog>
-                    </div>
+                                <DialogFooter className="flex-col sm:flex-row gap-2 pt-2">
+                                    <Button type="button" variant="outline" onClick={() => setPriceModal(false)} className="border-zinc-800 bg-zinc-900 text-zinc-300 h-8 text-xs">
+                                        Cancel
+                                    </Button>
+                                    <Button type="submit" disabled={priceForm.processing} className="bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium h-8 text-xs">
+                                        {editingPrice ? 'Save Changes' : 'Save Link'}
+                                    </Button>
+                                </DialogFooter>
+                            </form>
+                        </DialogContent>
+                    </Dialog>
                 </div>
 
                 {/* Two Compact Summary Cards Side-by-Side on Mobile & Desktop */}
@@ -211,9 +233,9 @@ export default function WishlistShow({ wishlist, lowestPrice }) {
                                     ) : (
                                         wishlist.prices.map((p) => {
                                             const isLowest =
-    lowestPrice !== null &&
-    lowestPrice !== undefined &&
-    Number(p.price) === Number(lowestPrice);
+                                                lowestPrice !== null &&
+                                                lowestPrice !== undefined &&
+                                                Number(p.price) === Number(lowestPrice);
 
                                             return (
                                                 <TableRow key={p.id} className="border-b border-zinc-800 hover:bg-zinc-900/40">
@@ -265,9 +287,9 @@ export default function WishlistShow({ wishlist, lowestPrice }) {
                             ) : (
                                 wishlist.prices.map((p) => {
                                     const isLowest =
-    lowestPrice !== null &&
-    lowestPrice !== undefined &&
-    Number(p.price) === Number(lowestPrice);
+                                        lowestPrice !== null &&
+                                        lowestPrice !== undefined &&
+                                        Number(p.price) === Number(lowestPrice);
 
                                     return (
                                         <div key={p.id} className="py-2 flex items-center justify-between gap-2">

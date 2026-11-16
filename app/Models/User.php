@@ -86,4 +86,8 @@ public function budgets()
 {
     return $this->hasMany(\App\Models\Budget::class);
 }
+public function wishlistItems(): HasMany
+{
+    return $this->hasMany(WishlistItem::class);
+}
 }

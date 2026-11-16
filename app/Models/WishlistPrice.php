@@ -24,4 +24,10 @@ class WishlistPrice extends Model
     {
         return $this->belongsTo(WishlistItem::class, 'wishlist_item_id');
     }
+    public function resolveRouteBinding($value, $field = null)
+{
+    return $this->whereHas('item', fn ($q) => $q->where('user_id', auth()->id()))
+                ->where($field ?? $this->getRouteKeyName(), $value)
+                ->firstOrFail();
+}
 }

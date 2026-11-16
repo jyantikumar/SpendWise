@@ -9,9 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, Calendar, Users, ArrowRight, Search, Filter, MoreHorizontal, Pencil, Trash2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Plus, Calendar, Users, ArrowRight, Search, Filter, MoreHorizontal, Pencil, Trash2, ChevronDown, Check } from 'lucide-react';
 import { formatCurrency } from '@/lib/currency';
 
 export default function SplitIndex({ auth, events }) {
@@ -83,16 +82,21 @@ export default function SplitIndex({ auth, events }) {
     // Filter events based on search query and status filter
     const filteredEvents = useMemo(() => {
         return events.filter((event) => {
-            const matchesSearch = 
-                event.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+            const matchesSearch =
+                event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 (event.description && event.description.toLowerCase().includes(searchQuery.toLowerCase()));
-            
-            const matchesStatus = 
+
+            const matchesStatus =
                 statusFilter === 'all' || event.status === statusFilter;
 
             return matchesSearch && matchesStatus;
         });
     }, [events, searchQuery, statusFilter]);
+
+    // Label for the filter chip inside the dropdown
+    const filterLabel =
+        statusFilter === 'open' ? 'Unpaid' :
+        statusFilter === 'settled' ? 'Settled' : 'All Events';
 
     return (
         <AppLayout title="Split Payments" headerTitle="Split Payments Ledger">
@@ -103,9 +107,50 @@ export default function SplitIndex({ auth, events }) {
                         <p className="text-xs sm:text-sm text-zinc-400">Keep track of shared group costs and who owes what.</p>
                     </div>
 
-                    <Button size="sm" onClick={openCreateModal} className="bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium h-9 text-xs w-full sm:w-auto">
-                        <Plus className="mr-1.5 h-3.5 w-3.5" /> New Event
-                    </Button>
+                    {/* Split button: [ + New Event | ▾ ] */}
+                    <div className="flex items-center w-full sm:w-auto rounded-md overflow-hidden divide-x divide-zinc-300">
+                        <Button
+                            size="sm"
+                            onClick={openCreateModal}
+                            className="flex-1 sm:flex-initial rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium text-xs h-9 px-3 gap-1.5 shadow-none"
+                        >
+                            <Plus className="h-3.5 w-3.5" /> New Event
+                        </Button>
+
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    size="sm"
+                                    className="rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 h-9 px-2 shadow-none"
+                                    aria-label="Filter events"
+                                >
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-950 text-zinc-300 text-xs w-[160px]">
+                                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium px-2 py-1.5">
+                                    Filter Status
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator className="bg-zinc-800" />
+                                {[
+                                    { value: 'all', label: 'All Events' },
+                                    { value: 'open', label: 'Unpaid' },
+                                    { value: 'settled', label: 'Settled' },
+                                ].map((opt) => (
+                                    <DropdownMenuItem
+                                        key={opt.value}
+                                        onClick={() => setStatusFilter(opt.value)}
+                                        className="cursor-pointer focus:bg-zinc-900 hover:bg-zinc-900"
+                                    >
+                                        <span className="flex-1">{opt.label}</span>
+                                        {statusFilter === opt.value && (
+                                            <Check className="h-3 w-3 text-zinc-300" />
+                                        )}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
 
                     {/* Create / Edit Event Modal */}
                     <Dialog open={openModal} onOpenChange={setOpenModal}>
@@ -161,7 +206,7 @@ export default function SplitIndex({ auth, events }) {
                     </Dialog>
                 </div>
 
-                {/* Search Bar & Status Filter Bar (Side-by-Side) */}
+                {/* Search Bar + active filter indicator */}
                 <div className="flex flex-row items-center gap-2">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-zinc-500" />
@@ -173,17 +218,18 @@ export default function SplitIndex({ auth, events }) {
                         />
                     </div>
 
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger className="h-9 w-[130px] sm:w-[160px] border-zinc-800 bg-zinc-900 text-xs text-zinc-300 shrink-0">
-                            <Filter className="mr-1.5 h-3.5 w-3.5 text-zinc-400" />
-                            <SelectValue placeholder="Filter status" />
-                        </SelectTrigger>
-                        <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                            <SelectItem value="all" className="text-xs">All Events</SelectItem>
-                            <SelectItem value="open" className="text-xs">Unpaid</SelectItem>
-                            <SelectItem value="settled" className="text-xs">Settled</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    {/* Active filter chip (hidden on 'all' to keep it clean) */}
+                    {statusFilter !== 'all' && (
+                        <button
+                            type="button"
+                            onClick={() => setStatusFilter('all')}
+                            className="inline-flex items-center gap-1 h-9 px-3 text-xs rounded-md border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 shrink-0"
+                        >
+                            <Filter className="h-3.5 w-3.5 text-zinc-400" />
+                            {filterLabel}
+                            <span className="text-zinc-500 ml-1">×</span>
+                        </button>
+                    )}
                 </div>
 
                 {/* Events Cards Grid */}
@@ -201,19 +247,19 @@ export default function SplitIndex({ auth, events }) {
                             <Card key={event.id} className="border-zinc-800 hover:border-zinc-700 transition-all flex flex-col justify-between shadow-none p-3.5 sm:p-5 gap-3">
                                 <div className="space-y-1.5">
                                     <div className="flex items-center justify-between">
-                                        <Badge variant="outline" className={`border-zinc-800      text-[9px] sm:text-[10px] tracking-wider py-0.5 px-2 ${
-                                            event.status === 'settled' 
-                                                ? 'bg-green-900 text-zinc-200' 
+                                        <Badge variant="outline" className={`border-zinc-800 text-[9px] sm:text-[10px] tracking-wider py-0.5 px-2 ${
+                                            event.status === 'settled'
+                                                ? 'bg-green-900 text-zinc-200'
                                                 : 'bg-zinc-900/60 text-zinc-400'
                                         }`}>
                                             {event.status.toUpperCase()}
                                         </Badge>
-                                        
+
                                         <div className="flex items-center gap-1.5">
-                                            <span className="text-[11px] text-zinc-500 flex items-center gap-1     ">
+                                            <span className="text-[11px] text-zinc-500 flex items-center gap-1">
                                                 <Calendar className="h-3 w-3" /> {event.event_date ? event.event_date.split('T')[0] : ''}
                                             </span>
-                                            
+
                                             {/* Event Actions Dropdown */}
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
@@ -238,7 +284,7 @@ export default function SplitIndex({ auth, events }) {
                                     </CardDescription>
                                 </div>
                                 <div className="flex items-center justify-between pt-2 border-t border-zinc-900 mt-auto">
-                                    <span className="text-[11px] text-zinc-400     ">
+                                    <span className="text-[11px] text-zinc-400">
                                         <strong className="text-zinc-200 font-semibold">{formatCurrency(event.total_spent || 0, userCurrency)}</strong>
                                     </span>
                                     <Button asChild variant="ghost" size="sm" className="h-7 px-2.5 text-zinc-300 hover:text-zinc-100 hover:bg-zinc-900 text-xs font-medium">

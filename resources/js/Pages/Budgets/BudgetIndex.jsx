@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
 import {
     Plus, Target, Search, Calendar, TrendingUp, CheckCircle2, MoreHorizontal,
-    Eye, Pencil, Filter, Wallet, Trash2, AlertTriangle,
+    Eye, Pencil, Wallet, Trash2, AlertTriangle, ChevronDown, Check, Filter,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -11,9 +11,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
-    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+    DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
+    DropdownMenuSeparator, DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
     AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -98,6 +98,12 @@ export default function BudgetIndex({ auth, budgets = [], summary = {}, filters 
         );
     };
 
+    // Labels for the period filter (used in chip + dropdown)
+    const periodLabel =
+        period === 'monthly' ? 'Monthly' :
+        period === 'weekly' ? 'Weekly' :
+        period === 'custom' ? 'Custom' : 'All Periods';
+
     return (
         <AppLayout title="Budgets" headerTitle="Budgets">
             <div className="space-y-4 sm:space-y-6">
@@ -107,13 +113,48 @@ export default function BudgetIndex({ auth, budgets = [], summary = {}, filters 
                         Set spending limits and track how close you are to them.
                     </p>
 
-                    <Button
-                        onClick={openCreate}
-                        className="w-full sm:hidden bg-white hover:bg-zinc-200 text-zinc-900 font-medium h-9 text-xs gap-1.5"
-                    >
-                        <Plus className="h-4 w-4" /> New Budget
-                    </Button>
+                    {/* Mobile: split button full width */}
+                    <div className="flex items-center w-full sm:hidden rounded-md overflow-hidden divide-x divide-zinc-300">
+                        <Button
+                            onClick={openCreate}
+                            className="flex-1 rounded-none border-0 bg-white hover:bg-zinc-200 text-zinc-900 font-medium h-9 text-xs gap-1.5 shadow-none"
+                        >
+                            <Plus className="h-4 w-4" /> New Budget
+                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    className="rounded-none border-0 bg-white hover:bg-zinc-200 text-zinc-900 h-9 px-2 shadow-none"
+                                    aria-label="Filter period"
+                                >
+                                    <ChevronDown className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-950 text-zinc-300 text-xs w-[160px]">
+                                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium px-2 py-1.5">
+                                    Filter Period
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator className="bg-zinc-800" />
+                                {[
+                                    { value: 'all', label: 'All Periods' },
+                                    { value: 'monthly', label: 'Monthly' },
+                                    { value: 'weekly', label: 'Weekly' },
+                                    { value: 'custom', label: 'Custom' },
+                                ].map((opt) => (
+                                    <DropdownMenuItem
+                                        key={opt.value}
+                                        onClick={() => handlePeriodChange(opt.value)}
+                                        className="cursor-pointer focus:bg-zinc-900 hover:bg-zinc-900"
+                                    >
+                                        <span className="flex-1">{opt.label}</span>
+                                        {period === opt.value && <Check className="h-3 w-3 text-zinc-300" />}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
 
+                    {/* Desktop: search + split button inline */}
                     <div className="hidden sm:flex sm:items-center sm:gap-2 sm:shrink-0">
                         <div className="relative">
                             <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-zinc-500" />
@@ -125,22 +166,47 @@ export default function BudgetIndex({ auth, budgets = [], summary = {}, filters 
                             />
                         </div>
 
-                        <Select value={period} onValueChange={handlePeriodChange}>
-                            <SelectTrigger className="h-9 w-[140px] border-zinc-800 bg-zinc-900 text-xs text-zinc-300 shrink-0">
-                                <Filter className="mr-1.5 h-3.5 w-3.5 text-zinc-400" />
-                                <SelectValue placeholder="Period" />
-                            </SelectTrigger>
-                            <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                                <SelectItem value="all" className="text-xs">All Periods</SelectItem>
-                                <SelectItem value="monthly" className="text-xs">Monthly</SelectItem>
-                                <SelectItem value="weekly" className="text-xs">Weekly</SelectItem>
-                                <SelectItem value="custom" className="text-xs">Custom</SelectItem>
-                            </SelectContent>
-                        </Select>
-
-                        <Button onClick={openCreate} size="sm" className="gap-1.5 h-9 text-xs">
-                            <Plus className="h-3.5 w-3.5" /> New Budget
-                        </Button>
+                        <div className="flex items-center rounded-md overflow-hidden divide-x divide-zinc-300">
+                            <Button
+                                onClick={openCreate}
+                                size="sm"
+                                className="rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium h-9 text-xs gap-1.5 shadow-none"
+                            >
+                                <Plus className="h-3.5 w-3.5" /> New Budget
+                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        size="sm"
+                                        className="rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 h-9 px-2 shadow-none"
+                                        aria-label="Filter period"
+                                    >
+                                        <ChevronDown className="h-3.5 w-3.5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-950 text-zinc-300 text-xs w-[160px]">
+                                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium px-2 py-1.5">
+                                        Filter Period
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator className="bg-zinc-800" />
+                                    {[
+                                        { value: 'all', label: 'All Periods' },
+                                        { value: 'monthly', label: 'Monthly' },
+                                        { value: 'weekly', label: 'Weekly' },
+                                        { value: 'custom', label: 'Custom' },
+                                    ].map((opt) => (
+                                        <DropdownMenuItem
+                                            key={opt.value}
+                                            onClick={() => handlePeriodChange(opt.value)}
+                                            className="cursor-pointer focus:bg-zinc-900 hover:bg-zinc-900"
+                                        >
+                                            <span className="flex-1">{opt.label}</span>
+                                            {period === opt.value && <Check className="h-3 w-3 text-zinc-300" />}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     </div>
                 </div>
 
@@ -183,7 +249,7 @@ export default function BudgetIndex({ auth, budgets = [], summary = {}, filters 
                     </Card>
                 </div>
 
-                {/* Mobile filter row */}
+                {/* Mobile: search + active filter chip */}
                 <div className="flex flex-row items-center gap-2 sm:hidden">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-zinc-500" />
@@ -194,19 +260,33 @@ export default function BudgetIndex({ auth, budgets = [], summary = {}, filters 
                             className="h-9 w-full pl-9 border-zinc-800 bg-zinc-900 text-xs text-zinc-200 placeholder:text-zinc-500"
                         />
                     </div>
-                    <Select value={period} onValueChange={handlePeriodChange}>
-                        <SelectTrigger className="h-9 w-[130px] border-zinc-800 bg-zinc-900 text-xs text-zinc-300 shrink-0">
-                            <Filter className="mr-1.5 h-3.5 w-3.5 text-zinc-400" />
-                            <SelectValue placeholder="Period" />
-                        </SelectTrigger>
-                        <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                            <SelectItem value="all" className="text-xs">All</SelectItem>
-                            <SelectItem value="monthly" className="text-xs">Monthly</SelectItem>
-                            <SelectItem value="weekly" className="text-xs">Weekly</SelectItem>
-                            <SelectItem value="custom" className="text-xs">Custom</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    {period !== 'all' && (
+                        <button
+                            type="button"
+                            onClick={() => handlePeriodChange('all')}
+                            className="inline-flex items-center gap-1 h-9 px-3 text-xs rounded-md border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 shrink-0"
+                        >
+                            <Filter className="h-3.5 w-3.5 text-zinc-400" />
+                            {periodLabel}
+                            <span className="text-zinc-500 ml-1">×</span>
+                        </button>
+                    )}
                 </div>
+
+                {/* Desktop: active filter chip (shown only when filtered) */}
+                {period !== 'all' && (
+                    <div className="hidden sm:flex items-center">
+                        <button
+                            type="button"
+                            onClick={() => handlePeriodChange('all')}
+                            className="inline-flex items-center gap-1 h-7 px-2.5 text-[11px] rounded-md border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                        >
+                            <Filter className="h-3 w-3 text-zinc-400" />
+                            {periodLabel}
+                            <span className="text-zinc-500 ml-1">×</span>
+                        </button>
+                    </div>
+                )}
 
                 {/* Budget list */}
                 {budgets.length === 0 ? (
