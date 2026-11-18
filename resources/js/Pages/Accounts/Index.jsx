@@ -139,7 +139,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                                 <DropdownMenuItem asChild className="cursor-pointer focus:bg-zinc-900 hover:bg-zinc-900">
                                     <Link href={route('account-types.index')} className="flex items-center w-full">
                                         <Layers className="mr-2 h-3 w-3 text-zinc-400" />
-                                        <span className="flex-1">Manage Account Types</span>
+                                        <span className="flex-1">Account Types</span>
                                     </Link>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
