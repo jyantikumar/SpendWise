@@ -1,6 +1,6 @@
 // resources/js/Pages/Subscriptions/SubscriptionsView.jsx
 import { useState, useMemo } from 'react';
-import { router, usePage } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { toast } from 'sonner';
 
 import AppLayout from '@/Layouts/AuthenticatedLayout';
@@ -19,7 +19,6 @@ import {
 import { CreateRecurringDialog } from '@/Pages/Subscriptions/Components/CreateRecurringDialog';
 import { PayInstanceDialog } from '@/Pages/Subscriptions/Components/PayInstanceDialog';
 
-// Local Component Imports
 import { SubscriptionHeader } from './Components/SubscriptionHeader';
 import { SubscriptionKpiCards } from './Components/SubscriptionKpiCards';
 import { ActiveFiltersBar } from './Components/ActiveFiltersBar';
@@ -41,7 +40,10 @@ export default function SubscriptionsView({
 }) {
     // Filter States
     const [filterType, setFilterType] = useState('all');
-    const [filterStatus, setFilterStatus] = useState('all');
+    // Default to 'active' so the Rules tab opens showing only live rules.
+    // filterStatus is only consumed by the Rules list, so this has no
+    // side effect on Today / Upcoming / Missed.
+    const [filterStatus, setFilterStatus] = useState('active');
     const [dateFilter, setDateFilter] = useState('current_month');
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
@@ -65,16 +67,6 @@ export default function SubscriptionsView({
 
     const todayList = Array.isArray(todayInstances) ? todayInstances : [];
 
-    // Debug: uncomment during development to see what's arriving
-    // useEffect(() => {
-    //     console.log('[SubscriptionsView] accounts:', accounts);
-    //     console.log('[SubscriptionsView] categories:', categories);
-    //     console.log('[SubscriptionsView] recurringTransactions:', recurringTransactions);
-    //     console.log('[SubscriptionsView] pendingInstances:', pendingInstances);
-    //     console.log('[SubscriptionsView] todayInstances:', todayInstances);
-    // }, [accounts, categories, recurringTransactions, pendingInstances, todayInstances]);
-
-    // Get user's preferred currency
     const userCurrency = auth?.user?.currency || 'PHP';
 
     const formatCurrency = (val) =>
@@ -85,7 +77,7 @@ export default function SubscriptionsView({
 
     const handleResetFilters = () => {
         setFilterType('all');
-        setFilterStatus('all');
+        setFilterStatus('active'); // reset back to the Rules-tab default
         setDateFilter('current_month');
         setCustomStartDate('');
         setCustomEndDate('');
@@ -156,8 +148,14 @@ export default function SubscriptionsView({
             recurringList.filter((item) => {
                 if (filterType === 'expense' && item.type !== 'expense') return false;
                 if (filterType === 'income' && item.type !== 'income') return false;
-                if (filterStatus === 'active' && !item.is_active) return false;
-                if (filterStatus === 'paused' && item.is_active) return false;
+
+                const isExpired = Boolean(item.is_expired);
+
+                if (filterStatus === 'expired') return isExpired;
+                if (filterStatus === 'active') return item.is_active && !isExpired;
+                if (filterStatus === 'paused') return !item.is_active && !isExpired;
+
+                // 'all' — everything, including expired
                 return true;
             }),
         [recurringList, filterType, filterStatus]
@@ -191,7 +189,7 @@ export default function SubscriptionsView({
 
     const hasActiveFilters = Boolean(
         filterType !== 'all' ||
-            filterStatus !== 'all' ||
+            filterStatus !== 'active' ||
             dateFilter !== 'current_month' ||
             customStartDate !== '' ||
             customEndDate !== ''
@@ -199,7 +197,7 @@ export default function SubscriptionsView({
 
     const activeFilterCount = [
         filterType !== 'all',
-        filterStatus !== 'all',
+        filterStatus !== 'active',
         dateFilter !== 'current_month' || customStartDate !== '' || customEndDate !== '',
     ].filter(Boolean).length;
 

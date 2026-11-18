@@ -71,7 +71,7 @@ export function FilterSheet({
                             </div>
                         </div>
 
-                        {/* Custom Date Inputs (only shown when 'Custom' is selected) */}
+                        {/* Custom Date Inputs */}
                         {dateFilter === 'custom' && (
                             <div className="p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg space-y-3">
                                 <span className="text-[11px] font-medium text-zinc-300 flex items-center gap-1.5">
@@ -132,11 +132,11 @@ export function FilterSheet({
                             </div>
                         </div>
 
-                        {/* Rule Status Filter */}
+                        {/* Rule Status Filter — includes Expired */}
                         <div className="space-y-2">
                             <label className="text-xs font-medium text-zinc-400">Rule Status</label>
-                            <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs">
-                                {['all', 'active', 'paused'].map((status) => (
+                            <div className="grid grid-cols-4 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs">
+                                {['all', 'active', 'paused', 'expired'].map((status) => (
                                     <button
                                         key={status}
                                         type="button"

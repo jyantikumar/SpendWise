@@ -41,6 +41,8 @@ class RecurringTransaction extends Model
         'amount'            => 'decimal:2',
     ];
 
+    protected $appends = ['is_expired'];
+
     // ------------------------------------------------------------------
     // Relations
     // ------------------------------------------------------------------
@@ -56,26 +58,28 @@ class RecurringTransaction extends Model
     }
 
     public function category(): BelongsTo
-{
-    return $this->belongsTo(Category::class)->withTrashed();
-}
+    {
+        return $this->belongsTo(Category::class)->withTrashed();
+    }
+
+    // ------------------------------------------------------------------
+    // Accessors
+    // ------------------------------------------------------------------
+
+    /**
+     * A rule is "expired" when it has an end_date that is strictly before
+     * today. Expired rules can no longer generate future instances, but they
+     * are kept in the database so the user can review/edit/delete them.
+     */
+    public function getIsExpiredAttribute(): bool
+    {
+        return $this->end_date && $this->end_date->lt(Carbon::today());
+    }
 
     // ------------------------------------------------------------------
     // Schedule helpers
     // ------------------------------------------------------------------
 
-    /**
-     * Advance a date by one step of the given frequency.
-     *
-     * For weekly frequency with one or more weekdays, this walks forward
-     * to the NEXT allowed weekday (never returns the input date itself).
-     * For daily/monthly/yearly, it's a simple addDay/addMonth/addYear.
-     *
-     * @param  Carbon|string  $date
-     * @param  string         $frequency   daily|weekly|monthly|yearly
-     * @param  array|string|null  $weekdays  Array of ints 0..6 (or JSON string)
-     * @return Carbon
-     */
     public static function advanceDate($date, string $frequency, $weekdays = null): Carbon
     {
         $cursor = $date instanceof Carbon ? $date->copy() : Carbon::parse($date);
@@ -94,13 +98,10 @@ class RecurringTransaction extends Model
             case 'weekly':
                 $allowed = self::normalizeWeekdaysArray($weekdays);
 
-                // No specific weekdays → just advance 7 days
                 if (empty($allowed)) {
                     return $cursor->addWeek();
                 }
 
-                // Walk forward up to 7 days to find the next allowed weekday.
-                // We start at +1 day so we never return the input date itself.
                 for ($i = 1; $i <= 7; $i++) {
                     $candidate = $cursor->copy()->addDays($i);
                     if (in_array($candidate->dayOfWeek, $allowed, true)) {
@@ -108,7 +109,6 @@ class RecurringTransaction extends Model
                     }
                 }
 
-                // Fallback (shouldn't happen if $allowed is non-empty)
                 return $cursor->addWeek();
 
             default:
@@ -116,10 +116,6 @@ class RecurringTransaction extends Model
         }
     }
 
-    /**
-     * Normalize a weekdays value (array, JSON string, or null) into a sorted,
-     * unique array of integers 0..6.
-     */
     public static function normalizeWeekdaysArray($value): array
     {
         if ($value === null || $value === '') {
