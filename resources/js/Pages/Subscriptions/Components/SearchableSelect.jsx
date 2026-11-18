@@ -69,13 +69,12 @@ export function SearchableSelect({
             </PopoverTrigger>
 
             <PopoverContent
-                className="w-[var(--radix-popover-trigger-width)] p-0 border-zinc-800 bg-zinc-900 text-zinc-200"
+                className="w-[var(--radix-popover-trigger-width)] p-0 border-zinc-800 bg-zinc-900 text-zinc-200 touch-pan-y"
                 align="start"
+                onWheel={(e) => e.stopPropagation()}
             >
                 <Command
                     className="bg-zinc-900 text-zinc-200"
-                    // simple substring filter; cmdk's default is fine but
-                    // we lowercase both sides for a forgiving match
                     filter={(value, search) =>
                         value.toLowerCase().includes(search.toLowerCase()) ? 1 : 0
                     }
@@ -84,7 +83,10 @@ export function SearchableSelect({
                         placeholder={searchPlaceholder}
                         className="h-9 text-xs text-zinc-200 placeholder:text-zinc-500"
                     />
-                    <CommandList className="max-h-[240px] overflow-y-auto">
+                    <CommandList
+                        className="max-h-[240px] overflow-y-auto overscroll-contain touch-pan-y [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden [&::-webkit-scrollbar]:w-0 [&::-webkit-scrollbar]:h-0"
+                        onWheel={(e) => e.stopPropagation()}
+                    >
                         <CommandEmpty className="py-4 text-center text-[11px] text-zinc-500">
                             {emptyText}
                         </CommandEmpty>
@@ -95,14 +97,16 @@ export function SearchableSelect({
                                 return (
                                     <CommandItem
                                         key={String(opt.value)}
-                                        // cmdk filters on `value`, so feed it the label
-                                        // (the human-readable text) — not the id.
                                         value={opt.label}
                                         onSelect={() => {
                                             onValueChange(String(opt.value));
                                             setOpen(false);
                                         }}
-                                        className="text-xs text-zinc-200 aria-selected:bg-zinc-800 aria-selected:text-zinc-100 cursor-pointer"
+                                        className={cn(
+                                            'text-xs cursor-pointer !bg-transparent text-zinc-200 hover:text-zinc-100 data-[selected=true]:!bg-transparent aria-selected:!bg-transparent',
+                                            isSelected &&
+                                                '!bg-zinc-800 text-zinc-100 font-medium data-[selected=true]:!bg-zinc-800 aria-selected:!bg-zinc-800'
+                                        )}
                                     >
                                         <Check
                                             className={cn(
