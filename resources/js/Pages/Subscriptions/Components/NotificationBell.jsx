@@ -167,7 +167,7 @@ export function NotificationBell() {
                 instance={payingInstance}
                 accounts={accounts}
                 isAccountLocked={true}
-                isAmountLocked={true}
+                isAmountLocked={false}
                 isCategoryLocked={true}
                 userCurrency={userCurrency}
             />

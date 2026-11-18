@@ -423,7 +423,7 @@ export default function SubscriptionsView({
                 accounts={accounts}
                 categories={categories}
                 isAccountLocked={true}
-                isAmountLocked={true}
+                isAmountLocked={false}
                 isCategoryLocked={true}
                 userCurrency={userCurrency}
             />
