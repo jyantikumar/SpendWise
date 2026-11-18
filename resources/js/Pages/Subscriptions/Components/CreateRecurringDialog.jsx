@@ -6,7 +6,6 @@ import {
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogDescription,
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -19,7 +18,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { Switch } from '@/components/ui/switch';
+import { todayLocalISO } from './dateHelpers';
+import { SearchableSelect } from './SearchableSelect';
 
 const WEEKDAYS = [
     { value: 0, short: 'Su', label: 'Sunday' },
@@ -49,7 +49,7 @@ export function CreateRecurringDialog({
         weekdays: [],
         account_id: accounts[0]?.id ? String(accounts[0].id) : '',
         category_id: '',
-        start_date: new Date().toISOString().slice(0, 10),
+        start_date:new Date().toISOString().slice(0, 10),
         end_date: '',
         auto_create: true,
     });
@@ -87,7 +87,7 @@ export function CreateRecurringDialog({
                     ? String(editingItem.next_due_date).split('T')[0]
                     : editingItem.start_date
                       ? String(editingItem.start_date).split('T')[0]
-                      : new Date().toISOString().slice(0, 10),
+                      : todayLocalISO(),
                 end_date: editingItem.end_date
                     ? String(editingItem.end_date).split('T')[0]
                     : '',
@@ -104,13 +104,7 @@ export function CreateRecurringDialog({
     /**
      * Only allow categories whose `type` matches the rule's type.
      * The currently-edited category is always kept so it can render,
-     * even if it is a legacy/mismatched record (e.g. created before
-     * this restriction was added).
-     *
-     * Previously this list also allowed categories with no type and
-     * transfer categories, which let mismatched categories get attached
-     * to a rule. Those then produced transactions whose category could
-     * not render in the edit modal.
+     * even if it is a legacy/mismatched record.
      */
     const filteredCategories = categories.filter((cat) => {
         if (String(cat.id) === String(editingCategoryId)) return true;
@@ -355,30 +349,26 @@ export function CreateRecurringDialog({
                         </div>
                     )}
 
-                    {/* Account & Category */}
+                    {/* Account & Category — now searchable */}
                     <div className="grid grid-cols-2 gap-2.5">
                         <div className="space-y-1">
                             <Label className="text-xs text-zinc-300">Account</Label>
-                            <Select
-                                value={data.account_id ? String(data.account_id) : ''}
+                            <SearchableSelect
+                                value={data.account_id}
                                 onValueChange={(val) => setData('account_id', val)}
-                            >
-                                <SelectTrigger className="h-9 w-full border-zinc-800 bg-zinc-900 text-xs text-zinc-200">
-                                    <SelectValue placeholder="Select account" />
-                                </SelectTrigger>
-                                <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                                    {accounts.length === 0 && (
-                                        <div className="px-2 py-1.5 text-[11px] text-zinc-500">
-                                            No accounts. Create one first.
-                                        </div>
-                                    )}
-                                    {accounts.map((acc) => (
-                                        <SelectItem key={acc.id} value={String(acc.id)}>
-                                            {acc.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                options={accounts.map((acc) => ({
+                                    value: String(acc.id),
+                                    label: acc.name,
+                                }))}
+                                placeholder={
+                                    accounts.length === 0
+                                        ? 'No accounts'
+                                        : 'Select account'
+                                }
+                                searchPlaceholder="Search accounts…"
+                                emptyText="No accounts match."
+                                disabled={accounts.length === 0}
+                            />
                             {errors.account_id && (
                                 <p className="text-[11px] text-rose-500">
                                     {errors.account_id}
@@ -388,26 +378,22 @@ export function CreateRecurringDialog({
 
                         <div className="space-y-1">
                             <Label className="text-xs text-zinc-300">Category</Label>
-                            <Select
-                                value={data.category_id ? String(data.category_id) : ''}
+                            <SearchableSelect
+                                value={data.category_id}
                                 onValueChange={(val) => setData('category_id', val)}
-                            >
-                                <SelectTrigger className="h-9 w-full border-zinc-800 bg-zinc-900 text-xs text-zinc-200">
-                                    <SelectValue placeholder="Select category" />
-                                </SelectTrigger>
-                                <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                                    {filteredCategories.length === 0 && (
-                                        <div className="px-2 py-1.5 text-[11px] text-zinc-500">
-                                            No matching categories.
-                                        </div>
-                                    )}
-                                    {filteredCategories.map((cat) => (
-                                        <SelectItem key={cat.id} value={String(cat.id)}>
-                                            {cat.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                                options={filteredCategories.map((cat) => ({
+                                    value: String(cat.id),
+                                    label: cat.name,
+                                }))}
+                                placeholder={
+                                    filteredCategories.length === 0
+                                        ? 'No matching categories'
+                                        : 'Select category'
+                                }
+                                searchPlaceholder="Search categories…"
+                                emptyText="No categories match."
+                                disabled={filteredCategories.length === 0}
+                            />
                             {errors.category_id && (
                                 <p className="text-[11px] text-rose-500">
                                     {errors.category_id}

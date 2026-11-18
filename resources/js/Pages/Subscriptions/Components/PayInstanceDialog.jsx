@@ -1,6 +1,7 @@
 // resources/js/Pages/Subscriptions/Components/PayInstanceDialog.jsx
 import { useEffect } from 'react';
 import { useForm } from '@inertiajs/react';
+import { todayLocalISO } from './dateHelpers';
 import {
     Dialog,
     DialogContent,
@@ -67,14 +68,14 @@ export function PayInstanceDialog({
                     instance.category_name || instance.category?.name || 'Uncategorized',
                 amount: instance.amount ? String(instance.amount) : '',
                 payment_date:
-                    instance.due_date || new Date().toISOString().slice(0, 10),
+                    instance.due_date || todayLocalISO(),
                 date_option: 'due_date',
             });
         }
     }, [instance, open, accounts]);
 
     const handleDateOptionChange = (value) => {
-        const todayStr = new Date().toISOString().slice(0, 10);
+        const todayStr = todayLocalISO();
         setData((prev) => ({
             ...prev,
             date_option: value,
@@ -224,7 +225,7 @@ export function PayInstanceDialog({
                                     className="text-xs text-zinc-300 font-normal cursor-pointer"
                                 >
                                     Today's Date (
-                                    {new Date().toISOString().slice(0, 10)})
+                                    {todayLocalISO()})
                                 </Label>
                             </div>
                         </RadioGroup>

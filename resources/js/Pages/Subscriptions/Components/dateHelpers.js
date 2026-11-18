@@ -46,3 +46,20 @@ export function dueDateLabel(iso) {
     if (isToday) return `Today, ${weekday}`;
     return `${MONTH_SHORT[date.getMonth()]} ${date.getDate()}, ${weekday}`;
 }
+
+/**
+ * Return today's date as a LOCAL "YYYY-MM-DD" string.
+ *
+ * Do NOT use `new Date().toISOString().slice(0, 10)` for user-facing
+ * date defaults: toISOString() is UTC, so for users ahead of UTC
+ * (e.g. UTC+8) the result can be yesterday's date during the early
+ * morning hours — which caused the "rule starts tomorrow but shows
+ * as due today" bug.
+ */
+export function todayLocalISO() {
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}

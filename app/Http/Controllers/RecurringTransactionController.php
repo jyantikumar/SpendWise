@@ -24,8 +24,9 @@ class RecurringTransactionController extends Controller
             ->orderBy('next_due_date', 'asc')
             ->get();
 
-        $today = Carbon::today();
-        $lookaheadDate = $today->copy()->addDays(30);
+        // Use date-only strings everywhere to avoid timezone-driven off-by-one.
+        $todayStr = Carbon::today()->format('Y-m-d');
+        $lookaheadStr = Carbon::today()->addDays(30)->format('Y-m-d');
 
         $paidTransactions = Transaction::where('user_id', $user->id)
             ->whereNotNull('recurring_transaction_id')
@@ -40,24 +41,42 @@ class RecurringTransactionController extends Controller
                 continue;
             }
 
-            $endDate = $rule->end_date ? Carbon::parse($rule->end_date) : null;
+            // Hard floor: never generate an instance before the rule's start_date.
+            // This is the guard that was missing and caused "tomorrow" rules to
+            // surface today when timezone shifts made start_date appear as today.
+            $startDateStr = optional($rule->start_date)->format('Y-m-d');
+            $endDateStr   = optional($rule->end_date)->format('Y-m-d');
+
+            if (!$startDateStr) {
+                continue;
+            }
+
             $skippedDates = $rule->skipped_dates ?? [];
             $weekdays = $this->normalizeWeekdays($rule->weekdays);
 
+            // Resolve the first due date, but never return something < start_date.
             $currentDueDate = $this->resolveFirstDueDate(
-                Carbon::parse($rule->start_date),
+                Carbon::parse($startDateStr),
                 $rule->frequency,
                 $weekdays
             );
+
+            // Safety net: if resolveFirstDueDate somehow returned a date before
+            // start_date (timezone edge), snap it forward to start_date.
+            if ($currentDueDate->format('Y-m-d') < $startDateStr) {
+                $currentDueDate = Carbon::parse($startDateStr);
+            }
 
             $rulePaidDates = $paidTransactions->get($rule->id, collect())
                 ->pluck('transaction_date')
                 ->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))
                 ->toArray();
 
+            // Iterate by date-string to avoid any TZ drift across the loop.
             while (
-                $currentDueDate->lte($lookaheadDate)
-                && (!$endDate || $currentDueDate->lte($endDate))
+                $currentDueDate->format('Y-m-d') <= $lookaheadStr
+                && (!$endDateStr || $currentDueDate->format('Y-m-d') <= $endDateStr)
+                && $currentDueDate->format('Y-m-d') >= $startDateStr
             ) {
                 $formattedDate = $currentDueDate->format('Y-m-d');
 
@@ -77,10 +96,10 @@ class RecurringTransactionController extends Controller
                         'category_id' => $rule->category_id,
                         'account'     => $rule->account,
                         'category'    => $rule->category,
-                        'is_overdue'  => $currentDueDate->lt($today),
+                        'is_overdue'  => $formattedDate < $todayStr,
                     ];
 
-                    if ($currentDueDate->isSameDay($today)) {
+                    if ($formattedDate === $todayStr) {
                         $todayInstances[] = $instance;
                     }
 
@@ -113,8 +132,10 @@ class RecurringTransactionController extends Controller
 
         $validated['user_id'] = $request->user()->id;
         $validated['weekdays'] = $this->normalizeWeekdays($validated['weekdays'] ?? null);
+
+        // Date-only string; no TZ shift.
         $validated['next_due_date'] = $this->resolveFirstDueDate(
-            Carbon::parse($validated['start_date']),
+            Carbon::parse($validated['start_date'])->startOfDay(),
             $validated['frequency'],
             $validated['weekdays'] ?? []
         )->format('Y-m-d');
@@ -136,7 +157,7 @@ class RecurringTransactionController extends Controller
 
         if ($this->scheduleChanged($recurringTransaction, $validated)) {
             $validated['next_due_date'] = $this->resolveFirstDueDate(
-                Carbon::parse($validated['start_date']),
+                Carbon::parse($validated['start_date'])->startOfDay(),
                 $validated['frequency'],
                 $validated['weekdays'] ?? []
             )->format('Y-m-d');
@@ -163,10 +184,6 @@ class RecurringTransactionController extends Controller
             'payment_date' => 'required|date',
         ]);
 
-        // Guard: if the rule's stored category is missing, owned by another
-        // user, or its `type` doesn't match the rule's type, drop it rather
-        // than writing a category onto the transaction that the edit modal
-        // would be unable to render (which was the original bug).
         $categoryId = $this->resolveSafeCategoryId(
             $recurringTransaction->user_id,
             $recurringTransaction->category_id,
@@ -296,15 +313,6 @@ class RecurringTransactionController extends Controller
         return $validated;
     }
 
-    /**
-     * Return a category_id that is safe to attach to a generated transaction,
-     * or null if the rule's stored category is invalid / mismatched.
-     *
-     * A mismatched category would later be filtered out of the edit modal's
-     * dropdown (because the modal only offers categories whose type matches
-     * the transaction type), causing the Select to render empty even though
-     * category_id is set — the original bug.
-     */
     private function resolveSafeCategoryId(int $userId, $categoryId, string $ruleType): ?int
     {
         if (empty($categoryId)) {
@@ -323,8 +331,6 @@ class RecurringTransactionController extends Controller
             return null;
         }
 
-        // Categories with no type are treated as "neutral" and allowed.
-        // A typed category must match the rule's type.
         if (!empty($category->type) && $category->type !== $ruleType) {
             Log::warning('Dropping mismatched category on recurring process', [
                 'user_id'         => $userId,
@@ -368,9 +374,17 @@ class RecurringTransactionController extends Controller
         return array_values($cleaned);
     }
 
+    /**
+     * Resolve the first due date for a rule.
+     *
+     * CRITICAL: The returned date is ALWAYS >= $start. This is the guard
+     * that prevents a rule starting "tomorrow" from ever generating
+     * an instance for "today" (which was the reported bug).
+     */
     private function resolveFirstDueDate(Carbon $start, string $frequency, array $weekdays): Carbon
     {
-        $date = $start->copy();
+        $date = $start->copy()->startOfDay();
+        $startStr = $date->format('Y-m-d');
 
         if ($frequency !== 'weekly' || empty($weekdays)) {
             return $date;
@@ -385,6 +399,10 @@ class RecurringTransactionController extends Controller
         for ($i = 0; $i < 7; $i++) {
             $date->addDay();
             if (in_array($date->dayOfWeek, $allowed, true)) {
+                // Safety: never return a date earlier than start.
+                if ($date->format('Y-m-d') < $startStr) {
+                    $date = $start->copy()->startOfDay();
+                }
                 return $date;
             }
         }
