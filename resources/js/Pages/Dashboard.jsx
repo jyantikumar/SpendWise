@@ -22,6 +22,7 @@ import CategoryTransactionsModal from '@/Pages/Categories/components/CategoryTra
 import AccountTransactionsModal from '@/Pages/Accounts/components/AccountTransactionsModal';
 import TransactionFormModal from '@/Pages/Transactions/components/TransactionFormModal';
 import { TransactionDetailSheet } from '@/Pages/Transactions/components/TransactionDetailSheet';
+import ProjectedMonthSheet from '@/Pages/DashboardComponents/ProjectedMonthSheet';
 
 import DashboardHeaderControls from './DashboardComponents/DashboardHeaderControls';
 import DashboardActivitySection from './DashboardComponents/DashboardActivitySection';
@@ -34,11 +35,13 @@ export default function Dashboard({
     dailyTrends = [],
     categoryBreakdown,
     latestTransactions = [],
+    periodTransactions = [],
     accounts = [],
     accountTypes = [],
     categories = [],
     savingsGoals = [],
-    currentFilter = 'this_day',
+    recurringInstances = [],
+    currentFilter = 'this_month',
     customDates = {}
 }) {
     const [isTransactionModalOpen, setIsTransactionModalOpen] = useState(false);
@@ -53,6 +56,8 @@ export default function Dashboard({
 
     const [selectedAccount, setSelectedAccount] = useState(null);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+
+    const [isProjectedSheetOpen, setIsProjectedSheetOpen] = useState(false);
 
     const [startDateInput, setStartDateInput] = useState(customDates.startDate || '');
     const [endDateInput, setEndDateInput] = useState(customDates.endDate || '');
@@ -158,11 +163,12 @@ export default function Dashboard({
                     openCreateModal={openCreateModal}
                 />
 
-                {/* KPI Cards Grid (Clicking 'Net Cash Flow' opens the Trend Sheet Drawer) */}
+                {/* KPI Cards Grid */}
                 <DashboardKpis 
                     kpis={kpis} 
                     dailyTrends={dailyTrends} 
                     formatCurrency={formatCurrency} 
+                    onOpenProjectedSheet={() => setIsProjectedSheetOpen(true)}
                 />
 
                 {/* Main Table & Analytics Layout */}
@@ -230,6 +236,16 @@ export default function Dashboard({
             </div>
 
             {/* Modals & Sheets */}
+            <ProjectedMonthSheet
+                open={isProjectedSheetOpen}
+                onOpenChange={setIsProjectedSheetOpen}
+                formatCurrency={formatCurrency}
+                projectedAmount={kpis?.projectedAmount || 0}
+                netCashFlow={kpis?.netCashFlow || 0}
+                recurringInstances={recurringInstances}
+                periodTransactions={periodTransactions}
+            />
+
             <CategoryTransactionsModal
                 isOpen={isCategoryModalOpen}
                 onClose={() => setIsCategoryModalOpen(false)}

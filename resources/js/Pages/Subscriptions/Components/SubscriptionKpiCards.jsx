@@ -6,7 +6,7 @@ export function SubscriptionKpiCards({ totalMonthlyExpenses, totalMonthlyIncome,
         <div className="grid gap-3 sm:gap-4 grid-cols-2 w-full">
             <Card className="border-zinc-800 py-1">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-3 pt-3">
-                    <CardTitle className="text-[11px] sm:text-xs font-medium text-zinc-400">Monthly Expenses</CardTitle>
+                    <CardTitle className="text-[11px] sm:text-xs font-medium text-zinc-400">Remaining Expenses</CardTitle>
                     <Calendar className="h-3.5 w-3.5 text-rose-500" />
                 </CardHeader>
                 <CardContent className="px-3 pb-3">
@@ -17,7 +17,7 @@ export function SubscriptionKpiCards({ totalMonthlyExpenses, totalMonthlyIncome,
 
             <Card className="border-zinc-800 py-1">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1 px-3 pt-3">
-                    <CardTitle className="text-[11px] sm:text-xs font-medium text-zinc-400">Monthly Income</CardTitle>
+                    <CardTitle className="text-[11px] sm:text-xs font-medium text-zinc-400">Remaining Income</CardTitle>
                     <TrendingUp className="h-3.5 w-3.5 text-emerald-500" />
                 </CardHeader>
                 <CardContent className="px-3 pb-3">

@@ -5,19 +5,25 @@ import { Wallet } from 'lucide-react';
 export default function AccountPieChartCard({ data = [], formatCurrency, onAccountClick }) {
     const [hoveredIndex, setHoveredIndex] = useState(null);
 
-    const total = data.reduce((sum, item) => sum + Math.max(0, parseFloat(item.balance) || 0), 0);
+    // Only active accounts contribute to the chart
+    const activeData = data.filter((item) => item.is_active !== false);
 
-    if (total === 0 || data.length === 0) {
+    const total = activeData.reduce(
+        (sum, item) => sum + Math.max(0, parseFloat(item.balance) || 0),
+        0
+    );
+
+    if (total === 0 || activeData.length === 0) {
         return (
             <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground min-h-[300px]">
                 <Wallet className="h-10 w-10 stroke-1 text-muted-foreground/50 mb-2" />
-                <p className="text-sm text-zinc-400">No account balance data available.</p>
+                <p className="text-sm text-zinc-400">No active account balance data available.</p>
             </div>
         );
     }
 
     let cumulativeAngle = 0;
-    const slices = data.map((item, index) => {
+    const slices = activeData.map((item, index) => {
         const value = Math.max(0, parseFloat(item.balance) || 0);
         const percentage = (value / total) * 100;
         const angle = (value / total) * 360;
@@ -53,7 +59,7 @@ export default function AccountPieChartCard({ data = [], formatCurrency, onAccou
             value,
             percentage,
             pathData,
-            color: item.color || '#3b82f6', // Fallback to blue if color is missing
+            color: item.color || '#3b82f6',
         };
     });
 
