@@ -35,27 +35,30 @@ class HandleInertiaRequests extends Middleware
         $user = $request->user();
         $notifications = [
             'due_today' => [],
-            'overdue' => [],
-            'count' => 0,
+            'overdue'   => [],
+            'count'     => 0,
         ];
 
         if ($user) {
             $today = Carbon::today();
 
-            // Fetch active recurring rules
-            $recurringRules = RecurringTransaction::where('user_id', $user->id)
+            // 1. Fetch active recurring rules with categories eager-loaded outside the loop
+            $recurringRules = RecurringTransaction::with('category')
+                ->where('user_id', $user->id)
                 ->where('is_active', true)
                 ->get();
 
-            // Fetch paid recurring transactions
+            // 2. Fetch paid recurring transactions
             $paidTransactions = Transaction::where('user_id', $user->id)
                 ->whereNotNull('recurring_transaction_id')
                 ->get(['recurring_transaction_id', 'transaction_date'])
                 ->groupBy('recurring_transaction_id');
 
             foreach ($recurringRules as $rule) {
-                $currentDueDate = Carbon::parse($rule->start_date);
-                $endDate = $rule->end_date ? Carbon::parse($rule->end_date) : null;
+                if (!$rule->start_date) continue;
+
+                $currentDueDate = Carbon::parse($rule->start_date)->startOfDay();
+                $endDate = $rule->end_date ? Carbon::parse($rule->end_date)->endOfDay() : null;
                 $skippedDates = $rule->skipped_dates ?? [];
 
                 $rulePaidDates = $paidTransactions->get($rule->id, collect())
@@ -63,47 +66,54 @@ class HandleInertiaRequests extends Middleware
                     ->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))
                     ->toArray();
 
-                // Loop up to today to collect current and missed payments
-                // Inside HandleInertiaRequests.php
+                $safetyCounter = 0;
+                $maxIterations = 100; // Safeguard against infinite execution
 
-while ($currentDueDate->lte($today) && (! $endDate || $currentDueDate->lte($endDate))) {
-    $formattedDate = $currentDueDate->format('Y-m-d');
-    $isPaid = in_array($formattedDate, $rulePaidDates);
-    $isSkipped = in_array($formattedDate, $skippedDates);
+                while ($currentDueDate->lte($today) && (!$endDate || $currentDueDate->lte($endDate)) && $safetyCounter < $maxIterations) {
+                    $safetyCounter++;
+                    $formattedDate = $currentDueDate->format('Y-m-d');
+                    $isPaid = in_array($formattedDate, $rulePaidDates, true);
+                    $isSkipped = in_array($formattedDate, $skippedDates, true);
 
-    $recurringRules = RecurringTransaction::with('category')
-    ->where('user_id', $user->id)
-    ->where('is_active', true)
-    ->get();
+                    if (!$isPaid && !$isSkipped) {
+                        $item = [
+                            'id'            => $rule->id,
+                            'title'         => $rule->title,
+                            'amount'        => (float) $rule->amount,
+                            'due_date'      => $formattedDate,
+                            'type'          => $rule->type,
+                            'account_id'    => $rule->account_id,
+                            'category_id'   => $rule->category_id,
+                            'category_name' => $rule->category?->name ?? 'Uncategorized',
+                        ];
 
-// 2. Include category details in $item array
-if (! $isPaid && ! $isSkipped) {
-    $item = [
-        'id' => $rule->id,
-        'title' => $rule->title,
-        'amount' => $rule->amount,
-        'due_date' => $formattedDate,
-        'type' => $rule->type,
-        'account_id' => $rule->account_id,
-        'category_id' => $rule->category_id,
-        'category_name' => $rule->category?->name ?? 'Uncategorized',
-    ];
+                        if ($currentDueDate->isToday()) {
+                            $notifications['due_today'][] = $item;
+                        } elseif ($currentDueDate->lt($today)) {
+                            $notifications['overdue'][] = $item;
+                        }
+                    }
 
-    if ($currentDueDate->isToday()) {
-        $notifications['due_today'][] = $item;
-    } elseif ($currentDueDate->lt($today)) {
-        $notifications['overdue'][] = $item;
-    }
-    }
+                    $previousDate = $currentDueDate->copy();
 
-    // Move switch OUTSIDE the if statement so it always increments
-    switch ($rule->frequency) {
-        case 'daily':   $currentDueDate->addDay(); break;
-        case 'weekly':  $currentDueDate->addWeek(); break;
-        case 'monthly': $currentDueDate->addMonth(); break;
-        case 'yearly':  $currentDueDate->addYear(); break;
-    }
-}
+                    // Advance using model method or fallback switch
+                    if (method_exists($rule, 'advanceDate')) {
+                        $currentDueDate = $rule::advanceDate($currentDueDate, $rule->frequency, $rule->weekdays ?? []);
+                    } else {
+                        switch ($rule->frequency) {
+                            case 'daily':   $currentDueDate->addDay(); break;
+                            case 'weekly':  $currentDueDate->addWeek(); break;
+                            case 'monthly': $currentDueDate->addMonthNoOverflow(); break;
+                            case 'yearly':  $currentDueDate->addYearNoOverflow(); break;
+                            default:        $currentDueDate->addDay(); break;
+                        }
+                    }
+
+                    // Strict protection: ensure date always moves forward by at least 1 day
+                    if ($currentDueDate->lte($previousDate)) {
+                        $currentDueDate = $previousDate->copy()->addDay();
+                    }
+                }
             }
 
             $notifications['count'] = count($notifications['due_today']) + count($notifications['overdue']);
@@ -116,7 +126,7 @@ if (! $isPaid && ! $isSkipped) {
             'notifications' => $notifications,
             'flash' => [
                 'success' => fn () => $request->session()->get('success'),
-                'error' => fn () => $request->session()->get('error'),
+                'error'   => fn () => $request->session()->get('error'),
             ],
         ]);
     }
