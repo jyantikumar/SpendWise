@@ -86,30 +86,7 @@ export function MasterRulesTab({
                     <div className="flex items-center gap-3 flex-wrap">
                         <CardTitle className="text-sm sm:text-base text-zinc-200">Scheduled Rules</CardTitle>
 
-                        <div className="flex items-center gap-1 bg-zinc-900/80 p-0.5 rounded-lg border border-zinc-800 text-xs">
-                            {[
-                                { id: 'all',     label: 'All' },
-                                { id: 'active',  label: 'Active' },
-                                { id: 'paused',  label: 'Paused' },
-                                { id: 'expired', label: 'Expired' },
-                            ].map((statusOption) => (
-                                <button
-                                    key={statusOption.id}
-                                    type="button"
-                                    onClick={() => {
-                                        setFilterStatus(statusOption.id);
-                                        setRulesPage(1);
-                                    }}
-                                    className={`py-1 px-2.5 rounded-md text-[11px] font-medium transition-all ${
-                                        filterStatus === statusOption.id 
-                                            ? 'bg-zinc-800 text-zinc-100 shadow-sm' 
-                                            : 'text-zinc-400 hover:text-zinc-200'
-                                    }`}
-                                >
-                                    {statusOption.label}
-                                </button>
-                            ))}
-                        </div>
+                        
                     </div>
 
                     {/* Right: Search Bar Input */}
