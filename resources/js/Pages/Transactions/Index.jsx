@@ -30,6 +30,7 @@ import {
 import { TransactionDetailSheet } from '@/Pages/Transactions/components/TransactionDetailSheet';
 import TransactionFormModal from '@/Pages/Transactions/components/TransactionFormModal';
 import DashboardKpis from '@/Pages/DashboardComponents/DashboardKpis';
+import ProjectedMonthSheet from '@/Pages/DashboardComponents/ProjectedMonthSheet';
 
 import TransactionFilterSheet from '@/Pages/Transactions/components/TransactionFilterSheet';
 import ActiveFilterChips from '@/Pages/Transactions/components/ActiveFilterChips';
@@ -42,12 +43,16 @@ export default function TransactionIndex({
     savingsGoals = [],
     filters = {},
     kpis = {},
+    dailyTrends = [],
+    recurringInstances = [],
+    periodTransactions = [],
 }) {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingTransaction, setEditingTransaction] = useState(null);
     const [deletingTransaction, setDeletingTransaction] = useState(null);
     const [selectedDetailTransaction, setSelectedDetailTransaction] = useState(null);
     const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
+    const [isProjectedSheetOpen, setIsProjectedSheetOpen] = useState(false);
 
     const [search, setSearch] = useState(filters.search || '');
     const [selectedType, setSelectedType] = useState(filters.type || 'all');
@@ -67,7 +72,6 @@ export default function TransactionIndex({
     const toRecord = transactions?.to || 0;
     const totalRecords = transactions?.total || 0;
 
-    // Get user's preferred currency from auth props (defaults to PHP if not set)
     const userCurrency = auth?.user?.currency || 'PHP';
 
     const formatCurrency = (val) =>
@@ -147,7 +151,6 @@ export default function TransactionIndex({
                 toast.success('Transaction deleted successfully.');
                 setDeletingTransaction(null);
                 setSelectedDetailTransaction(null);
-                // 👈 Force reload the list to get fresh data
                 router.reload({ only: ['transactions', 'kpis'] });
             },
             onError: () => {
@@ -223,7 +226,12 @@ export default function TransactionIndex({
                 </div>
 
                 {/* KPI Cards Grid */}
-                <DashboardKpis kpis={kpis} formatCurrency={formatCurrency} />
+                <DashboardKpis 
+                    kpis={kpis} 
+                    dailyTrends={dailyTrends} 
+                    formatCurrency={formatCurrency} 
+                    onOpenProjectedSheet={() => setIsProjectedSheetOpen(true)}
+                />
 
                 {/* Active Filter Chips Bar */}
                 <ActiveFilterChips
@@ -407,7 +415,7 @@ export default function TransactionIndex({
                 </Card>
             </div>
 
-            {/* Filter Sheet — triggerless, driven by setIsFilterSheetOpen */}
+            {/* Filter Sheet */}
             <TransactionFilterSheet
                 isFilterSheetOpen={isFilterSheetOpen}
                 setIsFilterSheetOpen={setIsFilterSheetOpen}
@@ -430,6 +438,17 @@ export default function TransactionIndex({
                 accounts={accounts}
                 handleApplyFilters={handleApplyFilters}
                 hideTrigger
+            />
+
+            {/* Projected Month Breakdown Sheet */}
+            <ProjectedMonthSheet
+                open={isProjectedSheetOpen}
+                onOpenChange={setIsProjectedSheetOpen}
+                formatCurrency={formatCurrency}
+                projectedAmount={kpis?.projectedAmount || 0}
+                netCashFlow={kpis?.netCashFlow || 0}
+                recurringInstances={recurringInstances}
+                periodTransactions={periodTransactions}
             />
 
             <TransactionDetailSheet
