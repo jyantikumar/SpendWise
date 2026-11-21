@@ -73,7 +73,7 @@ export default function ExpenseAnalysisPieChart({
                             key={slice.id || index}
                             d={slice.pathData}
                             fill={slice.color}
-                            className="transition-all duration-200 cursor-pointer hover:opacity-90"
+                            className="transition-all duration-200 cursor-pointer hover:opacity-90 active:scale-95"
                             style={{
                                 transform: hoveredIndex === index ? 'scale(1.05)' : 'scale(1)',
                                 transformOrigin: '100px 100px',

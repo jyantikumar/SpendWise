@@ -226,7 +226,7 @@ export default function AccountTransactionsModal({
                 variant="outline"
                 className={`text-xs font-semibold px-2.5 py-1 whitespace-nowrap ${
                     displayBalance >= 0
-                        ? 'bg-zinc-800 text-zinc-200 border-zinc-700'
+                        ? 'bg-zinc-800 text-zinc-200 border-zinc-800'
                         : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
                 }`}
             >

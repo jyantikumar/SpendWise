@@ -8,6 +8,7 @@ import { DateTransactionsDialog } from '@/Pages/Analysis/components/DateTransact
 import ExpenseAnalysisPieChart from '@/Pages/Analysis/components/ExpenseAnalysisPieChart';
 import AccountAnalysisPieChart from '@/Pages/Analysis/components/AccountAnalysisPieChart';
 import CategoryTransactionsModal from '@/Pages/Categories/components/CategoryTransactionsModal';
+import AccountTransactionsModal from '@/Pages/Accounts/components/AccountTransactionsModal';
 import { AccountsBreakdownCard } from '@/components/AccountsBreakdownCard';
 
 import { AnalysisFilterSheet } from '@/Pages/Analysis/components/AnalysisFilterSheet';
@@ -46,8 +47,12 @@ export default function AnalysisIndex({
 
     const [isMobile, setIsMobile] = useState(false);
 
+    // Modal State for Category & Account Drilldowns
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+
+    const [selectedAccount, setSelectedAccount] = useState(null);
+    const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
     const userCurrency = auth?.user?.currency || 'PHP';
 
@@ -294,7 +299,8 @@ export default function AnalysisIndex({
     };
 
     const handleAccountClick = (account) => {
-        applyFilters({ account_id: String(account.id) });
+        setSelectedAccount(account);
+        setIsAccountModalOpen(true);
     };
 
     const incomeVal = kpis?.totalIncome || 0;
@@ -434,6 +440,16 @@ export default function AnalysisIndex({
                     onClose={() => setIsCategoryModalOpen(false)}
                     category={selectedCategory}
                     accounts={accounts}
+                    initialStartDate={modalStart}
+                    initialEndDate={modalEnd}
+                    userCurrency={userCurrency}
+                />
+
+                <AccountTransactionsModal
+                    isOpen={isAccountModalOpen}
+                    onClose={() => setIsAccountModalOpen(false)}
+                    account={selectedAccount}
+                    categories={categories}
                     initialStartDate={modalStart}
                     initialEndDate={modalEnd}
                     userCurrency={userCurrency}
