@@ -1,17 +1,19 @@
+// resources/js/Pages/Savings/Index.jsx
 import { useState } from 'react';
 import { Link, router } from '@inertiajs/react';
-import { Plus, Target, Search, Calendar, TrendingUp, CheckCircle2, MoreHorizontal, Eye, Pencil, Filter, Wallet, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, Target, Search, Calendar, TrendingUp, CheckCircle2, MoreHorizontal, Eye, Pencil, Filter, Wallet, ChevronLeft, ChevronRight, ChevronDown, Check } from 'lucide-react';
 
 import AppLayout from '@/Layouts/AuthenticatedLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import SavingsGoalFormModal from '@/Pages/Savings/components/SavingsGoalFormModal';
@@ -74,6 +76,10 @@ export default function SavingsIndex({ auth, goals, summary = {}, filters = {} }
             ? Math.round((summary.total_saved / summary.total_target) * 100)
             : 0;
 
+    const statusLabel =
+        status === 'active' ? 'Active' :
+        status === 'completed' ? 'Completed' : 'All Goals';
+
     return (
         <AppLayout title="Savings Goals" headerTitle="Savings Goals">
             <div className="space-y-4 sm:space-y-6">
@@ -83,13 +89,47 @@ export default function SavingsIndex({ auth, goals, summary = {}, filters = {} }
                         Track milestones and log deposits toward each goal.
                     </p>
 
-                    <Button
-                        onClick={() => setIsFormOpen(true)}
-                        className="w-full sm:hidden bg-white hover:bg-zinc-200 text-zinc-900 font-medium h-9 text-xs gap-1.5"
-                    >
-                        <Plus className="h-4 w-4" /> New Goal
-                    </Button>
+                    {/* Mobile: split button full width */}
+                    <div className="flex items-center w-full sm:hidden rounded-md overflow-hidden divide-x divide-zinc-300">
+                        <Button
+                            onClick={() => setIsFormOpen(true)}
+                            className="flex-1 rounded-none border-0 bg-white hover:bg-zinc-200 text-zinc-900 font-medium h-9 text-xs gap-1.5 shadow-none"
+                        >
+                            <Plus className="h-4 w-4" /> New Goal
+                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    className="rounded-none border-0 bg-white hover:bg-zinc-200 text-zinc-900 h-9 px-2 shadow-none"
+                                    aria-label="Filter status"
+                                >
+                                    <ChevronDown className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-950 text-zinc-300 text-xs w-[160px]">
+                                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium px-2 py-1.5">
+                                    Filter Status
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator className="bg-zinc-800" />
+                                {[
+                                    { value: 'all', label: 'All Goals' },
+                                    { value: 'active', label: 'Active' },
+                                    { value: 'completed', label: 'Completed' },
+                                ].map((opt) => (
+                                    <DropdownMenuItem
+                                        key={opt.value}
+                                        onClick={() => handleStatusChange(opt.value)}
+                                        className="cursor-pointer focus:bg-zinc-900 hover:bg-zinc-900"
+                                    >
+                                        <span className="flex-1">{opt.label}</span>
+                                        {status === opt.value && <Check className="h-3 w-3 text-zinc-300" />}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
 
+                    {/* Desktop: search + split button inline */}
                     <div className="hidden sm:flex sm:items-center sm:gap-2 sm:shrink-0">
                         <div className="relative">
                             <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-zinc-500" />
@@ -101,21 +141,46 @@ export default function SavingsIndex({ auth, goals, summary = {}, filters = {} }
                             />
                         </div>
 
-                        <Select value={status} onValueChange={handleStatusChange}>
-                            <SelectTrigger className="h-9 w-[140px] border-zinc-800 bg-zinc-900 text-xs text-zinc-300 shrink-0">
-                                <Filter className="mr-1.5 h-3.5 w-3.5 text-zinc-400" />
-                                <SelectValue placeholder="Filter status" />
-                            </SelectTrigger>
-                            <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                                <SelectItem value="all" className="text-xs">All Goals</SelectItem>
-                                <SelectItem value="active" className="text-xs">Active</SelectItem>
-                                <SelectItem value="completed" className="text-xs">Completed</SelectItem>
-                            </SelectContent>
-                        </Select>
-
-                        <Button onClick={() => setIsFormOpen(true)} size="sm" className="gap-1.5 h-9 text-xs">
-                            <Plus className="h-3.5 w-3.5" /> New Goal
-                        </Button>
+                        <div className="flex items-center rounded-md overflow-hidden divide-x divide-zinc-300">
+                            <Button
+                                onClick={() => setIsFormOpen(true)}
+                                size="sm"
+                                className="rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium h-9 text-xs gap-1.5 shadow-none"
+                            >
+                                <Plus className="h-3.5 w-3.5" /> New Goal
+                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        size="sm"
+                                        className="rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 h-9 px-2 shadow-none"
+                                        aria-label="Filter status"
+                                    >
+                                        <ChevronDown className="h-3.5 w-3.5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-950 text-zinc-300 text-xs w-[160px]">
+                                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium px-2 py-1.5">
+                                        Filter Status
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator className="bg-zinc-800" />
+                                    {[
+                                        { value: 'all', label: 'All Goals' },
+                                        { value: 'active', label: 'Active' },
+                                        { value: 'completed', label: 'Completed' },
+                                    ].map((opt) => (
+                                        <DropdownMenuItem
+                                            key={opt.value}
+                                            onClick={() => handleStatusChange(opt.value)}
+                                            className="cursor-pointer focus:bg-zinc-900 hover:bg-zinc-900"
+                                        >
+                                            <span className="flex-1">{opt.label}</span>
+                                            {status === opt.value && <Check className="h-3 w-3 text-zinc-300" />}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     </div>
                 </div>
 
@@ -150,7 +215,7 @@ export default function SavingsIndex({ auth, goals, summary = {}, filters = {} }
                     </Card>
                 </div>
 
-                {/* Mobile filter row */}
+                {/* Mobile: search + active filter chip */}
                 <div className="flex flex-row items-center gap-2 sm:hidden">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-zinc-500" />
@@ -161,19 +226,33 @@ export default function SavingsIndex({ auth, goals, summary = {}, filters = {} }
                             className="h-9 w-full pl-9 border-zinc-800 bg-zinc-900 text-xs text-zinc-200 placeholder:text-zinc-500"
                         />
                     </div>
-
-                    <Select value={status} onValueChange={handleStatusChange}>
-                        <SelectTrigger className="h-9 w-[130px] border-zinc-800 bg-zinc-900 text-xs text-zinc-300 shrink-0">
-                            <Filter className="mr-1.5 h-3.5 w-3.5 text-zinc-400" />
-                            <SelectValue placeholder="Filter status" />
-                        </SelectTrigger>
-                        <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                            <SelectItem value="all" className="text-xs">All Goals</SelectItem>
-                            <SelectItem value="active" className="text-xs">Active</SelectItem>
-                            <SelectItem value="completed" className="text-xs">Completed</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    {status !== 'all' && (
+                        <button
+                            type="button"
+                            onClick={() => handleStatusChange('all')}
+                            className="inline-flex items-center gap-1 h-9 px-3 text-xs rounded-md border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 shrink-0"
+                        >
+                            <Filter className="h-3.5 w-3.5 text-zinc-400" />
+                            {statusLabel}
+                            <span className="text-zinc-500 ml-1">×</span>
+                        </button>
+                    )}
                 </div>
+
+                {/* Desktop: active filter chip (shown only when filtered) */}
+                {status !== 'all' && (
+                    <div className="hidden sm:flex items-center">
+                        <button
+                            type="button"
+                            onClick={() => handleStatusChange('all')}
+                            className="inline-flex items-center gap-1 h-7 px-2.5 text-[11px] rounded-md border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                        >
+                            <Filter className="h-3 w-3 text-zinc-400" />
+                            {statusLabel}
+                            <span className="text-zinc-500 ml-1">×</span>
+                        </button>
+                    </div>
+                )}
 
                 {/* Goal list */}
                 {rows.length === 0 ? (
@@ -200,9 +279,35 @@ export default function SavingsIndex({ auth, goals, summary = {}, filters = {} }
                         <CardContent className="p-0">
                             <div className="divide-y divide-zinc-800/70 px-3 sm:px-4">
                                 {rows.map((goal) => (
-                                    <div key={goal.id} className="relative group">
-                                        <Link href={route('savings.show', goal.id)}>
-                                            <div className="flex items-center gap-3 py-3 -mx-3 sm:-mx-4 px-3 sm:px-4 hover:bg-zinc-900/40 transition-colors">
+                                    <div key={goal.id} className="relative group flex items-center gap-2">
+                                        <div className="shrink-0 z-10">
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-6 w-6 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 rounded-md transition-opacity"
+                                                        onClick={(e) => e.stopPropagation()}
+                                                    >
+                                                        <MoreHorizontal className="h-3.5 w-3.5" />
+                                                        <span className="sr-only">Actions</span>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="start" className="bg-zinc-900 border-zinc-800 text-zinc-200">
+                                                    <DropdownMenuItem asChild className="gap-2 text-xs cursor-pointer">
+                                                        <Link href={route('savings.show', goal.id)}>
+                                                            <Eye className="h-3.5 w-3.5" /> View Details
+                                                        </Link>
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={(e) => handleEditGoal(e, goal)} className="gap-2 text-xs cursor-pointer">
+                                                        <Pencil className="h-3.5 w-3.5" /> Edit Goal
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </div>
+
+                                        <Link href={route('savings.show', goal.id)} className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-3 py-3 hover:bg-zinc-900/40 transition-colors rounded-md px-1">
                                                 <div className="min-w-0 flex-1">
                                                     <div className="flex items-center gap-2">
                                                         <span className="text-sm font-semibold text-zinc-100 truncate">
@@ -248,32 +353,6 @@ export default function SavingsIndex({ auth, goals, summary = {}, filters = {} }
                                                 </div>
                                             </div>
                                         </Link>
-
-                                        <div className="absolute top-2.5 right-2 z-10 sm:top-1/2 sm:-translate-y-1/2 sm:right-2">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="icon"
-                                                        className="h-6 w-6 text-zinc-400 hover:text-zinc-100 hover:bg-zinc-800/60 rounded-md opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity"
-                                                        onClick={(e) => e.stopPropagation()}
-                                                    >
-                                                        <MoreHorizontal className="h-3.5 w-3.5" />
-                                                        <span className="sr-only">Actions</span>
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800 text-zinc-200">
-                                                    <DropdownMenuItem asChild className="gap-2 text-xs cursor-pointer">
-                                                        <Link href={route('savings.show', goal.id)}>
-                                                            <Eye className="h-3.5 w-3.5" /> View Details
-                                                        </Link>
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={(e) => handleEditGoal(e, goal)} className="gap-2 text-xs cursor-pointer">
-                                                        <Pencil className="h-3.5 w-3.5" /> Edit Goal
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </div>
                                     </div>
                                 ))}
                             </div>

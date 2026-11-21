@@ -9,6 +9,14 @@ use App\Models\Account;
 use App\Models\Category;
 use App\Models\Transaction;
 use App\Models\RecurringTransaction;
+use App\Models\Budget;
+use App\Models\SavingsGoal;
+use App\Models\WishlistItem;
+use App\Models\WishlistPrice;
+use App\Models\SplitEvent;
+use App\Models\SplitExpense;
+use App\Models\SplitExpenseShare;
+use App\Models\SplitSettlement;
 use Inertia\Inertia;
 
 class DataExportImportController extends Controller
@@ -25,22 +33,28 @@ class DataExportImportController extends Controller
         $userId = $request->user()->id;
         $scope = $request->query('scope', 'full'); // 'full', 'all', or 'transactions'
 
-        // Base payload
         $data = [
-            'version' => '1.0',
+            'version' => '1.1',
             'scope' => $scope,
             'exported_at' => now()->toIso8601String(),
         ];
 
-        // Export relational dependencies first if scope is full/all
         if ($scope === 'full' || $scope === 'all') {
             $data['account_types'] = AccountType::where('user_id', $userId)->get();
             $data['categories'] = Category::where('user_id', $userId)->get();
             $data['accounts'] = Account::where('user_id', $userId)->get();
+            $data['budgets'] = Budget::where('user_id', $userId)->get();
+            $data['savings_goals'] = SavingsGoal::where('user_id', $userId)->get();
+            
+            $data['wishlist_items'] = WishlistItem::where('user_id', $userId)->with('prices')->get();
+            
+            $data['split_events'] = SplitEvent::where('user_id', $userId)
+                ->with(['expenses.shares', 'settlements'])
+                ->get();
+
             $data['recurring_transactions'] = RecurringTransaction::where('user_id', $userId)->get();
         }
 
-        // Export transactions last (dependent on accounts and categories)
         $data['transactions'] = Transaction::where('user_id', $userId)->get();
 
         $filename = 'spendwise-' . $scope . '-backup-' . now()->format('Y-m-d-His') . '.json';
@@ -53,7 +67,7 @@ class DataExportImportController extends Controller
     public function importJson(Request $request)
     {
         $request->validate([
-            'file' => ['required', 'file', 'mimes:json', 'max:5120'],
+            'file' => ['required', 'file', 'mimes:json', 'max:10240'],
         ]);
 
         $userId = $request->user()->id;
@@ -66,7 +80,7 @@ class DataExportImportController extends Controller
 
         DB::beginTransaction();
         try {
-            // 1. Map and Import Account Types (Handling Soft Deletes to bypass Unique Constraints)
+            // 1. Account Types
             $accountTypeMap = [];
             foreach ($data['account_types'] ?? [] as $item) {
                 $oldId = $item['id'] ?? null;
@@ -84,22 +98,38 @@ class DataExportImportController extends Controller
                     $existing->update($item);
                     $new = $existing;
                 } else {
-                    $new = AccountType::create(array_merge(['user_id' => $userId, 'name' => $item['name']], $item));
+                    $new = AccountType::create(array_merge(['user_id' => $userId], $item));
                 }
 
                 if ($oldId) $accountTypeMap[$oldId] = $new->id;
             }
 
-            // 2. Map and Import Categories
+            // 2. Categories
             $categoryMap = [];
             foreach ($data['categories'] ?? [] as $item) {
                 $oldId = $item['id'] ?? null;
                 unset($item['id'], $item['user_id'], $item['created_at'], $item['updated_at'], $item['deleted_at']);
-                $new = Category::updateOrCreate(['user_id' => $userId, 'name' => $item['name'], 'type' => $item['type']], $item);
+
+                $existing = Category::withTrashed()
+                    ->where('user_id', $userId)
+                    ->where('name', $item['name'])
+                    ->where('type', $item['type'])
+                    ->first();
+
+                if ($existing) {
+                    if ($existing->trashed()) {
+                        $existing->restore();
+                    }
+                    $existing->update($item);
+                    $new = $existing;
+                } else {
+                    $new = Category::create(array_merge(['user_id' => $userId], $item));
+                }
+
                 if ($oldId) $categoryMap[$oldId] = $new->id;
             }
 
-            // 3. Map and Import Accounts
+            // 3. Accounts
             $accountMap = [];
             foreach ($data['accounts'] ?? [] as $item) {
                 $oldId = $item['id'] ?? null;
@@ -107,32 +137,109 @@ class DataExportImportController extends Controller
                     $item['account_type_id'] = $accountTypeMap[$item['account_type_id']];
                 }
                 unset($item['id'], $item['user_id'], $item['created_at'], $item['updated_at'], $item['deleted_at']);
-                $new = Account::updateOrCreate(['user_id' => $userId, 'name' => $item['name']], $item);
+
+                $existing = Account::withTrashed()
+                    ->where('user_id', $userId)
+                    ->where('name', $item['name'])
+                    ->first();
+
+                if ($existing) {
+                    if ($existing->trashed()) {
+                        $existing->restore();
+                    }
+                    $existing->update($item);
+                    $new = $existing;
+                } else {
+                    $new = Account::create(array_merge(['user_id' => $userId], $item));
+                }
+
                 if ($oldId) $accountMap[$oldId] = $new->id;
             }
 
-            // 4. Map and Import Recurring Transactions
-            foreach ($data['recurring_transactions'] ?? [] as $item) {
-                if (isset($item['account_id']) && isset($accountMap[$item['account_id']])) {
-                    $item['account_id'] = $accountMap[$item['account_id']];
-                }
+            // 4. Budgets
+            foreach ($data['budgets'] ?? [] as $item) {
                 if (isset($item['category_id']) && isset($categoryMap[$item['category_id']])) {
                     $item['category_id'] = $categoryMap[$item['category_id']];
                 }
                 unset($item['id'], $item['user_id'], $item['created_at'], $item['updated_at'], $item['deleted_at']);
                 $item['user_id'] = $userId;
                 
-                RecurringTransaction::updateOrCreate(
-                    [
-                        'user_id' => $userId, 
-                        'title' => $item['title'] ?? 'Imported Recurring Item', 
-                        'amount' => $item['amount'] ?? 0
-                    ], 
-                    $item
-                );
+                Budget::create($item);
             }
 
-            // 5. Map and Import Transactions
+            // 5. Savings Goals
+            $savingsGoalMap = [];
+            foreach ($data['savings_goals'] ?? [] as $item) {
+                $oldId = $item['id'] ?? null;
+                unset($item['id'], $item['user_id'], $item['created_at'], $item['updated_at'], $item['deleted_at']);
+                $item['user_id'] = $userId;
+                
+                $newGoal = SavingsGoal::create($item);
+                if ($oldId) $savingsGoalMap[$oldId] = $newGoal->id;
+            }
+
+            // 6. Wishlist Items & Prices
+            foreach ($data['wishlist_items'] ?? [] as $item) {
+                $prices = $item['prices'] ?? [];
+                unset($item['id'], $item['user_id'], $item['created_at'], $item['updated_at'], $item['prices']);
+                $item['user_id'] = $userId;
+
+                $newItem = WishlistItem::create($item);
+
+                foreach ($prices as $price) {
+                    unset($price['id'], $price['created_at'], $price['updated_at']);
+                    $newItem->prices()->create($price);
+                }
+            }
+
+            // 7. Split Events, Expenses, Shares & Settlements
+            foreach ($data['split_events'] ?? [] as $item) {
+                $expenses = $item['expenses'] ?? [];
+                $settlements = $item['settlements'] ?? [];
+                unset($item['id'], $item['user_id'], $item['created_at'], $item['updated_at'], $item['expenses'], $item['settlements']);
+                $item['user_id'] = $userId;
+
+                $newEvent = SplitEvent::create($item);
+
+                foreach ($expenses as $expense) {
+                    $shares = $expense['shares'] ?? [];
+                    unset($expense['id'], $expense['split_event_id'], $expense['created_at'], $expense['updated_at'], $expense['shares']);
+                    $expense['user_id'] = $userId;
+                    
+                    $newExpense = $newEvent->expenses()->create($expense);
+
+                    foreach ($shares as $share) {
+                        unset($share['id'], $share['split_expense_id'], $share['created_at'], $share['updated_at']);
+                        $share['user_id'] = $userId;
+                        $newExpense->shares()->create($share);
+                    }
+                }
+
+                foreach ($settlements as $settlement) {
+                    unset($settlement['id'], $settlement['split_event_id'], $settlement['created_at'], $settlement['updated_at']);
+                    $settlement['user_id'] = $userId;
+                    $newEvent->settlements()->create($settlement);
+                }
+            }
+
+            // 8. Recurring Transactions
+            $recurringMap = [];
+            foreach ($data['recurring_transactions'] ?? [] as $item) {
+                $oldId = $item['id'] ?? null;
+                if (isset($item['account_id']) && isset($accountMap[$item['account_id']])) {
+                    $item['account_id'] = $accountMap[$item['account_id']];
+                }
+                if (isset($item['category_id']) && isset($categoryMap[$item['category_id']])) {
+                    $item['category_id'] = $categoryMap[$item['category_id']];
+                }
+                unset($item['id'], $item['user_id'], $item['created_at'], $item['updated_at']);
+                $item['user_id'] = $userId;
+                
+                $newRecurring = RecurringTransaction::create($item);
+                if ($oldId) $recurringMap[$oldId] = $newRecurring->id;
+            }
+
+            // 9. Transactions
             foreach ($data['transactions'] ?? [] as $item) {
                 if (isset($item['account_id']) && isset($accountMap[$item['account_id']])) {
                     $item['account_id'] = $accountMap[$item['account_id']];
@@ -143,6 +250,13 @@ class DataExportImportController extends Controller
                 if (isset($item['category_id']) && isset($categoryMap[$item['category_id']])) {
                     $item['category_id'] = $categoryMap[$item['category_id']];
                 }
+                if (isset($item['savings_goal_id']) && isset($savingsGoalMap[$item['savings_goal_id']])) {
+                    $item['savings_goal_id'] = $savingsGoalMap[$item['savings_goal_id']];
+                }
+                if (isset($item['recurring_transaction_id']) && isset($recurringMap[$item['recurring_transaction_id']])) {
+                    $item['recurring_transaction_id'] = $recurringMap[$item['recurring_transaction_id']];
+                }
+                
                 unset($item['id'], $item['user_id'], $item['created_at'], $item['updated_at'], $item['deleted_at']);
                 $item['user_id'] = $userId;
                 
@@ -150,7 +264,7 @@ class DataExportImportController extends Controller
             }
 
             DB::commit();
-            return back()->with('success', 'JSON data successfully imported!');
+            return back()->with('success', 'Workspace data successfully imported!');
         } catch (\Exception $e) {
             DB::rollBack();
             return back()->withErrors(['file' => 'JSON Import failed: ' . $e->getMessage()]);
@@ -165,18 +279,30 @@ class DataExportImportController extends Controller
 
         DB::beginTransaction();
         try {
-            // Delete dependent records first to respect foreign keys
-            Transaction::where('user_id', $userId)->delete();
+            // Delete dependent records first to respect FK constraints
+            Transaction::where('user_id', $userId)->forceDelete();
             RecurringTransaction::where('user_id', $userId)->delete();
-            Account::where('user_id', $userId)->delete();
-            Category::where('user_id', $userId)->delete();
-            AccountType::where('user_id', $userId)->delete();
+            
+            SplitExpenseShare::where('user_id', $userId)->delete();
+            SplitExpense::where('user_id', $userId)->delete();
+            SplitSettlement::where('user_id', $userId)->delete();
+            SplitEvent::where('user_id', $userId)->delete();
+
+            WishlistPrice::whereHas('item', fn ($q) => $q->where('user_id', $userId))->delete();
+            WishlistItem::where('user_id', $userId)->delete();
+
+            SavingsGoal::where('user_id', $userId)->forceDelete();
+            Budget::where('user_id', $userId)->forceDelete();
+            
+            Account::where('user_id', $userId)->forceDelete();
+            Category::where('user_id', $userId)->forceDelete();
+            AccountType::where('user_id', $userId)->forceDelete();
 
             DB::commit();
             return back()->with('success', 'All account data has been successfully cleared.');
         } catch (\Exception $e) {
             DB::rollBack();
-            return back()->withErrors(['clear' => 'Failed to clear data: ' . $e->getMessage()]);
+            return back()->withErrors(['clear' => 'Failed to clear workspace data: ' . $e->getMessage()]);
         }
     }
 
@@ -185,7 +311,6 @@ class DataExportImportController extends Controller
     public function exportCsv(Request $request)
     {
         $userId = $request->user()->id;
-        // Note: CSV handles transactions ledger primarily
         
         $query = Transaction::where('user_id', $userId)->with(['account', 'category', 'destinationAccount']);
         
@@ -202,7 +327,7 @@ class DataExportImportController extends Controller
 
         $callback = function() use ($transactions) {
             $file = fopen('php://output', 'w');
-            fputcsv($file, ['Date', 'Type', 'Amount', 'Account', 'Destination Account', 'Category', 'Description', 'Reference Number']);
+            fputcsv($file, ['Date', 'Type', 'Amount', 'Account', 'Destination Account', 'Category', 'Description', 'Reference Number', 'Notes']);
 
             foreach ($transactions as $t) {
                 fputcsv($file, [
@@ -213,7 +338,8 @@ class DataExportImportController extends Controller
                     $t->destinationAccount?->name,
                     $t->category?->name,
                     $t->description,
-                    $t->reference_number
+                    $t->reference_number,
+                    $t->notes
                 ]);
             }
             fclose($file);
@@ -232,7 +358,7 @@ class DataExportImportController extends Controller
         $path = $request->file('file')->getRealPath();
         $file = fopen($path, 'r');
         
-        fgetcsv($file); // Skip header
+        fgetcsv($file); // Skip header row
 
         DB::beginTransaction();
         try {
@@ -247,17 +373,18 @@ class DataExportImportController extends Controller
                 $categoryName = $row[5] ?? null;
                 $description = $row[6] ?? null;
                 $refNumber = $row[7] ?? null;
+                $notes = $row[8] ?? null;
 
                 $account = Account::firstOrCreate(
                     ['user_id' => $userId, 'name' => $accountName],
-                    ['type' => 'General', 'balance' => 0]
+                    ['balance' => 0, 'is_active' => true]
                 );
 
                 $destAccountId = null;
                 if ($destAccountName) {
                     $destAccount = Account::firstOrCreate(
                         ['user_id' => $userId, 'name' => $destAccountName],
-                        ['type' => 'General', 'balance' => 0]
+                        ['balance' => 0, 'is_active' => true]
                     );
                     $destAccountId = $destAccount->id;
                 }
@@ -279,6 +406,7 @@ class DataExportImportController extends Controller
                     'type' => in_array($type, ['income', 'expense', 'transfer']) ? $type : 'expense',
                     'amount' => $amount,
                     'description' => $description,
+                    'notes' => $notes,
                     'transaction_date' => $date,
                     'reference_number' => $refNumber,
                 ]);
@@ -305,26 +433,30 @@ class DataExportImportController extends Controller
             ];
             $callback = function() {
                 $file = fopen('php://output', 'w');
-                fputcsv($file, ['Date', 'Type', 'Amount', 'Account', 'Destination Account', 'Category', 'Description', 'Reference Number']);
-                fputcsv($file, ['2026-10-27 12:00:00', 'expense', '500.00', 'Cash Wallet', '', 'Food & Dining', 'Grocery shopping', 'REF12345']);
+                fputcsv($file, ['Date', 'Type', 'Amount', 'Account', 'Destination Account', 'Category', 'Description', 'Reference Number', 'Notes']);
+                fputcsv($file, ['2026-10-27', 'expense', '500.00', 'Cash Wallet', '', 'Food & Dining', 'Grocery shopping', 'REF12345', 'Monthly supplies']);
                 fclose($file);
             };
             return response()->stream($callback, 200, $headers);
         } else {
             $template = [
-                'version' => '1.0',
+                'version' => '1.1',
                 'scope' => 'full',
                 'exported_at' => now()->toIso8601String(),
                 'account_types' => [['id' => 1, 'name' => 'Bank', 'color' => '#3b82f6', 'icon' => 'wallet']],
-                'accounts' => [['id' => 1, 'account_type_id' => 1, 'name' => 'BDO Savings', 'balance' => 15000.00]],
+                'accounts' => [['id' => 1, 'account_type_id' => 1, 'name' => 'Savings Account', 'balance' => 15000.00, 'is_active' => true]],
                 'categories' => [['id' => 1, 'name' => 'Salary', 'type' => 'income', 'color' => '#10b981']],
+                'budgets' => [],
+                'savings_goals' => [],
+                'wishlist_items' => [],
+                'split_events' => [],
                 'recurring_transactions' => [],
                 'transactions' => [
                     [
                         'type' => 'income',
                         'amount' => 25000.00,
                         'description' => 'Monthly Salary',
-                        'transaction_date' => '2026-10-01 08:00:00',
+                        'transaction_date' => '2026-10-01',
                         'account_id' => 1,
                         'category_id' => 1
                     ]

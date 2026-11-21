@@ -1,3 +1,4 @@
+// resources/js/Pages/Wishlist/Index.jsx
 import { useState } from 'react';
 import { useForm, Link, router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AuthenticatedLayout';
@@ -10,10 +11,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Plus, Gift, ArrowRight, Pencil, Trash2, MoreHorizontal, Search, CircleCheckBig, Power, Filter } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Plus, Gift, ArrowRight, Pencil, Trash2, MoreHorizontal, Search, CircleCheckBig, Power, Filter, ChevronDown, Check } from 'lucide-react';
 
-export default function WishlistIndex({ items }) {
+export default function WishlistIndex({ items = [] }) {
     const [openModal, setOpenModal] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [deletingItem, setDeletingItem] = useState(null);
@@ -88,26 +89,61 @@ export default function WishlistIndex({ items }) {
     const activeCount = items.filter(i => i.status !== 'purchased').length;
     const acquiredCount = items.filter(i => i.status === 'purchased').length;
 
+    const statusLabel =
+        statusTab === 'active' ? `Active (${activeCount})` :
+        statusTab === 'acquired' ? `Acquired (${acquiredCount})` : `All (${items.length})`;
+
     return (
         <AppLayout title="Wishlist" headerTitle="Product Wishlist & Comparison">
             <div className="space-y-4 sm:space-y-6">
-                {/* Header: subtitle + Add (desktop gets filter/search inline) */}
+                {/* Header: subtitle + split button */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                     <p className="text-xs sm:text-sm text-zinc-400 line-clamp-1">
                         Track target items and compare prices across different sites.
                     </p>
 
-                    {/* Mobile: Full-width white Add button below subtitle */}
-                    <Button
-                        onClick={openCreateModal}
-                        className="w-full sm:hidden bg-white hover:bg-zinc-200 text-zinc-900 font-medium h-9 text-xs gap-1.5"
-                    >
-                        <Plus className="h-4 w-4" /> Add Wishlist Item
-                    </Button>
+                    {/* Mobile: split button full width */}
+                    <div className="flex items-center w-full sm:hidden rounded-md overflow-hidden divide-x divide-zinc-300">
+                        <Button
+                            onClick={openCreateModal}
+                            className="flex-1 rounded-none border-0 bg-white hover:bg-zinc-200 text-zinc-900 font-medium h-9 text-xs gap-1.5 shadow-none"
+                        >
+                            <Plus className="h-4 w-4" /> Add Item
+                        </Button>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    className="rounded-none border-0 bg-white hover:bg-zinc-200 text-zinc-900 h-9 px-2 shadow-none"
+                                    aria-label="Filter status"
+                                >
+                                    <ChevronDown className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-950 text-zinc-300 text-xs w-[170px]">
+                                <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium px-2 py-1.5">
+                                    Filter Status
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator className="bg-zinc-800" />
+                                {[
+                                    { value: 'all', label: `All (${items.length})` },
+                                    { value: 'active', label: `Active (${activeCount})` },
+                                    { value: 'acquired', label: `Acquired (${acquiredCount})` },
+                                ].map((opt) => (
+                                    <DropdownMenuItem
+                                        key={opt.value}
+                                        onClick={() => setStatusTab(opt.value)}
+                                        className="cursor-pointer focus:bg-zinc-900 hover:bg-zinc-900"
+                                    >
+                                        <span className="flex-1">{opt.label}</span>
+                                        {statusTab === opt.value && <Check className="h-3 w-3 text-zinc-300" />}
+                                    </DropdownMenuItem>
+                                ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
 
-                    {/* Desktop: status filter + search + Add inline */}
+                    {/* Desktop: search + split button inline */}
                     <div className="hidden sm:flex sm:items-center sm:gap-2 sm:shrink-0">
-                        
                         <div className="relative">
                             <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-zinc-500" />
                             <Input
@@ -118,24 +154,51 @@ export default function WishlistIndex({ items }) {
                                 className="h-9 w-[200px] lg:w-[240px] pl-9 border-zinc-800 bg-zinc-900 text-xs text-zinc-200 placeholder:text-zinc-500"
                             />
                         </div>
-<Select value={statusTab} onValueChange={setStatusTab}>
-                            <SelectTrigger className="h-9 w-[150px] border-zinc-800 bg-zinc-900 text-xs text-zinc-300 shrink-0">
-                                <Filter className="mr-1.5 h-3.5 w-3.5 text-zinc-400" />
-                                <SelectValue placeholder="Filter status" />
-                            </SelectTrigger>
-                            <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                                <SelectItem value="all" className="text-xs">All ({items.length})</SelectItem>
-                                <SelectItem value="active" className="text-xs">Active ({activeCount})</SelectItem>
-                                <SelectItem value="acquired" className="text-xs">Acquired ({acquiredCount})</SelectItem>
-                            </SelectContent>
-                        </Select>
-                        <Button onClick={openCreateModal} size="sm" className="gap-1.5 h-9 text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium">
-                            <Plus className="h-3.5 w-3.5" /> Add Item
-                        </Button>
+
+                        <div className="flex items-center rounded-md overflow-hidden divide-x divide-zinc-300">
+                            <Button
+                                onClick={openCreateModal}
+                                size="sm"
+                                className="rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium h-9 text-xs gap-1.5 shadow-none"
+                            >
+                                <Plus className="h-3.5 w-3.5" /> Add Item
+                            </Button>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        size="sm"
+                                        className="rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 h-9 px-2 shadow-none"
+                                        aria-label="Filter status"
+                                    >
+                                        <ChevronDown className="h-3.5 w-3.5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="border-zinc-800 bg-zinc-950 text-zinc-300 text-xs w-[170px]">
+                                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium px-2 py-1.5">
+                                        Filter Status
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator className="bg-zinc-800" />
+                                    {[
+                                        { value: 'all', label: `All (${items.length})` },
+                                        { value: 'active', label: `Active (${activeCount})` },
+                                        { value: 'acquired', label: `Acquired (${acquiredCount})` },
+                                    ].map((opt) => (
+                                        <DropdownMenuItem
+                                            key={opt.value}
+                                            onClick={() => setStatusTab(opt.value)}
+                                            className="cursor-pointer focus:bg-zinc-900 hover:bg-zinc-900"
+                                        >
+                                            <span className="flex-1">{opt.label}</span>
+                                            {statusTab === opt.value && <Check className="h-3 w-3 text-zinc-300" />}
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
                     </div>
                 </div>
 
-                {/* Mobile: Status filter & Search above cards */}
+                {/* Mobile: Search + Active filter chip */}
                 <div className="flex flex-row items-center gap-2 sm:hidden">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-2.5 h-3.5 w-3.5 text-zinc-500" />
@@ -147,19 +210,33 @@ export default function WishlistIndex({ items }) {
                             className="h-9 w-full pl-9 border-zinc-800 bg-zinc-900 text-xs text-zinc-200 placeholder:text-zinc-500"
                         />
                     </div>
-
-                    <Select value={statusTab} onValueChange={setStatusTab}>
-                        <SelectTrigger className="h-9 w-[130px] border-zinc-800 bg-zinc-900 text-xs text-zinc-300 shrink-0">
-                            <Filter className="mr-1.5 h-3.5 w-3.5 text-zinc-400" />
-                            <SelectValue placeholder="Filter status" />
-                        </SelectTrigger>
-                        <SelectContent className="border-zinc-800 bg-zinc-900 text-zinc-200">
-                            <SelectItem value="all" className="text-xs">All ({items.length})</SelectItem>
-                            <SelectItem value="active" className="text-xs">Active ({activeCount})</SelectItem>
-                            <SelectItem value="acquired" className="text-xs">Acquired ({acquiredCount})</SelectItem>
-                        </SelectContent>
-                    </Select>
+                    {statusTab !== 'all' && (
+                        <button
+                            type="button"
+                            onClick={() => setStatusTab('all')}
+                            className="inline-flex items-center gap-1 h-9 px-3 text-xs rounded-md border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800 shrink-0"
+                        >
+                            <Filter className="h-3.5 w-3.5 text-zinc-400" />
+                            {statusLabel}
+                            <span className="text-zinc-500 ml-1">×</span>
+                        </button>
+                    )}
                 </div>
+
+                {/* Desktop: Active filter chip (shown only when filtered) */}
+                {statusTab !== 'all' && (
+                    <div className="hidden sm:flex items-center">
+                        <button
+                            type="button"
+                            onClick={() => setStatusTab('all')}
+                            className="inline-flex items-center gap-1 h-7 px-2.5 text-[11px] rounded-md border border-zinc-800 bg-zinc-900 text-zinc-300 hover:bg-zinc-800"
+                        >
+                            <Filter className="h-3 w-3 text-zinc-400" />
+                            {statusLabel}
+                            <span className="text-zinc-500 ml-1">×</span>
+                        </button>
+                    </div>
+                )}
 
                 {/* Cards Grid */}
                 <div className="grid grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3">
