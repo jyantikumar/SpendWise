@@ -191,7 +191,7 @@ export default function Dashboard({
                                         </>
                                     ) : (
                                         <>
-                                            <Wallet className="h-5 w-5 text-emerald-500" />
+                                            <Wallet className="h-5 w-5 text-zinc-400" />
                                             Accounts
                                         </>
                                     )}
