@@ -1,4 +1,5 @@
-import { useState } from 'react';
+// resources/js/Pages/DashboardComponents/ProjectedMonthSheet.jsx
+import { useState, useEffect } from 'react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 
 export default function ProjectedMonthSheet({ 
@@ -11,6 +12,14 @@ export default function ProjectedMonthSheet({
     periodTransactions = []
 }) {
     const [activeTab, setActiveTab] = useState('pending');
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 640);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
 
     const pendingIncomeTotal = recurringInstances
         .filter((i) => i.type === 'income')
@@ -59,7 +68,14 @@ export default function ProjectedMonthSheet({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            <SheetContent side="right" className="w-full sm:max-w-md border-zinc-800 bg-zinc-950 text-zinc-100 flex flex-col justify-between p-6">
+            <SheetContent 
+                side={isMobile ? 'bottom' : 'right'} 
+                className={`border-zinc-800 bg-zinc-950 text-zinc-100 flex flex-col justify-between ${
+                    isMobile
+                        ? 'w-full h-auto max-h-[85vh] rounded-t-xl p-4 sm:p-6'
+                        : 'w-full max-w-md h-full rounded-none p-6'
+                }`}
+            >
                 <div className="flex flex-col h-full min-h-0">
                     
                     {/* Sheet Header */}
