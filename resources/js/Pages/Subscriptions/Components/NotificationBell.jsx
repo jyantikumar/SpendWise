@@ -1,7 +1,7 @@
 // resources/js/Layouts/Components/NotificationBell.jsx
 import { useState } from 'react';
 import { usePage, Link, router } from '@inertiajs/react';
-import { Bell, AlertCircle, Clock, Check, ChevronRight, SkipForward } from 'lucide-react';
+import { Bell, Check, ChevronRight, SkipForward } from 'lucide-react';
 import * as Popover from '@radix-ui/react-popover';
 import { toast } from 'sonner';
 
@@ -14,6 +14,7 @@ export function NotificationBell() {
     const { due_today = [], overdue = [], count = 0 } = notifications || {};
 
     const [payingInstance, setPayingInstance] = useState(null);
+    const [activeTab, setActiveTab] = useState('today');
 
     // Get user's preferred currency from auth props (defaults to PHP if not set)
     const userCurrency = auth?.user?.currency || 'PHP';
@@ -86,6 +87,8 @@ export function NotificationBell() {
         );
     };
 
+    const activeList = activeTab === 'today' ? due_today : overdue;
+
     return (
         <>
             <Popover.Root>
@@ -108,48 +111,61 @@ export function NotificationBell() {
                         sideOffset={8}
                         className="w-80 sm:w-[360px] p-0 z-50 focus:outline-none"
                     >
-                        <Card className="border-zinc-800 bg-zinc-900 text-zinc-100 shadow-2xl overflow-hidden rounded-2xl p-1.5 space-y-1.5">
+                        <Card className="border-zinc-800 bg-zinc-900 text-zinc-100 shadow-2xl overflow-hidden rounded-2xl p-1.5 space-y-1">
+                            {/* Header */}
                             <CardHeader className="flex flex-row items-center justify-between px-3 py-2 space-y-0 rounded-xl bg-zinc-950/60">
                                 <CardTitle className="text-xs font-medium text-zinc-300">
                                     Payment Notifications
                                 </CardTitle>
                                 {count > 0 && (
-                                    <span className="text-xs text-zinc-400">
+                                    <span className="text-[11px] text-zinc-400">
                                         {count} action{count > 1 ? 's' : ''} needed
                                     </span>
                                 )}
                             </CardHeader>
 
-                            <CardContent className="p-1 max-h-[320px] overflow-y-auto space-y-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                            {/* Shifted Tab Bar */}
+                            {count > 0 && (
+                                <div className="flex gap-4 px-3 pt-0.5 -mt-0.5 border-b border-zinc-800/80 text-xs">
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTab('today')}
+                                        className={`pb-1 text-xs font-medium transition-colors outline-none border-b-2 ${
+                                            activeTab === 'today'
+                                                ? 'text-amber-400 border-amber-400'
+                                                : 'text-zinc-400 border-transparent hover:text-zinc-200'
+                                        }`}
+                                    >
+                                        Due Today ({due_today.length})
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setActiveTab('overdue')}
+                                        className={`pb-1 text-xs font-medium transition-colors outline-none border-b-2 ${
+                                            activeTab === 'overdue'
+                                                ? 'text-rose-400 border-rose-400'
+                                                : 'text-zinc-400 border-transparent hover:text-zinc-200'
+                                        }`}
+                                    >
+                                        Overdue ({overdue.length})
+                                    </button>
+                                </div>
+                            )}
+
+                            <CardContent className="p-1 max-h-[320px] overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                                 {count === 0 ? (
                                     <div className="flex flex-col items-center justify-center py-8 text-center px-4">
                                         <Check className="h-5 w-5 text-emerald-400 mb-1.5" />
                                         <p className="text-xs text-zinc-300">All payments settled</p>
                                     </div>
+                                ) : activeList.length === 0 ? (
+                                    <div className="text-center py-8 text-zinc-500 text-xs italic">
+                                        No {activeTab === 'today' ? 'due today' : 'overdue'} payments.
+                                    </div>
                                 ) : (
-                                    <>
-                                        {overdue.length > 0 && (
-                                            <div className="p-1 rounded-xl bg-zinc-950/40 space-y-0.5">
-                                                <div className="px-2 py-1 text-[10px] font-semibold text-rose-400 uppercase tracking-wider flex items-center gap-1">
-                                                    <AlertCircle className="h-3 w-3" /> Overdue
-                                                </div>
-                                                <div className="divide-y divide-zinc-800/40">
-                                                    {overdue.map((item) => renderRow(item, true))}
-                                                </div>
-                                            </div>
-                                        )}
-
-                                        {due_today.length > 0 && (
-                                            <div className="p-1 rounded-xl bg-zinc-950/40 space-y-0.5">
-                                                <div className="px-2 py-1 text-[10px] font-semibold text-amber-400 uppercase tracking-wider flex items-center gap-1">
-                                                    <Clock className="h-3 w-3" /> Due Today
-                                                </div>
-                                                <div className="divide-y divide-zinc-800/40">
-                                                    {due_today.map((item) => renderRow(item, false))}
-                                                </div>
-                                            </div>
-                                        )}
-                                    </>
+                                    <div className="divide-y divide-zinc-800/40">
+                                        {activeList.map((item) => renderRow(item, activeTab === 'overdue'))}
+                                    </div>
                                 )}
                             </CardContent>
 
