@@ -1,6 +1,6 @@
 // resources/js/Pages/DashboardComponents/DashboardKpis.jsx
 import { useState } from 'react';
-import { Wallet, PieChart as PieChartIcon, Eye, EyeOff, TrendingUp, CalendarClock, ChevronRight } from 'lucide-react';
+import { Wallet, PieChart as PieChartIcon, Eye, EyeOff, TrendingUp, CalendarClock } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import NetFlowSheet from './NetFlowSheet';
@@ -19,6 +19,9 @@ export default function DashboardKpis({
     const income = parseFloat(kpis?.totalIncome) || 0;
     const expense = parseFloat(kpis?.totalExpense) || 0;
     const totalFlow = income + expense;
+
+    const incomePercentage = totalFlow > 0 ? (income / totalFlow) * 100 : 0;
+    const expensePercentage = totalFlow > 0 ? (expense / totalFlow) * 100 : 0;
 
     // Projected Month: net cash flow + remaining recurring net
     const projectedAmount    = parseFloat(kpis?.projectedAmount) || 0;
@@ -67,77 +70,104 @@ export default function DashboardKpis({
                     </CardContent>
                 </Card>
 
-                {/* 2. Income vs Expense Donut Card */}
+                {/* 2. Income vs Expense Donut / Split Bar Card */}
                 <Card className="border-zinc-800 flex flex-col justify-between py-1">
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-1.5 pt-3 px-3 sm:px-4">
                         <CardTitle className="text-[11px] sm:text-xs font-medium text-zinc-400">Income vs. Expense</CardTitle>
                         <PieChartIcon className="h-3.5 w-3.5 text-zinc-400" />
                     </CardHeader>
-                    <CardContent className="pb-2.5 pt-0 px-3 sm:px-4">
+                    <CardContent className="pb-3 pt-0 px-3 sm:px-4">
                         {totalFlow > 0 ? (
-                            <div className="flex items-center justify-between gap-2 sm:gap-3">
-                                <div className="h-[50px] w-[50px] sm:h-[70px] sm:w-[70px] shrink-0">
-                                    <svg viewBox="0 0 200 200" className="w-full h-full">
-                                        {(() => {
-                                            const data = [
-                                                { name: 'Income', value: income, color: '#10b981' },
-                                                { name: 'Expense', value: expense, color: '#f43f5e' }
-                                            ];
-
-                                            let cumulativeAngle = 0;
-                                            return data.map((item, index) => {
-                                                const angle = (item.value / totalFlow) * 360;
-                                                const startAngle = cumulativeAngle;
-                                                const endAngle = cumulativeAngle + angle;
-                                                cumulativeAngle += angle;
-
-                                                const cx = 100, cy = 100, rOut = 80, rIn = 52;
-                                                const radStart = ((startAngle - 90) * Math.PI) / 180;
-                                                const radEnd = ((endAngle - 90) * Math.PI) / 180;
-
-                                                const x1Out = cx + rOut * Math.cos(radStart);
-                                                const y1Out = cy + rOut * Math.sin(radStart);
-                                                const x2Out = cx + rOut * Math.cos(radEnd);
-                                                const y2Out = cy + rOut * Math.sin(radEnd);
-
-                                                const x1In = cx + rIn * Math.cos(radStart);
-                                                const y1In = cy + rIn * Math.sin(radStart);
-                                                const x2In = cx + rIn * Math.cos(radEnd);
-                                                const y2In = cy + rIn * Math.sin(radEnd);
-
-                                                const largeArc = angle > 180 ? 1 : 0;
-                                                const pathData = angle >= 359.99 
-                                                    ? `M ${cx} ${cy - rOut} A ${rOut} ${rOut} 0 1 1 ${cx - 0.01} ${cy - rOut} L ${cx - 0.01} ${cy - rIn} A ${rIn} ${rIn} 0 1 0 ${cx} ${cy - rIn} Z`
-                                                    : `M ${x1Out} ${y1Out} A ${rOut} ${rOut} 0 ${largeArc} 1 ${x2Out} ${y2Out} L ${x2In} ${y2In} A ${rIn} ${rIn} 0 ${largeArc} 0 ${x1In} ${y1In} Z`;
-
-                                                return (
-                                                    <path
-                                                        key={index}
-                                                        d={pathData}
-                                                        fill={item.color}
-                                                        className="transition-all duration-200"
-                                                    />
-                                                );
-                                            });
-                                        })()}
-                                    </svg>
-                                </div>
-
-                                <div className="flex flex-col justify-center gap-1 flex-1 text-[9px] sm:text-[11px] overflow-hidden">
-                                    <div className="flex items-center justify-between gap-1">
-                                        <span className="flex items-center gap-1 text-zinc-400 font-medium shrink-0">
-                                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" /> Income
-                                        </span>
-                                        <span className="font-bold text-emerald-500 truncate">{currencyFormatter(kpis?.totalIncome)}</span>
+                            <>
+                                {/* Mobile View: Dual Progress Bar & Stacked KPI Legend */}
+                                <div className="sm:hidden space-y-2 py-0.5">
+                                    <div className="h-2 w-full bg-zinc-800 rounded-full overflow-hidden flex">
+                                        <div 
+                                            style={{ width: `${incomePercentage}%` }} 
+                                            className="bg-emerald-500 h-full transition-all duration-300" 
+                                        />
+                                        <div 
+                                            style={{ width: `${expensePercentage}%` }} 
+                                            className="bg-rose-500 h-full transition-all duration-300" 
+                                        />
                                     </div>
-                                    <div className="flex items-center justify-between gap-1">
-                                        <span className="flex items-center gap-1 text-zinc-400 font-medium shrink-0">
-                                            <span className="h-1.5 w-1.5 rounded-full bg-rose-500 shrink-0" /> Expense
-                                        </span>
-                                        <span className="font-bold text-rose-500 truncate">{currencyFormatter(kpis?.totalExpense)}</span>
+                                    <div className="flex items-center justify-between text-[10px]">
+                                        <div className="flex items-center gap-1 font-semibold text-emerald-400 truncate">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" />
+                                            <span>+{currencyFormatter(income)}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 font-semibold text-rose-400 truncate">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-rose-500 shrink-0" />
+                                            <span>-{currencyFormatter(expense)}</span>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+
+                                {/* Desktop View: SVG Donut Chart + Standard Legend */}
+                                <div className="hidden sm:flex items-center justify-between gap-2 sm:gap-3">
+                                    <div className="h-[50px] w-[50px] sm:h-[70px] sm:w-[70px] shrink-0">
+                                        <svg viewBox="0 0 200 200" className="w-full h-full">
+                                            {(() => {
+                                                const data = [
+                                                    { name: 'Income', value: income, color: '#10b981' },
+                                                    { name: 'Expense', value: expense, color: '#f43f5e' }
+                                                ];
+
+                                                let cumulativeAngle = 0;
+                                                return data.map((item, index) => {
+                                                    const angle = (item.value / totalFlow) * 360;
+                                                    const startAngle = cumulativeAngle;
+                                                    const endAngle = cumulativeAngle + angle;
+                                                    cumulativeAngle += angle;
+
+                                                    const cx = 100, cy = 100, rOut = 80, rIn = 52;
+                                                    const radStart = ((startAngle - 90) * Math.PI) / 180;
+                                                    const radEnd = ((endAngle - 90) * Math.PI) / 180;
+
+                                                    const x1Out = cx + rOut * Math.cos(radStart);
+                                                    const y1Out = cy + rOut * Math.sin(radStart);
+                                                    const x2Out = cx + rOut * Math.cos(radEnd);
+                                                    const y2Out = cy + rOut * Math.sin(radEnd);
+
+                                                    const x1In = cx + rIn * Math.cos(radStart);
+                                                    const y1In = cy + rIn * Math.sin(radStart);
+                                                    const x2In = cx + rIn * Math.cos(radEnd);
+                                                    const y2In = cy + rIn * Math.sin(radEnd);
+
+                                                    const largeArc = angle > 180 ? 1 : 0;
+                                                    const pathData = angle >= 359.99 
+                                                        ? `M ${cx} ${cy - rOut} A ${rOut} ${rOut} 0 1 1 ${cx - 0.01} ${cy - rOut} L ${cx - 0.01} ${cy - rIn} A ${rIn} ${rIn} 0 1 0 ${cx} ${cy - rIn} Z`
+                                                        : `M ${x1Out} ${y1Out} A ${rOut} ${rOut} 0 ${largeArc} 1 ${x2Out} ${y2Out} L ${x2In} ${y2In} A ${rIn} ${rIn} 0 ${largeArc} 0 ${x1In} ${y1In} Z`;
+
+                                                    return (
+                                                        <path
+                                                            key={index}
+                                                            d={pathData}
+                                                            fill={item.color}
+                                                            className="transition-all duration-200"
+                                                        />
+                                                    );
+                                                });
+                                            })()}
+                                        </svg>
+                                    </div>
+
+                                    <div className="flex flex-col justify-center gap-1 flex-1 text-[9px] sm:text-[11px] overflow-hidden">
+                                        <div className="flex items-center justify-between gap-1">
+                                            <span className="flex items-center gap-1 text-zinc-400 font-medium shrink-0">
+                                                <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" /> Income
+                                            </span>
+                                            <span className="font-bold text-emerald-500 truncate">{currencyFormatter(kpis?.totalIncome)}</span>
+                                        </div>
+                                        <div className="flex items-center justify-between gap-1">
+                                            <span className="flex items-center gap-1 text-zinc-400 font-medium shrink-0">
+                                                <span className="h-1.5 w-1.5 rounded-full bg-rose-500 shrink-0" /> Expense
+                                            </span>
+                                            <span className="font-bold text-rose-500 truncate">{currencyFormatter(kpis?.totalExpense)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </>
                         ) : (
                             <div className="flex flex-col items-center justify-center py-2 text-zinc-400 text-[10px] sm:text-[11px]">
                                 No flow recorded.
