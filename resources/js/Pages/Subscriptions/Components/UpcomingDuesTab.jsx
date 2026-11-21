@@ -1,4 +1,5 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+// resources/js/Pages/Subscriptions/Components/UpcomingDuesTab.jsx
+import { ChevronLeft, ChevronRight, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -60,12 +61,22 @@ export function UpcomingDuesTab({
                                                 <span className="font-medium text-zinc-300">Due {dueDateLabel(item.due_date)}</span>
                                                 <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-medium capitalize">{item.frequency}</span>
                                             </div>
-                                            <div className="flex items-center gap-1.5 shrink-0">
-                                                <Button size="sm" variant="outline" className="h-6 text-[10px] px-2.5 border-zinc-800 text-zinc-300" onClick={() => setPayingInstance(item)}>
+                                            <div className="flex items-center gap-1 shrink-0">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSkipInstance(item)}
+                                                    className="p-1 text-zinc-500 hover:text-zinc-300 rounded transition-colors"
+                                                    title="Skip"
+                                                >
+                                                    <SkipForward className="h-3.5 w-3.5" />
+                                                </button>
+                                                <Button 
+                                                    size="sm" 
+                                                    variant="ghost"
+                                                    onClick={() => setPayingInstance(item)}
+                                                    className="h-6 text-[11px] px-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded font-medium"
+                                                >
                                                     Pay
-                                                </Button>
-                                                <Button size="sm" variant="ghost" className="h-6 text-[10px] px-2 text-zinc-400" onClick={() => handleSkipInstance(item)}>
-                                                    Skip
                                                 </Button>
                                             </div>
                                         </div>
@@ -97,13 +108,25 @@ export function UpcomingDuesTab({
                                             <TableCell className={`text-right font-semibold text-xs ${item.type === 'income' ? 'text-emerald-500' : 'text-rose-500'}`}>
                                                 {item.type === 'income' ? '+' : '-'}{formatCurrency(item.amount)}
                                             </TableCell>
-                                            <TableCell className="text-right space-x-2">
-                                                <Button size="sm" variant="outline" onClick={() => setPayingInstance(item)} className="h-7 px-2.5 text-xs border-zinc-800 text-zinc-300">
-                                                    Pay
-                                                </Button>
-                                                <Button size="sm" variant="ghost" onClick={() => handleSkipInstance(item)} className="h-7 px-2 text-xs text-zinc-400">
-                                                    Skip
-                                                </Button>
+                                            <TableCell className="text-right">
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleSkipInstance(item)}
+                                                        className="p-1 text-zinc-500 hover:text-zinc-300 rounded transition-colors"
+                                                        title="Skip"
+                                                    >
+                                                        <SkipForward className="h-3.5 w-3.5" />
+                                                    </button>
+                                                    <Button 
+                                                        size="sm" 
+                                                        variant="ghost"
+                                                        onClick={() => setPayingInstance(item)}
+                                                        className="h-6 text-[11px] px-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded font-medium"
+                                                    >
+                                                        Pay
+                                                    </Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))}
