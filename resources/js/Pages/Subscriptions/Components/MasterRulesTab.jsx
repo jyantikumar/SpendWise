@@ -1,5 +1,17 @@
-import { MoreHorizontal, Pencil, Power, Trash2, ChevronLeft, ChevronRight, Ban } from 'lucide-react';
+// resources/js/Pages/Subscriptions/Components/MasterRulesTab.jsx
+import { useState, useMemo } from 'react';
+import { 
+    MoreHorizontal, 
+    Pencil, 
+    Power, 
+    Trash2, 
+    ChevronLeft, 
+    ChevronRight, 
+    Search, 
+    X 
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
@@ -22,11 +34,9 @@ function formatWeekdayList(weekdays, compact = false) {
 }
 
 export function MasterRulesTab({ 
-    filteredRules, 
-    paginatedRules, 
+    filteredRules = [], 
     rulesPage, 
     setRulesPage, 
-    totalRulesPages, 
     itemsPerPage, 
     formatCurrency, 
     setEditingItem, 
@@ -36,10 +46,43 @@ export function MasterRulesTab({
     filterStatus,
     setFilterStatus
 }) {
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Apply internal search filter on top of the status/type filtered list
+    const searchedRules = useMemo(() => {
+        if (!searchQuery.trim()) return filteredRules;
+        const query = searchQuery.toLowerCase().trim();
+        return filteredRules.filter((item) => {
+            const titleMatch = item.title?.toLowerCase().includes(query);
+            const accountMatch = item.account?.name?.toLowerCase().includes(query);
+            return titleMatch || accountMatch;
+        });
+    }, [filteredRules, searchQuery]);
+
+    // Recalculate pagination against searched results
+    const totalRulesPages = Math.ceil(searchedRules.length / itemsPerPage) || 1;
+    const paginatedRules = useMemo(() => {
+        return searchedRules.slice(
+            (rulesPage - 1) * itemsPerPage,
+            rulesPage * itemsPerPage
+        );
+    }, [searchedRules, rulesPage, itemsPerPage]);
+
+    const handleSearchChange = (e) => {
+        setSearchQuery(e.target.value);
+        setRulesPage(1);
+    };
+
+    const handleClearSearch = () => {
+        setSearchQuery('');
+        setRulesPage(1);
+    };
+
     return (
         <Card className="border-zinc-800">
             <CardHeader className="p-4 sm:p-6 pb-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    {/* Left: Title & Status Filter Badges */}
                     <div className="flex items-center gap-3 flex-wrap">
                         <CardTitle className="text-sm sm:text-base text-zinc-200">Scheduled Rules</CardTitle>
 
@@ -69,9 +112,26 @@ export function MasterRulesTab({
                         </div>
                     </div>
 
-                    <CardDescription className="text-xs text-zinc-400 sm:text-right">
-                        Overview of repeat processing schedules across accounts.
-                    </CardDescription>
+                    {/* Right: Search Bar Input */}
+                    <div className="relative w-full sm:w-64 shrink-0">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                        <Input
+                            type="text"
+                            placeholder="Search rules or accounts..."
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            className="h-8 pl-8 pr-8 text-xs border-zinc-800 bg-zinc-900 text-zinc-200 focus-visible:ring-zinc-700"
+                        />
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={handleClearSearch}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                    </div>
                 </div>
             </CardHeader>
 
@@ -80,7 +140,7 @@ export function MasterRulesTab({
                 <div className="block sm:hidden space-y-2.5">
                     {paginatedRules.length === 0 ? (
                         <div className="text-center py-8 text-zinc-500 text-xs">
-                            No recurring rules found matching your filters.
+                            {searchQuery ? `No rules matching "${searchQuery}"` : 'No recurring rules found matching your filters.'}
                         </div>
                     ) : (
                         paginatedRules.map((item) => {
@@ -254,7 +314,7 @@ export function MasterRulesTab({
                             ) : (
                                 <TableRow>
                                     <TableCell colSpan={6} className="py-8 text-center text-xs text-zinc-500">
-                                        No recurring rules found matching your filters.
+                                        {searchQuery ? `No rules matching "${searchQuery}"` : 'No recurring rules found matching your filters.'}
                                     </TableCell>
                                 </TableRow>
                             )}
@@ -263,12 +323,12 @@ export function MasterRulesTab({
                 </div>
             </CardContent>
 
-            {filteredRules.length > 0 && (
+            {searchedRules.length > 0 && (
                 <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-zinc-800 px-4 sm:px-6 py-4 text-xs text-zinc-400">
                     <div>
                         Showing <span className="font-medium text-zinc-200">{(rulesPage - 1) * itemsPerPage + 1}</span> to{' '}
-                        <span className="font-medium text-zinc-200">{Math.min(rulesPage * itemsPerPage, filteredRules.length)}</span> of{' '}
-                        <span className="font-medium text-zinc-200">{filteredRules.length}</span> records
+                        <span className="font-medium text-zinc-200">{Math.min(rulesPage * itemsPerPage, searchedRules.length)}</span> of{' '}
+                        <span className="font-medium text-zinc-200">{searchedRules.length}</span> records
                     </div>
 
                     <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">

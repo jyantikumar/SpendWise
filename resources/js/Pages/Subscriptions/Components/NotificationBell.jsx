@@ -15,15 +15,18 @@ export function NotificationBell() {
 
     const [payingInstance, setPayingInstance] = useState(null);
 
-    // Get user's preferred currency from auth props (defaults to PHP if not set)[cite: 27]
+    // Get user's preferred currency from auth props (defaults to PHP if not set)
     const userCurrency = auth?.user?.currency || 'PHP';
 
     const formatCurrency = (val) => 
         new Intl.NumberFormat('en-US', { style: 'currency', currency: userCurrency }).format(val || 0);
 
+    const resolveRuleId = (item) => item.rule_id ?? item.id;
+
     const handleSkip = (item) => {
+        const ruleId = resolveRuleId(item);
         router.post(
-            route('recurring.skip', item.id), 
+            route('recurring.skip', ruleId), 
             { due_date: item.due_date }, 
             {
                 preserveScroll: true,
@@ -32,53 +35,56 @@ export function NotificationBell() {
         );
     };
 
-    const isExpense = (item) => item.type !== 'income';
+    const renderRow = (item, isOverdue) => {
+        const ruleId = resolveRuleId(item);
 
-    const renderRow = (item, isOverdue) => (
-        <div 
-            key={`${isOverdue ? 'overdue' : 'today'}-${item.id}`}
-            className="group flex items-center justify-between p-2.5 hover:bg-zinc-800/50 rounded-lg transition-colors"
-        >
-            <div className="min-w-0 flex-1 pr-2">
-                <p className="text-xs font-medium text-zinc-200 truncate group-hover:text-white">
-                    {item.title}
-                </p>
-                <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
-                    <span className={isOverdue ? 'text-rose-400 font-medium' : 'text-amber-400 font-medium'}>
-                        {isOverdue ? item.due_date : 'Today'}
-                    </span>
-                    <span className="text-zinc-600">•</span>
-                    <span className="text-zinc-400 font-medium">
-                        {formatCurrency(item.amount)}
-                    </span>
+        return (
+            <div 
+                key={`${isOverdue ? 'overdue' : 'today'}-${ruleId}-${item.due_date}`}
+                className="group flex items-center justify-between p-2.5 hover:bg-zinc-800/50 rounded-lg transition-colors"
+            >
+                <div className="min-w-0 flex-1 pr-2">
+                    <p className="text-xs font-medium text-zinc-200 truncate group-hover:text-white">
+                        {item.title}
+                    </p>
+                    <div className="flex items-center gap-1.5 mt-0.5 text-[10px]">
+                        <span className={isOverdue ? 'text-rose-400 font-medium' : 'text-amber-400 font-medium'}>
+                            {isOverdue ? (item.due_date || 'Overdue') : 'Today'}
+                        </span>
+                        <span className="text-zinc-600">•</span>
+                        <span className="text-zinc-400 font-medium">
+                            {formatCurrency(item.amount)}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="flex items-center gap-1 shrink-0">
+                    <button
+                        type="button"
+                        onClick={() => handleSkip(item)}
+                        className="p-1 text-zinc-500 hover:text-zinc-300 rounded transition-colors"
+                        title="Skip"
+                    >
+                        <SkipForward className="h-3.5 w-3.5" />
+                    </button>
+                    <Button 
+                        size="sm" 
+                        variant="ghost"
+                        onClick={() => setPayingInstance({ 
+                            ...item, 
+                            rule_id: ruleId,
+                            due_date: item.due_date || new Date().toISOString().slice(0, 10),
+                            account_id: item.account_id || item.account?.id || '',
+                            category_name: item.category_name ?? item.category?.name ?? 'Uncategorized',
+                        })}
+                        className="h-6 text-[11px] px-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded font-medium"
+                    >
+                        Pay
+                    </Button>
                 </div>
             </div>
-
-            <div className="flex items-center gap-1 shrink-0">
-                <button
-                    type="button"
-                    onClick={() => handleSkip(item)}
-                    className="p-1 text-zinc-500 hover:text-zinc-300 rounded transition-colors"
-                    title="Skip"
-                >
-                    <SkipForward className="h-3.5 w-3.5" />
-                </button>
-                <Button 
-                    size="sm" 
-                    variant="ghost"
-                    onClick={() => setPayingInstance({ 
-                        ...item, 
-                        rule_id: item.id,
-                        account_id: item.account_id || item.account?.id || '',
-                        category_name: item.category_name ?? item.category?.name ?? '',
-                    })}
-                    className="h-6 text-[11px] px-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded font-medium"
-                >
-                    Pay
-                </Button>
-            </div>
-        </div>
-    );
+        );
+    };
 
     return (
         <>

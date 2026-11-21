@@ -1,7 +1,7 @@
-import { AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+// resources/js/Pages/Subscriptions/Components/MissedPaymentsTab.jsx
+import { AlertCircle, ChevronLeft, ChevronRight, SkipForward } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { dueDateLabel } from './dateHelpers';
 
@@ -40,12 +40,9 @@ export function MissedPaymentsTab({
                                         <div className="min-w-0 flex-1 space-y-1">
                                             <div className="flex items-center gap-2 flex-wrap">
                                                 <span className="text-xs font-semibold text-zinc-200">{item.title}</span>
-                                                <Badge variant="outline" className="text-[10px] border-rose-900/80 bg-rose-950/20 text-rose-400">
-                                                    Due {dueDateLabel(item.due_date)}
-                                                </Badge>
                                             </div>
                                             <p className="text-[11px] text-zinc-400">
-                                                {item.account?.name || 'No account'} • <span className="capitalize">{item.frequency}</span>
+                                                {item.account?.name || 'No account'}
                                             </p>
                                         </div>
                                         <span className="text-sm font-bold text-rose-500 shrink-0">
@@ -53,23 +50,29 @@ export function MissedPaymentsTab({
                                         </span>
                                     </div>
 
-                                    <div className="flex items-center justify-end gap-1.5 pt-2 border-t border-zinc-800">
-                                        <Button 
-                                            size="sm" 
-                                            variant="outline" 
-                                            className="h-6 text-[10px] px-2.5 border-rose-900/50 text-rose-400 hover:bg-rose-950/30 hover:text-rose-300"
-                                            onClick={() => setPayingInstance(item)}
-                                        >
-                                            Pay
-                                        </Button>
-                                        <Button 
-                                            size="sm" 
-                                            variant="ghost" 
-                                            className="h-6 text-[10px] px-2 text-zinc-400 hover:text-zinc-200"
-                                            onClick={() => handleSkipInstance(item)}
-                                        >
-                                            Skip
-                                        </Button>
+                                    <div className="flex items-center justify-between gap-2 pt-1 border-t border-zinc-800/60 text-[10px]">
+                                        <div className="flex items-center gap-1.5 text-zinc-400 flex-wrap">
+                                            <span className="font-medium text-rose-400">{dueDateLabel(item.due_date)}</span>
+                                            <span className="px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-300 font-medium capitalize">{item.frequency}</span>
+                                        </div>
+                                        <div className="flex items-center gap-1 shrink-0">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSkipInstance(item)}
+                                                className="p-1 text-zinc-500 hover:text-zinc-300 rounded transition-colors"
+                                                title="Skip"
+                                            >
+                                                <SkipForward className="h-3.5 w-3.5" />
+                                            </button>
+                                            <Button 
+                                                size="sm" 
+                                                variant="ghost"
+                                                onClick={() => setPayingInstance(item)}
+                                                className="h-6 text-[11px] px-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded font-medium"
+                                            >
+                                                Pay
+                                            </Button>
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -98,23 +101,25 @@ export function MissedPaymentsTab({
                                             <TableCell className="text-right font-semibold text-xs text-rose-500">
                                                 -{formatCurrency(item.amount)}
                                             </TableCell>
-                                            <TableCell className="text-right space-x-2">
-                                                <Button 
-                                                    size="sm" 
-                                                    variant="outline" 
-                                                    onClick={() => setPayingInstance(item)} 
-                                                    className="h-7 px-2.5 text-xs border-rose-900/50 text-rose-400 hover:bg-rose-950/30 hover:text-rose-300"
-                                                >
-                                                    Pay
-                                                </Button>
-                                                <Button 
-                                                    size="sm" 
-                                                    variant="ghost" 
-                                                    onClick={() => handleSkipInstance(item)} 
-                                                    className="h-7 px-2 text-xs text-zinc-400 hover:text-zinc-200"
-                                                >
-                                                    Skip
-                                                </Button>
+                                            <TableCell className="text-right">
+                                                <div className="flex items-center justify-end gap-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => handleSkipInstance(item)}
+                                                        className="p-1 text-zinc-500 hover:text-zinc-300 rounded transition-colors"
+                                                        title="Skip"
+                                                    >
+                                                        <SkipForward className="h-3.5 w-3.5" />
+                                                    </button>
+                                                    <Button 
+                                                        size="sm" 
+                                                        variant="ghost"
+                                                        onClick={() => setPayingInstance(item)}
+                                                        className="h-6 text-[11px] px-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-200 hover:text-white rounded font-medium"
+                                                    >
+                                                        Pay
+                                                    </Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))}

@@ -147,6 +147,8 @@ export default function TransactionIndex({
                 toast.success('Transaction deleted successfully.');
                 setDeletingTransaction(null);
                 setSelectedDetailTransaction(null);
+                // 👈 Force reload the list to get fresh data
+                router.reload({ only: ['transactions', 'kpis'] });
             },
             onError: () => {
                 toast.error('Failed to delete transaction.');

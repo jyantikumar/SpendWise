@@ -1,4 +1,5 @@
-import React from 'react';
+// resources/js/Pages/Transactions/components/TransactionDetailSheet.jsx
+import React, { useState, useEffect } from 'react';
 import { FileText, Pencil, Trash2 } from 'lucide-react';
 
 import {
@@ -20,6 +21,15 @@ export function TransactionDetailSheet({
     currentDate,
     userCurrency = 'PHP'
 }) {
+    const [isMobile, setIsMobile] = useState(false);
+
+    useEffect(() => {
+        const checkMobile = () => setIsMobile(window.innerWidth < 640);
+        checkMobile();
+        window.addEventListener('resize', checkMobile);
+        return () => window.removeEventListener('resize', checkMobile);
+    }, []);
+
     if (!transaction) return null;
 
     const formatCurrency = (val) =>
@@ -50,13 +60,13 @@ export function TransactionDetailSheet({
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
-            {/* 
-              Mobile: Bottom Sheet (side="bottom", max-h-[85vh], rounded-t-xl)
-              Desktop: Side Sheet (sm:side="right", sm:max-w-md, sm:h-full, sm:rounded-none) 
-            */}
             <SheetContent 
-                side="bottom" 
-                className="w-full h-auto max-h-[85vh] sm:max-h-full border-zinc-800 bg-zinc-950 text-zinc-100 flex flex-col justify-between rounded-t-xl sm:rounded-none sm:inset-y-0 sm:right-0 sm:left-auto sm:w-full sm:max-w-md sm:h-full sm:border-l sm:border-t-0"
+                side={isMobile ? 'bottom' : 'right'} 
+                className={`border-zinc-800 bg-zinc-950 text-zinc-100 flex flex-col justify-between ${
+                    isMobile
+                        ? 'w-full h-auto max-h-[85vh] rounded-t-xl'
+                        : 'w-full max-w-md h-full rounded-none'
+                }`}
             >
                 <div className="flex-1 overflow-hidden flex flex-col">
                     <SheetHeader className="pb-4 border-b border-zinc-800">
@@ -122,7 +132,7 @@ export function TransactionDetailSheet({
                             </div>
                         )}
 
-                        {/* Notes Block (Only renders if notes exist) */}
+                        {/* Notes Block */}
                         {transaction.notes && (
                             <div className="space-y-1.5 pt-2">
                                 <span className="text-zinc-400 block">Notes</span>

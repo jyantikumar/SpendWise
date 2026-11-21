@@ -28,7 +28,7 @@ import { UpcomingDuesTab } from './Components/UpcomingDuesTab';
 import { MissedPaymentsTab } from './Components/MissedPaymentsTab';
 import { MasterRulesTab } from './Components/MasterRulesTab';
 
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 10;
 
 export default function SubscriptionsView({
     auth,
@@ -38,15 +38,17 @@ export default function SubscriptionsView({
     accounts = [],
     categories = [],
 }) {
-    // Filter States
+    // Core Filter States
     const [filterType, setFilterType] = useState('all');
-    // Default to 'active' so the Rules tab opens showing only live rules.
-    // filterStatus is only consumed by the Rules list, so this has no
-    // side effect on Today / Upcoming / Missed.
     const [filterStatus, setFilterStatus] = useState('active');
     const [dateFilter, setDateFilter] = useState('current_month');
     const [customStartDate, setCustomStartDate] = useState('');
     const [customEndDate, setCustomEndDate] = useState('');
+
+    // Extended Filter States (Account, Category, Frequency)
+    const [filterAccountId, setFilterAccountId] = useState('all');
+    const [filterCategoryId, setFilterCategoryId] = useState('all');
+    const [filterFrequency, setFilterFrequency] = useState('all');
 
     // UI Dialog & Sheet States
     const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
@@ -77,25 +79,45 @@ export default function SubscriptionsView({
 
     const handleResetFilters = () => {
         setFilterType('all');
-        setFilterStatus('active'); // reset back to the Rules-tab default
+        setFilterStatus('active');
         setDateFilter('current_month');
         setCustomStartDate('');
         setCustomEndDate('');
+        setFilterAccountId('all');
+        setFilterCategoryId('all');
+        setFilterFrequency('all');
         setTodayPage(1);
         setMissedPage(1);
         setUpcomingPage(1);
         setRulesPage(1);
     };
 
+    // Helper function to validate shared filters
+    const matchesCommonFilters = (item) => {
+        if (filterType === 'expense' && item.type !== 'expense') return false;
+        if (filterType === 'income' && item.type !== 'income') return false;
+
+        if (filterAccountId !== 'all') {
+            const accId = item.account_id ?? item.account?.id;
+            if (String(accId) !== String(filterAccountId)) return false;
+        }
+
+        if (filterCategoryId !== 'all') {
+            const catId = item.category_id ?? item.category?.id;
+            if (String(catId) !== String(filterCategoryId)) return false;
+        }
+
+        if (filterFrequency !== 'all') {
+            if (item.frequency !== filterFrequency) return false;
+        }
+
+        return true;
+    };
+
     // 1. Filter Today Payments
     const filteredToday = useMemo(
-        () =>
-            todayList.filter((item) => {
-                if (filterType === 'expense' && item.type !== 'expense') return false;
-                if (filterType === 'income' && item.type !== 'income') return false;
-                return true;
-            }),
-        [todayList, filterType]
+        () => todayList.filter((item) => matchesCommonFilters(item)),
+        [todayList, filterType, filterAccountId, filterCategoryId, filterFrequency]
     );
 
     // 2. Filter Overdue Payments
@@ -103,11 +125,9 @@ export default function SubscriptionsView({
         () =>
             (Array.isArray(pendingInstances) ? pendingInstances : []).filter((item) => {
                 if (!item.is_overdue) return false;
-                if (filterType === 'expense' && item.type !== 'expense') return false;
-                if (filterType === 'income' && item.type !== 'income') return false;
-                return true;
+                return matchesCommonFilters(item);
             }),
-        [pendingInstances, filterType]
+        [pendingInstances, filterType, filterAccountId, filterCategoryId, filterFrequency]
     );
 
     // 3. Filter Upcoming Dues (exclude today & overdue)
@@ -120,8 +140,7 @@ export default function SubscriptionsView({
         return (Array.isArray(pendingInstances) ? pendingInstances : []).filter((item) => {
             if (item.is_overdue) return false;
             if (item.due_date === todayStr) return false;
-            if (filterType === 'expense' && item.type !== 'expense') return false;
-            if (filterType === 'income' && item.type !== 'income') return false;
+            if (!matchesCommonFilters(item)) return false;
 
             if (dateFilter === 'current_month') {
                 const itemDate = new Date(item.due_date);
@@ -140,14 +159,22 @@ export default function SubscriptionsView({
 
             return true;
         });
-    }, [pendingInstances, filterType, dateFilter, customStartDate, customEndDate]);
+    }, [
+        pendingInstances,
+        filterType,
+        filterAccountId,
+        filterCategoryId,
+        filterFrequency,
+        dateFilter,
+        customStartDate,
+        customEndDate,
+    ]);
 
     // 4. Filter Master Rules
     const filteredRules = useMemo(
         () =>
             recurringList.filter((item) => {
-                if (filterType === 'expense' && item.type !== 'expense') return false;
-                if (filterType === 'income' && item.type !== 'income') return false;
+                if (!matchesCommonFilters(item)) return false;
 
                 const isExpired = Boolean(item.is_expired);
 
@@ -155,10 +182,9 @@ export default function SubscriptionsView({
                 if (filterStatus === 'active') return item.is_active && !isExpired;
                 if (filterStatus === 'paused') return !item.is_active && !isExpired;
 
-                // 'all' — everything, including expired
                 return true;
             }),
-        [recurringList, filterType, filterStatus]
+        [recurringList, filterType, filterStatus, filterAccountId, filterCategoryId, filterFrequency]
     );
 
     // Pagination Calculations
@@ -181,24 +207,24 @@ export default function SubscriptionsView({
         upcomingPage * ITEMS_PER_PAGE
     );
 
-    const totalRulesPages = Math.ceil(filteredRules.length / ITEMS_PER_PAGE) || 1;
-    const paginatedRules = filteredRules.slice(
-        (rulesPage - 1) * ITEMS_PER_PAGE,
-        rulesPage * ITEMS_PER_PAGE
-    );
-
     const hasActiveFilters = Boolean(
         filterType !== 'all' ||
             filterStatus !== 'active' ||
             dateFilter !== 'current_month' ||
             customStartDate !== '' ||
-            customEndDate !== ''
+            customEndDate !== '' ||
+            filterAccountId !== 'all' ||
+            filterCategoryId !== 'all' ||
+            filterFrequency !== 'all'
     );
 
     const activeFilterCount = [
         filterType !== 'all',
         filterStatus !== 'active',
         dateFilter !== 'current_month' || customStartDate !== '' || customEndDate !== '',
+        filterAccountId !== 'all',
+        filterCategoryId !== 'all',
+        filterFrequency !== 'all',
     ].filter(Boolean).length;
 
     const handleSkipInstance = (item) => {
@@ -367,10 +393,8 @@ export default function SubscriptionsView({
                     <TabsContent value="rules" className="w-full mt-0">
                         <MasterRulesTab
                             filteredRules={filteredRules}
-                            paginatedRules={paginatedRules}
                             rulesPage={rulesPage}
                             setRulesPage={setRulesPage}
-                            totalRulesPages={totalRulesPages}
                             itemsPerPage={ITEMS_PER_PAGE}
                             formatCurrency={formatCurrency}
                             setEditingItem={setEditingItem}
@@ -397,6 +421,14 @@ export default function SubscriptionsView({
                 setFilterType={setFilterType}
                 filterStatus={filterStatus}
                 setFilterStatus={setFilterStatus}
+                filterAccountId={filterAccountId}
+                setFilterAccountId={setFilterAccountId}
+                filterCategoryId={filterCategoryId}
+                setFilterCategoryId={setFilterCategoryId}
+                filterFrequency={filterFrequency}
+                setFilterFrequency={setFilterFrequency}
+                accounts={accounts}
+                categories={categories}
                 hasActiveFilters={hasActiveFilters}
                 handleResetFilters={handleResetFilters}
                 resetPages={{
