@@ -17,10 +17,11 @@ class Transaction extends Model
         'destination_account_id',
         'category_id',
         'savings_goal_id',
-        'recurring_transaction_id', // 👈 Added
+        'recurring_transaction_id',
         'type',
         'amount',
         'description',
+        'notes',
         'transaction_date',
         'reference_number',
     ];

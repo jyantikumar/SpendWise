@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useForm } from '@inertiajs/react';
+import { useForm, router } from '@inertiajs/react'; // 👈 Added router
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
     Dialog,
@@ -17,14 +19,22 @@ import {
 import CategoryFormModal from '@/Pages/Categories/components/CategoryFormModal';
 import AccountFormModal from '@/Pages/Accounts/components/AccountFormModal';
 
-// Helper to safely get today's local date in YYYY-MM-DD format
-// without shifting backward due to UTC conversion.
+const DESCRIPTION_MAX = 255;
+const NOTES_MAX = 2000;
+
 const getTodayLocal = () => {
     const now = new Date();
     const year = now.getFullYear();
     const month = String(now.getMonth() + 1).padStart(2, '0');
     const day = String(now.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+};
+
+const counterClass = (length, max) => {
+    const ratio = length / max;
+    if (ratio >= 1) return 'text-rose-500 font-medium';
+    if (ratio >= 0.8) return 'text-amber-500';
+    return 'text-zinc-500';
 };
 
 export default function TransactionFormModal({
@@ -64,6 +74,7 @@ export default function TransactionFormModal({
         type: 'expense',
         amount: '',
         description: '',
+        notes: '',
         transaction_date: getTodayLocal(),
     });
 
@@ -90,6 +101,7 @@ export default function TransactionFormModal({
                 type: editingTransaction.type || 'expense',
                 amount: editingTransaction.amount ? String(editingTransaction.amount) : '',
                 description: editingTransaction.description || '',
+                notes: editingTransaction.notes || '',
                 transaction_date: formattedDate,
             });
         } else {
@@ -105,6 +117,7 @@ export default function TransactionFormModal({
                 type: defaultType || 'expense',
                 amount: '',
                 description: '',
+                notes: '',
                 transaction_date: getTodayLocal(),
             });
         }
@@ -135,6 +148,8 @@ export default function TransactionFormModal({
                     toast.success('Transaction updated successfully.');
                     onClose();
                     reset();
+                    // 👈 Force reload the list to get fresh data
+                    router.reload({ only: ['transactions', 'kpis'] });
                 },
                 onError: () => toast.error('Failed to update transaction.'),
             });
@@ -144,6 +159,8 @@ export default function TransactionFormModal({
                     toast.success('Transaction logged successfully.');
                     onClose();
                     reset();
+                    // 👈 Force reload the list to get fresh data
+                    router.reload({ only: ['transactions', 'kpis'] });
                 },
                 onError: () => toast.error('Failed to log transaction.'),
             });
@@ -428,13 +445,42 @@ export default function TransactionFormModal({
 
                         {/* Description */}
                         <div className="space-y-2">
-                            <label className="text-sm font-medium leading-none">Description</label>
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium leading-none">Description</label>
+                                <span className={`text-[11px] tabular-nums ${counterClass((data.description || '').length, DESCRIPTION_MAX)}`}>
+                                    {(data.description || '').length}/{DESCRIPTION_MAX}
+                                </span>
+                            </div>
                             <Input
                                 placeholder="e.g. Monthly deposit"
                                 value={data.description}
+                                maxLength={DESCRIPTION_MAX}
                                 onChange={(e) => setData('description', e.target.value)}
                             />
                             {errors.description && <p className="text-xs text-rose-500">{errors.description}</p>}
+                        </div>
+
+                        {/* Notes */}
+                        <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                                <label className="text-sm font-medium leading-none">Notes</label>
+                                <span className={`text-[11px] tabular-nums ${counterClass((data.notes || '').length, NOTES_MAX)}`}>
+                                    {(data.notes || '').length}/{NOTES_MAX}
+                                </span>
+                            </div>
+                            
+                            <div className="rounded-md border border-zinc-800 bg-zinc-950/50 text-sm shadow-sm transition-colors focus-within:border-zinc-500 focus-within:ring-1 focus-within:ring-zinc-500">
+                                <ScrollArea className="h-24">
+                                    <Textarea
+                                        placeholder="Add any extra details or context (optional)..."
+                                        value={data.notes}
+                                        onChange={(e) => setData('notes', e.target.value)}
+                                        maxLength={NOTES_MAX}
+                                        className="min-h-[96px] resize-none break-all border-0 bg-transparent shadow-none focus-visible:ring-0 p-3 text-zinc-200 placeholder:text-zinc-500"
+                                    />
+                                </ScrollArea>
+                            </div>
+                            {errors.notes && <p className="text-xs text-rose-500">{errors.notes}</p>}
                         </div>
 
                         <DialogFooter className="pt-4">

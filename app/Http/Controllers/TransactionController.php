@@ -150,6 +150,7 @@ class TransactionController extends Controller
             'type'             => ['required', 'in:income,expense,transfer,savings'],
             'amount'           => ['required', 'numeric', 'min:0.01'],
             'description'      => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:2000'],
             'transaction_date' => ['required', 'date'],
         ]);
 
@@ -210,6 +211,7 @@ class TransactionController extends Controller
             'type'             => ['required', 'in:income,expense,transfer,savings'],
             'amount'           => ['required', 'numeric', 'min:0.01'],
             'description'      => ['nullable', 'string', 'max:255'],
+            'notes' => ['nullable', 'string', 'max:2000'],
             'transaction_date' => ['required', 'date'],
         ]);
 
