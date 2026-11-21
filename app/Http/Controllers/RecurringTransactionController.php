@@ -42,8 +42,6 @@ class RecurringTransactionController extends Controller
             }
 
             // Hard floor: never generate an instance before the rule's start_date.
-            // This is the guard that was missing and caused "tomorrow" rules to
-            // surface today when timezone shifts made start_date appear as today.
             $startDateStr = optional($rule->start_date)->format('Y-m-d');
             $endDateStr   = optional($rule->end_date)->format('Y-m-d');
 
@@ -54,15 +52,14 @@ class RecurringTransactionController extends Controller
             $skippedDates = $rule->skipped_dates ?? [];
             $weekdays = $this->normalizeWeekdays($rule->weekdays);
 
-            // Resolve the first due date, but never return something < start_date.
+            // Resolve the first due date.
             $currentDueDate = $this->resolveFirstDueDate(
                 Carbon::parse($startDateStr),
                 $rule->frequency,
                 $weekdays
             );
 
-            // Safety net: if resolveFirstDueDate somehow returned a date before
-            // start_date (timezone edge), snap it forward to start_date.
+            // Safety net: if resolveFirstDueDate returned a date before start_date, snap to start_date.
             if ($currentDueDate->format('Y-m-d') < $startDateStr) {
                 $currentDueDate = Carbon::parse($startDateStr);
             }
@@ -133,7 +130,6 @@ class RecurringTransactionController extends Controller
         $validated['user_id'] = $request->user()->id;
         $validated['weekdays'] = $this->normalizeWeekdays($validated['weekdays'] ?? null);
 
-        // Date-only string; no TZ shift.
         $validated['next_due_date'] = $this->resolveFirstDueDate(
             Carbon::parse($validated['start_date'])->startOfDay(),
             $validated['frequency'],
@@ -199,6 +195,7 @@ class RecurringTransactionController extends Controller
                 'amount'                   => $validated['amount'],
                 'type'                     => $recurringTransaction->type,
                 'description'              => $recurringTransaction->title . ' (Rec.)',
+                'notes'                    => $recurringTransaction->notes,
                 'transaction_date'         => $validated['payment_date'],
             ]);
 
@@ -288,10 +285,15 @@ class RecurringTransactionController extends Controller
 
         $validated = $request->validate([
             'title'       => 'required|string|max:255',
+            'notes'       => 'nullable|string|max:2000',
             'amount'      => 'required|numeric|min:0.01',
             'type'        => 'required|in:income,expense',
-            'frequency'   => 'required|in:daily,weekly,monthly,yearly',
-            'weekdays'    => 'nullable|array|required_if:frequency,weekly',
+            'frequency'   => 'required|in:daily,weekly,custom,monthly,yearly',
+            'weekdays'    => [
+                'nullable',
+                'array',
+                Rule::requiredIf(fn () => $request->input('frequency') === 'custom'),
+            ],
             'weekdays.*'  => 'integer|between:0,6',
             'account_id'  => [
                 'required',
@@ -306,7 +308,8 @@ class RecurringTransactionController extends Controller
             'auto_create' => 'boolean',
         ]);
 
-        if ($validated['frequency'] !== 'weekly') {
+        // Wipe weekdays array if frequency is not custom
+        if ($validated['frequency'] !== 'custom') {
             $validated['weekdays'] = null;
         }
 
@@ -375,18 +378,15 @@ class RecurringTransactionController extends Controller
     }
 
     /**
-     * Resolve the first due date for a rule.
-     *
-     * CRITICAL: The returned date is ALWAYS >= $start. This is the guard
-     * that prevents a rule starting "tomorrow" from ever generating
-     * an instance for "today" (which was the reported bug).
+     * Resolve the first due date.
+     * Only 'custom' uses the specific weekdays calculation loop.
+     * Standard 'weekly' starts directly on $start date.
      */
     private function resolveFirstDueDate(Carbon $start, string $frequency, array $weekdays): Carbon
     {
         $date = $start->copy()->startOfDay();
-        $startStr = $date->format('Y-m-d');
 
-        if ($frequency !== 'weekly' || empty($weekdays)) {
+        if ($frequency !== 'custom' || empty($weekdays)) {
             return $date;
         }
 
@@ -399,10 +399,6 @@ class RecurringTransactionController extends Controller
         for ($i = 0; $i < 7; $i++) {
             $date->addDay();
             if (in_array($date->dayOfWeek, $allowed, true)) {
-                // Safety: never return a date earlier than start.
-                if ($date->format('Y-m-d') < $startStr) {
-                    $date = $start->copy()->startOfDay();
-                }
                 return $date;
             }
         }

@@ -16,6 +16,7 @@ class RecurringTransaction extends Model
         'account_id',
         'category_id',
         'title',
+        'notes',
         'amount',
         'type',
         'frequency',
@@ -89,17 +90,20 @@ class RecurringTransaction extends Model
             case 'daily':
                 return $cursor->addDay();
 
+            case 'weekly':
+                return $cursor->addWeek();
+
             case 'monthly':
                 return $cursor->addMonthNoOverflow();
 
             case 'yearly':
                 return $cursor->addYearNoOverflow();
 
-            case 'weekly':
+            case 'custom':
                 $allowed = self::normalizeWeekdaysArray($weekdays);
 
                 if (empty($allowed)) {
-                    return $cursor->addWeek();
+                    return $cursor->addDay();
                 }
 
                 for ($i = 1; $i <= 7; $i++) {
@@ -109,7 +113,7 @@ class RecurringTransaction extends Model
                     }
                 }
 
-                return $cursor->addWeek();
+                return $cursor->addDay();
 
             default:
                 return $cursor->addMonthNoOverflow();
