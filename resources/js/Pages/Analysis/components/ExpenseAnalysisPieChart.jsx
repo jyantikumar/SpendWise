@@ -64,8 +64,9 @@ export default function ExpenseAnalysisPieChart({
     const activeItem = hoveredIndex !== null ? slices[hoveredIndex] : null;
 
     return (
-        <div className="flex flex-row items-center gap-6 h-full min-h-0 flex-1">
-            <div className="relative w-40 h-40 md:w-44 md:h-44 shrink-0 flex items-center justify-center my-1">
+        <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 h-full min-h-0 flex-1">
+            {/* Donut Chart Viewport */}
+            <div className="relative w-40 h-40 md:w-44 md:h-44 shrink-0 flex items-center justify-center my-1 mx-auto sm:mx-0">
                 <svg viewBox="0 0 200 200" className="w-full h-full">
                     {slices.map((slice, index) => (
                         <path
@@ -99,7 +100,8 @@ export default function ExpenseAnalysisPieChart({
                 </div>
             </div>
 
-            <div className="w-full space-y-1.5 overflow-y-auto pr-1 max-h-[260px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+            {/* Category Legend List */}
+            <div className="w-full space-y-1.5 overflow-y-auto pr-1 max-h-[220px] sm:max-h-[260px] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                 {slices.map((slice, index) => (
                     <div
                         key={slice.id || index}
