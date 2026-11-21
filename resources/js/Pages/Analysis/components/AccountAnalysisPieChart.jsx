@@ -1,0 +1,140 @@
+// resources/js/Pages/Analysis/components/AccountAnalysisPieChart.jsx
+import { useState } from 'react';
+import { PieChart as PieChartIcon } from 'lucide-react';
+
+export default function AccountAnalysisPieChart({ 
+    accounts = [], 
+    formatCurrency, 
+    onAccountClick,
+}) {
+    const [hoveredIndex, setHoveredIndex] = useState(null);
+
+    const chartData = accounts
+        .map((acc) => ({
+            ...acc,
+            value: Math.max(0, parseFloat(acc.balance) || 0),
+        }))
+        .filter((acc) => acc.value > 0);
+
+    const total = chartData.reduce((sum, item) => sum + item.value, 0);
+
+    if (total === 0 || chartData.length === 0) {
+        return (
+            <div className="flex flex-col items-center justify-center py-12 text-center text-muted-foreground min-h-[300px]">
+                <PieChartIcon className="h-10 w-10 stroke-1 text-muted-foreground/50 mb-2" />
+                <p className="text-sm text-zinc-400">No active balances for this period.</p>
+            </div>
+        );
+    }
+
+    let cumulativeAngle = 0;
+    const slices = chartData.map((item, index) => {
+        const percentage = (item.value / total) * 100;
+        const angle = (item.value / total) * 360;
+        const startAngle = cumulativeAngle;
+        const endAngle = cumulativeAngle + angle;
+        cumulativeAngle += angle;
+
+        const cx = 100, cy = 100, rOut = 80, rIn = 52;
+        const radStart = ((startAngle - 90) * Math.PI) / 180;
+        const radEnd = ((endAngle - 90) * Math.PI) / 180;
+
+        const x1Out = cx + rOut * Math.cos(radStart);
+        const y1Out = cy + rOut * Math.sin(radStart);
+        const x2Out = cx + rOut * Math.cos(radEnd);
+        const y2Out = cy + rOut * Math.sin(radEnd);
+
+        const x1In = cx + rIn * Math.cos(radStart);
+        const y1In = cy + rIn * Math.sin(radStart);
+        const x2In = cx + rIn * Math.cos(radEnd);
+        const y2In = cy + rIn * Math.sin(radEnd);
+
+        const largeArc = angle >= 360 ? 1 : angle > 180 ? 1 : 0;
+
+        let pathData = '';
+        if (angle >= 359.99) {
+            pathData = `M ${cx} ${cy - rOut} A ${rOut} ${rOut} 0 1 1 ${cx - 0.01} ${cy - rOut} L ${cx - 0.01} ${cy - rIn} A ${rIn} ${rIn} 0 1 0 ${cx} ${cy - rIn} Z`;
+        } else {
+            pathData = `M ${x1Out} ${y1Out} A ${rOut} ${rOut} 0 ${largeArc} 1 ${x2Out} ${y2Out} L ${x2In} ${y2In} A ${rIn} ${rIn} 0 ${largeArc} 0 ${x1In} ${y1In} Z`;
+        }
+
+        return {
+            ...item,
+            percentage,
+            pathData,
+            color: item.color || '#14b8a6',
+        };
+    });
+
+    const activeItem = hoveredIndex !== null ? slices[hoveredIndex] : null;
+
+    return (
+        <div className="flex flex-col items-center gap-4 w-full h-full min-h-0">
+            {/* SVG Donut Chart centered on top */}
+            <div className="relative w-44 h-44 shrink-0 flex items-center justify-center my-1">
+                <svg viewBox="0 0 200 200" className="w-full h-full">
+                    {slices.map((slice, index) => (
+                        <path
+                            key={slice.id || index}
+                            d={slice.pathData}
+                            fill={slice.color}
+                            className="transition-all duration-200 cursor-pointer hover:opacity-90"
+                            style={{
+                                transform: hoveredIndex === index ? 'scale(1.05)' : 'scale(1)',
+                                transformOrigin: '100px 100px',
+                            }}
+                            onMouseEnter={() => setHoveredIndex(index)}
+                            onMouseLeave={() => setHoveredIndex(null)}
+                            onClick={() => onAccountClick && onAccountClick(slice)}
+                        />
+                    ))}
+                </svg>
+
+                <div className="absolute inset-0 flex flex-col items-center justify-center text-center pointer-events-none p-2">
+                    <span className="text-[10px] uppercase font-semibold text-zinc-400 tracking-wider truncate max-w-[90px]">
+                        {activeItem ? activeItem.name : 'Total'}
+                    </span>
+                    <span className="text-sm font-bold tracking-tight text-zinc-300">
+                        {activeItem ? formatCurrency(activeItem.value) : formatCurrency(total)}
+                    </span>
+                    {activeItem && (
+                        <span className="text-[10px] text-zinc-400 font-medium">
+                            {activeItem.percentage.toFixed(1)}%
+                        </span>
+                    )}
+                </div>
+            </div>
+
+            {/* Legends Below */}
+            <div className="w-full grid grid-cols-1 sm:grid-cols-2 gap-1.5 overflow-y-auto max-h-[180px] pr-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+                {slices.map((slice, index) => (
+                    <div
+                        key={slice.id || index}
+                        className={`flex items-center justify-between p-2 rounded-md transition-colors cursor-pointer text-xs ${
+                            hoveredIndex === index
+                                ? 'bg-zinc-800 font-medium text-zinc-100'
+                                : 'hover:bg-zinc-800/50 text-zinc-300'
+                        }`}
+                        onMouseEnter={() => setHoveredIndex(index)}
+                        onMouseLeave={() => setHoveredIndex(null)}
+                        onClick={() => onAccountClick && onAccountClick(slice)}
+                    >
+                        <div className="flex items-center gap-2 truncate pr-2">
+                            <span
+                                className="h-2.5 w-2.5 rounded-full shrink-0"
+                                style={{ backgroundColor: slice.color }}
+                            />
+                            <span className="truncate">{slice.name}</span>
+                        </div>
+                        <div className="flex items-center gap-2.5 shrink-0">
+                            <span className="text-zinc-400 text-[11px] font-mono">
+                                {slice.percentage.toFixed(0)}%
+                            </span>
+                            <span className="font-semibold">{formatCurrency(slice.value)}</span>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}

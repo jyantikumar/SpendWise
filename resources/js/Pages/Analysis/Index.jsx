@@ -5,7 +5,8 @@ import { router } from '@inertiajs/react';
 import AppLayout from '@/Layouts/AuthenticatedLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { DateTransactionsDialog } from '@/Pages/Analysis/components/DateTransactionsDialog';
-import ExpenseAnalysisPieChart from '@/Pages/Analysis/components/ExpenseAnalysisPieChart'; // 👈 Import new component
+import ExpenseAnalysisPieChart from '@/Pages/Analysis/components/ExpenseAnalysisPieChart';
+import AccountAnalysisPieChart from '@/Pages/Analysis/components/AccountAnalysisPieChart';
 import CategoryTransactionsModal from '@/Pages/Categories/components/CategoryTransactionsModal';
 import { AccountsBreakdownCard } from '@/components/AccountsBreakdownCard';
 
@@ -292,6 +293,10 @@ export default function AnalysisIndex({
         setIsCategoryModalOpen(true);
     };
 
+    const handleAccountClick = (account) => {
+        applyFilters({ account_id: String(account.id) });
+    };
+
     const incomeVal = kpis?.totalIncome || 0;
     const expenseVal = kpis?.totalExpense || 0;
     const totalFlow = incomeVal + expenseVal;
@@ -393,7 +398,6 @@ export default function AnalysisIndex({
                             </CardTitle>
                         </CardHeader>
                         <CardContent className="flex-1">
-                            {/* 👇 Uses the dedicated side-by-side analysis chart */}
                             <ExpenseAnalysisPieChart 
                                 data={categoryData} 
                                 formatCurrency={formatCurrency}
@@ -402,11 +406,20 @@ export default function AnalysisIndex({
                         </CardContent>
                     </Card>
 
-                    <AccountsBreakdownCard 
-                        accounts={accounts} 
-                        categories={categories}
-                        userCurrency={userCurrency}
-                    />
+                    <Card className="border-zinc-800 flex flex-col">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-sm font-semibold text-zinc-200">
+                                Accounts Distribution
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent className="flex-1">
+                            <AccountAnalysisPieChart 
+                                accounts={accounts} 
+                                formatCurrency={formatCurrency}
+                                onAccountClick={handleAccountClick}
+                            />
+                        </CardContent>
+                    </Card>
                 </div>
 
                 <DateTransactionsDialog

@@ -119,7 +119,7 @@ function ExpensePieChart({ data = [], formatCurrency, onCategoryClick }) {
                             <span className="truncate">{slice.name}</span>
                         </div>
                         <div className="flex items-center gap-3 shrink-0">
-                            <span className="text-zinc-400 text-[11px] font-mono">
+                            <span className="text-zinc-400 text-[11px]">
                                 {slice.percentage.toFixed(0)}%
                             </span>
                             <span className="font-semibold">{formatCurrency(slice.value)}</span>
