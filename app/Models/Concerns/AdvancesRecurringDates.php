@@ -8,40 +8,67 @@ trait AdvancesRecurringDates
 {
     /**
      * Advance a date by one cycle.
-     * For weekly rules, $weekdays is an array of 0..6 (Sun..Sat).
-     * If empty/null, falls back to +1 week.
+     * For weekly or custom rules, $weekdays is an array of 0..6 (Sun..Sat).
+     * If empty/null, falls back to +1 week for weekly, or +1 day for custom.
      */
     public static function advanceDate(Carbon $date, string $frequency, array $weekdays = []): Carbon
     {
         $next = $date->copy();
+        $original = $date->copy();
 
         switch ($frequency) {
             case 'daily':
-                return $next->addDay();
+                $next->addDay();
+                break;
 
             case 'weekly':
                 $weekdays = array_values(array_unique(array_map('intval', $weekdays)));
 
                 if (empty($weekdays)) {
-                    return $next->addWeek();
+                    $next->addWeek();
+                    break;
                 }
 
-                // Walk forward day by day until we hit the next allowed weekday.
-                // Cap at 8 iterations to guarantee termination.
                 for ($i = 0; $i < 8; $i++) {
                     $next->addDay();
                     if (in_array($next->dayOfWeek, $weekdays, true)) {
-                        return $next;
+                        break;
                     }
                 }
+                break;
 
-                return $next; // unreachable, but safety net
+            case 'custom':
+                $weekdays = array_values(array_unique(array_map('intval', $weekdays)));
+
+                if (empty($weekdays)) {
+                    $next->addDay();
+                    break;
+                }
+
+                for ($i = 0; $i < 8; $i++) {
+                    $next->addDay();
+                    if (in_array($next->dayOfWeek, $weekdays, true)) {
+                        break;
+                    }
+                }
+                break;
 
             case 'monthly':
-                return $next->addMonth();
+                $next->addMonthNoOverflow();
+                break;
 
             case 'yearly':
-                return $next->addYear();
+                $next->addYearNoOverflow();
+                break;
+
+            default:
+                $next->addMonthNoOverflow();
+                break;
+        }
+
+        // ABSOLUTE SAFETY GUARD: Guaranteed to move forward at least 1 day
+        if ($next->lte($original)) {
+            return $original->addDay();
         }
 
         return $next;
