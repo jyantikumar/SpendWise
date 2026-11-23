@@ -236,7 +236,7 @@ export default function AccountFormModal({
                                     maxLength={7}
                                     value={data.color}
                                     onChange={handleHexInputChange}
-                                    className="flex-1 h-10   text-xs uppercase border-zinc-800"
+                                    className="flex-1 h-10 font-mono text-xs uppercase border-zinc-800"
                                     placeholder="#3B82F6"
                                 />
                             </div>

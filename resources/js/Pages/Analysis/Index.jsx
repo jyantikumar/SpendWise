@@ -1,7 +1,6 @@
 // resources/js/Pages/Analysis/Index.jsx
 import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
-import { Wallet, PieChart as PieChartIcon } from 'lucide-react';
 
 import AppLayout from '@/Layouts/AuthenticatedLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -101,6 +100,7 @@ export default function AnalysisIndex({
             monthly: 'Monthly',
             yearly: 'Yearly',
             '1_week': '1 Week',
+            '3_months': '3 Months',
             '6_months': '6 Months',
             this_year: 'This Year',
             custom: 'Custom Range',
@@ -273,6 +273,11 @@ export default function AnalysisIndex({
             case '1_week': {
                 const past = new Date();
                 past.setDate(today.getDate() - 7);
+                return { startDate: fmt(past), endDate: fmt(today) };
+            }
+            case '3_months': {
+                const past = new Date();
+                past.setMonth(today.getMonth() - 3);
                 return { startDate: fmt(past), endDate: fmt(today) };
             }
             case '6_months': {

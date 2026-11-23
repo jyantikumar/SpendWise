@@ -28,6 +28,9 @@ class AnalysisController extends Controller
         if ($range === '1_week') {
             $startDate = Carbon::now()->subDays(6)->startOfDay();
             $endDate   = Carbon::now()->endOfDay();
+        } elseif ($range === '3_months') {
+            $startDate = Carbon::now()->subMonths(3)->startOfDay();
+            $endDate   = Carbon::now()->endOfDay();
         } elseif ($range === '6_months') {
             $startDate = Carbon::now()->subMonths(6)->startOfDay();
             $endDate   = Carbon::now()->endOfDay();
@@ -275,6 +278,8 @@ class AnalysisController extends Controller
             $rangeLabel = 'Yearly';
         } elseif ($range === '1_week') {
             $rangeLabel = '1 Week';
+        } elseif ($range === '3_months') {
+            $rangeLabel = '3 Months';
         } elseif ($range === '6_months') {
             $rangeLabel = '6 Months';
         } elseif ($range === 'this_year') {

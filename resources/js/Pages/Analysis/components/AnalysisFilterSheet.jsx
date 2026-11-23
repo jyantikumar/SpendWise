@@ -1,16 +1,25 @@
-import { Filter, Wallet, SlidersHorizontal, X } from 'lucide-react';
+// resources/js/Pages/Analysis/components/AnalysisFilterSheet.jsx
+import { Filter, RotateCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from '@/components/ui/select';
-import {
-    Sheet,
-    SheetContent,
-    SheetDescription,
-    SheetHeader,
-    SheetTitle,
+import { 
+    Sheet, 
+    SheetContent, 
+    SheetHeader, 
+    SheetTitle, 
     SheetTrigger,
-    SheetFooter,
+    SheetFooter
 } from '@/components/ui/sheet';
+import { 
+    Select, 
+    SelectContent, 
+    SelectGroup, 
+    SelectItem, 
+    SelectLabel, 
+    SelectTrigger, 
+    SelectValue 
+} from '@/components/ui/select';
 
 export function AnalysisFilterSheet({
     isFilterSheetOpen,
@@ -26,7 +35,7 @@ export function AnalysisFilterSheet({
     setTempStartDate,
     tempEndDate,
     setTempEndDate,
-    accounts,
+    accounts = [],
     getTimeHorizonLabel,
     hasActiveFilters,
     handleResetFilters,
@@ -35,63 +44,52 @@ export function AnalysisFilterSheet({
     return (
         <Sheet open={isFilterSheetOpen} onOpenChange={handleSheetOpenChange}>
             <SheetTrigger asChild>
-                <Button variant="outline" className="relative w-full sm:w-auto gap-2 border-zinc-800 text-zinc-300">
-                    <Filter className="h-4 w-4" />
-                    <span>Filter</span>
+                <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 text-xs h-9 relative"
+                >
+                    <Filter className="h-3.5 w-3.5 mr-2 text-zinc-400" />
+                    Filters
                     {activeFilterCount > 0 && (
-                        <span className="ml-1 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500/10 text-[10px] font-semibold text-emerald-400 border border-emerald-500/20">
+                        <span className="ml-2 flex h-4 w-4 items-center justify-center rounded-full bg-zinc-100 text-[10px] font-bold text-zinc-950">
                             {activeFilterCount}
                         </span>
                     )}
                 </Button>
             </SheetTrigger>
-
-            <SheetContent side="right" className="w-full sm:max-w-md border-zinc-800 bg-zinc-950 text-zinc-100 flex flex-col justify-between">
-                <div>
-                    <SheetHeader className="pb-4 border-b border-zinc-800">
-                        <SheetTitle className="text-zinc-100 flex items-center gap-2">
-                            <Filter className="h-4 w-4 text-zinc-400" /> Filter Analysis
+            <SheetContent className="w-full sm:max-w-md border-zinc-800 bg-zinc-950 text-zinc-100 flex flex-col justify-between p-6">
+                <div className="space-y-6">
+                    <SheetHeader>
+                        <SheetTitle className="text-zinc-100 font-bold flex items-center justify-between">
+                            Filter Visual Analytics
                         </SheetTitle>
-                        <SheetDescription className="text-zinc-400 text-xs">
-                            Adjust flow type, selected account, and time horizons.
-                        </SheetDescription>
                     </SheetHeader>
 
-                    <div className="py-6 space-y-5">
-                        {/* Flow Type Filter */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-medium text-zinc-400">Flow Type</label>
-                            <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs">
-                                {[
-                                    { label: 'All Flow', value: 'all' },
-                                    { label: 'Expenses', value: 'expense' },
-                                    { label: 'Income', value: 'income' },
-                                ].map((pill) => (
-                                    <button
-                                        key={pill.value}
-                                        type="button"
-                                        onClick={() => setTempType(pill.value)}
-                                        className={`w-full py-1.5 rounded-md font-medium text-xs text-center transition-all whitespace-nowrap ${
-                                            tempType === pill.value
-                                                ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                                                : 'text-zinc-400 hover:text-zinc-200'
-                                        }`}
-                                    >
-                                        {pill.label}
-                                    </button>
-                                ))}
-                            </div>
+                    <div className="space-y-4">
+                        {/* Transaction Type Filter */}
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-zinc-400">Transaction Type</Label>
+                            <Select value={tempType} onValueChange={setTempType}>
+                                <SelectTrigger className="w-full border-zinc-800 bg-zinc-900 text-zinc-200">
+                                    <SelectValue placeholder="Select Type" />
+                                </SelectTrigger>
+                                <SelectContent className="border-zinc-800 bg-zinc-950 text-zinc-300">
+                                    <SelectItem value="all">All Transactions</SelectItem>
+                                    <SelectItem value="expense">Expenses Only</SelectItem>
+                                    <SelectItem value="income">Income Only</SelectItem>
+                                </SelectContent>
+                            </Select>
                         </div>
 
-                        {/* Account Selector */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-medium text-zinc-400">Account</label>
+                        {/* Account Scope Filter */}
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-zinc-400">Account Scope</Label>
                             <Select value={tempAccountId} onValueChange={setTempAccountId}>
-                                <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900">
-                                    <Wallet className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
-                                    <SelectValue placeholder="All Accounts" />
+                                <SelectTrigger className="w-full border-zinc-800 bg-zinc-900 text-zinc-200">
+                                    <SelectValue placeholder="Select Account" />
                                 </SelectTrigger>
-                                <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-300 max-h-60">
+                                <SelectContent className="border-zinc-800 bg-zinc-950 text-zinc-300">
                                     <SelectItem value="all">All Accounts</SelectItem>
                                     {accounts.map((acc) => (
                                         <SelectItem key={acc.id} value={String(acc.id)}>
@@ -102,31 +100,28 @@ export function AnalysisFilterSheet({
                             </Select>
                         </div>
 
-                        {/* Time Horizon Selector */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-medium text-zinc-400">Time Horizon</label>
+                        {/* Time Horizon Filter */}
+                        <div className="space-y-1.5">
+                            <Label className="text-xs font-semibold text-zinc-400">Time Horizon</Label>
                             <Select value={tempRange} onValueChange={setTempRange}>
-                                <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900">
-                                    <SlidersHorizontal className="mr-2 h-3.5 w-3.5 text-zinc-400 shrink-0" />
+                                <SelectTrigger className="w-full border-zinc-800 bg-zinc-900 text-zinc-200">
                                     <SelectValue>{getTimeHorizonLabel(tempRange)}</SelectValue>
                                 </SelectTrigger>
-                                <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-200">
+                                <SelectContent className="border-zinc-800 bg-zinc-950 text-zinc-300">
                                     <SelectGroup>
                                         <SelectLabel className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 px-2 py-1">
-                                            Aggregated Comparisons
+                                            Macro Views
                                         </SelectLabel>
-                                        <SelectItem value="monthly">Monthly</SelectItem>
-                                        <SelectItem value="yearly">Yearly</SelectItem>
+                                        <SelectItem value="monthly">Monthly Breakdown</SelectItem>
+                                        <SelectItem value="yearly">Yearly Breakdown</SelectItem>
                                     </SelectGroup>
-
-                                    <SelectSeparator className="bg-zinc-800 my-1" />
-
                                     <SelectGroup>
                                         <SelectLabel className="text-[10px] uppercase font-bold tracking-wider text-zinc-500 px-2 py-1">
                                             Time Horizons
                                         </SelectLabel>
                                         <SelectItem value="this_month">This Month</SelectItem>
                                         <SelectItem value="1_week">1 Week</SelectItem>
+                                        <SelectItem value="3_months">3 Months</SelectItem>
                                         <SelectItem value="6_months">6 Months</SelectItem>
                                         <SelectItem value="this_year">This Year</SelectItem>
                                         <SelectItem value="custom">Custom Range</SelectItem>
@@ -135,23 +130,25 @@ export function AnalysisFilterSheet({
                             </Select>
                         </div>
 
-                        {/* Custom Date Range */}
+                        {/* Custom Date Inputs */}
                         {tempRange === 'custom' && (
-                            <div className="space-y-2 pt-2 border-t border-zinc-800/80">
-                                <label className="text-xs font-medium text-zinc-400">Custom Date Range</label>
-                                <div className="flex items-center gap-2">
+                            <div className="grid grid-cols-2 gap-3 pt-2">
+                                <div className="space-y-1.5">
+                                    <Label className="text-[11px] font-medium text-zinc-400">Start Date</Label>
                                     <Input
                                         type="date"
                                         value={tempStartDate}
                                         onChange={(e) => setTempStartDate(e.target.value)}
-                                        className="h-9 border-zinc-800 text-zinc-300 text-xs bg-zinc-900"
+                                        className="border-zinc-800 bg-zinc-900 text-zinc-200 text-xs"
                                     />
-                                    <span className="text-xs text-zinc-400">to</span>
+                                </div>
+                                <div className="space-y-1.5">
+                                    <Label className="text-[11px] font-medium text-zinc-400">End Date</Label>
                                     <Input
                                         type="date"
                                         value={tempEndDate}
                                         onChange={(e) => setTempEndDate(e.target.value)}
-                                        className="h-9 border-zinc-800 text-zinc-300 text-xs bg-zinc-900"
+                                        className="border-zinc-800 bg-zinc-900 text-zinc-200 text-xs"
                                     />
                                 </div>
                             </div>
@@ -159,19 +156,22 @@ export function AnalysisFilterSheet({
                     </div>
                 </div>
 
-                <SheetFooter className="pt-4 border-t border-zinc-800 flex flex-row items-center justify-between gap-2">
-                    {hasActiveFilters ? (
-                        <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={handleResetFilters}
-                            className="text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 gap-1 h-9"
-                        >
-                            <X className="h-3.5 w-3.5" /> Reset Filters
-                        </Button>
-                    ) : <div />}
-
-                    <Button onClick={handleApplyAllFilters} className="h-9 px-6">
+                <SheetFooter className="flex-row items-center justify-between gap-3 pt-6 border-t border-zinc-900">
+                    <Button 
+                        type="button" 
+                        variant="ghost" 
+                        onClick={handleResetFilters}
+                        disabled={!hasActiveFilters}
+                        className="text-xs text-zinc-400 hover:text-zinc-200 hover:bg-zinc-900 h-9 px-3"
+                    >
+                        <RotateCcw className="h-3.5 w-3.5 mr-1.5" />
+                        Reset
+                    </Button>
+                    <Button 
+                        type="button" 
+                        onClick={handleApplyAllFilters}
+                        className="bg-zinc-100 text-zinc-950 hover:bg-zinc-200 font-semibold text-xs h-9 px-4 flex-1"
+                    >
                         Apply Filters
                     </Button>
                 </SheetFooter>
