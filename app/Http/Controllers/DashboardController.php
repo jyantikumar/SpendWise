@@ -40,17 +40,17 @@ class DashboardController extends Controller
         $startStr = $startDate->format('Y-m-d H:i:s');
         $endStr   = $endDate->format('Y-m-d H:i:s');
 
-        // 1. Only active accounts should contribute to balances and flows
+        // 1. Active accounts for KPI and balance calculations
         $activeAccountIds = Account::where('user_id', $userId)
             ->where('is_active', true)
             ->pluck('id');
 
-        // 2. Total Balance — only active accounts
+        // 2. Total Balance — active accounts
         $totalBalance = Account::where('user_id', $userId)
             ->where('is_active', true)
             ->sum('balance');
 
-        // 3. Period income/expense — exclude transactions tied to inactive accounts
+        // 3. Period income/expense
         $periodIncomes = Transaction::where('user_id', $userId)
             ->where('type', 'income')
             ->whereIn('account_id', $activeAccountIds)
@@ -71,6 +71,7 @@ class DashboardController extends Controller
             ->whereBetween('transaction_date', [$startStr, $endStr])
             ->with(['account', 'category'])
             ->orderBy('transaction_date', 'desc')
+            ->orderBy('id', 'desc')
             ->get()
             ->map(function ($tx) {
                 return [
@@ -84,7 +85,7 @@ class DashboardController extends Controller
                 ];
             });
 
-        // 5. Daily Trends — only active accounts
+        // 5. Daily Trends
         $dailyRaw = Transaction::where('user_id', $userId)
             ->whereIn('type', ['income', 'expense'])
             ->whereIn('account_id', $activeAccountIds)
@@ -118,7 +119,7 @@ class DashboardController extends Controller
             $current->addDay();
         }
 
-        // 6. Category Breakdown — only active accounts
+        // 6. Category Breakdown
         $categoryBreakdown = Transaction::where('transactions.user_id', $userId)
             ->whereIn('transactions.type', ['income', 'expense'])
             ->whereIn('transactions.account_id', $activeAccountIds)
@@ -135,9 +136,8 @@ class DashboardController extends Controller
             ->get()
             ->groupBy('type');
 
-        // 7. Latest 10 Transactions — only from active accounts
+        // 7. Latest 10 Transactions — Fetch top 10 recent transactions without strict account status filtering
         $latestTransactions = Transaction::where('user_id', $userId)
-            ->whereIn('account_id', $activeAccountIds)
             ->with(['account', 'destinationAccount', 'category'])
             ->orderBy('transaction_date', 'desc')
             ->orderBy('id', 'desc')
@@ -153,7 +153,6 @@ class DashboardController extends Controller
         // 9. Recurring Net Flow & Itemized Recurring Instances
         $recurringRules = RecurringTransaction::where('user_id', $userId)
             ->where('is_active', true)
-            ->whereIn('account_id', $activeAccountIds)
             ->get();
 
         $paidTransactions = Transaction::where('user_id', $userId)
@@ -165,7 +164,6 @@ class DashboardController extends Controller
         $recurringExpense = 0.0;
         $recurringInstances = [];
 
-        // Lookahead to the end of the current month
         $lookaheadStr = now()->endOfMonth()->format('Y-m-d');
         $todayStr = Carbon::today()->format('Y-m-d');
 
@@ -190,12 +188,10 @@ class DashboardController extends Controller
             while ($currentDueDate->format('Y-m-d') <= $lookaheadStr) {
                 $formattedDate = $currentDueDate->format('Y-m-d');
 
-                // Stop iterating if we've gone past the end date
                 if ($rule->end_date && $formattedDate > Carbon::parse($rule->end_date)->format('Y-m-d')) {
                     break;
                 }
 
-                // Only count it if it's in the future (or today) AND unpaid AND not skipped
                 if ($formattedDate >= $todayStr) {
                     $isPaid = in_array($formattedDate, $rulePaidDates, true);
                     $isSkipped = in_array($formattedDate, $skippedDates, true);
@@ -229,7 +225,6 @@ class DashboardController extends Controller
             }
         }
 
-        // Sort instances chronologically by due date
         usort($recurringInstances, fn ($a, $b) => strcmp($a['raw_date'], $b['raw_date']));
 
         $projectedRecurringNet = (float) ($recurringIncome - $recurringExpense);
@@ -268,10 +263,6 @@ class DashboardController extends Controller
             ],
         ]);
     }
-
-    // ------------------------------------------------------------------
-    // Helpers copied from RecurringTransactionController
-    // ------------------------------------------------------------------
 
     private function normalizeWeekdays($value): array
     {

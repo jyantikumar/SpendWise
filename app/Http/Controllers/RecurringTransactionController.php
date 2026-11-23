@@ -187,6 +187,8 @@ class RecurringTransactionController extends Controller
         );
 
         DB::transaction(function () use ($recurringTransaction, $validated, $categoryId) {
+            $paymentDate = Carbon::parse($validated['payment_date'])->format('Y-m-d H:i:s');
+
             Transaction::create([
                 'user_id'                  => $recurringTransaction->user_id,
                 'account_id'               => $validated['account_id'],
@@ -196,7 +198,7 @@ class RecurringTransactionController extends Controller
                 'type'                     => $recurringTransaction->type,
                 'description'              => $recurringTransaction->title . ' (Rec.)',
                 'notes'                    => $recurringTransaction->notes,
-                'transaction_date'         => $validated['payment_date'],
+                'transaction_date'         => $paymentDate,
             ]);
 
             $account = Account::findOrFail($validated['account_id']);
@@ -377,11 +379,6 @@ class RecurringTransactionController extends Controller
         return array_values($cleaned);
     }
 
-    /**
-     * Resolve the first due date.
-     * Only 'custom' uses the specific weekdays calculation loop.
-     * Standard 'weekly' starts directly on $start date.
-     */
     private function resolveFirstDueDate(Carbon $start, string $frequency, array $weekdays): Carbon
     {
         $date = $start->copy()->startOfDay();
