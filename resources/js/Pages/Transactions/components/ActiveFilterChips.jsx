@@ -12,6 +12,8 @@ export default function ActiveFilterChips({
     setSelectedType,
     selectedAccount,
     setSelectedAccount,
+    selectedCategory,
+    setSelectedCategory,
     selectedRange,
     setSelectedRange,
     setStartDate,
@@ -19,6 +21,7 @@ export default function ActiveFilterChips({
     startDate,
     endDate,
     accounts = [],
+    categories = [],
 }) {
     if (!hasActiveFilters) return null;
 
@@ -47,21 +50,34 @@ export default function ActiveFilterChips({
                     </span>
                 )}
 
-                {selectedType !== 'all' && (
+                {selectedType && selectedType !== 'all' && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/80 text-[11px] sm:text-xs capitalize shrink-0">
                         <span>{selectedType}</span>
                         <X className="h-3 w-3 shrink-0 cursor-pointer hover:text-rose-400" onClick={() => { setSelectedType('all'); applyFilters({ type: 'all' }); }} />
                     </span>
                 )}
 
-                {selectedAccount !== 'all' && (
+                {selectedAccount && selectedAccount !== 'all' && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/80 text-[11px] sm:text-xs shrink-0 max-w-[120px]">
                         <span className="truncate">{accounts.find(a => String(a.id) === String(selectedAccount))?.name || 'Account'}</span>
                         <X className="h-3 w-3 shrink-0 cursor-pointer hover:text-rose-400" onClick={() => { setSelectedAccount('all'); applyFilters({ account_id: 'all' }); }} />
                     </span>
                 )}
 
-                {selectedRange !== 'this_month' && (
+                {selectedCategory && selectedCategory !== 'all' && (
+                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/80 text-[11px] sm:text-xs shrink-0 max-w-[120px]">
+                        <span className="truncate">{categories.find(c => String(c.id) === String(selectedCategory))?.name || 'Category'}</span>
+                        <X 
+                            className="h-3 w-3 shrink-0 cursor-pointer hover:text-rose-400" 
+                            onClick={() => { 
+                                if (setSelectedCategory) setSelectedCategory('all'); 
+                                applyFilters({ category_id: 'all' }); 
+                            }} 
+                        />
+                    </span>
+                )}
+
+                {selectedRange && selectedRange !== 'this_month' && (
                     <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-zinc-800 text-zinc-200 border border-zinc-700/80 text-[11px] sm:text-xs shrink-0">
                         <span>
                             {selectedRange === 'custom' && startDate && endDate

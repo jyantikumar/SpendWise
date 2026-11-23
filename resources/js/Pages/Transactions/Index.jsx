@@ -57,6 +57,7 @@ export default function TransactionIndex({
     const [search, setSearch] = useState(filters.search || '');
     const [selectedType, setSelectedType] = useState(filters.type || 'all');
     const [selectedAccount, setSelectedAccount] = useState(filters.account_id || 'all');
+    const [selectedCategory, setSelectedCategory] = useState(filters.category_id || 'all');
     const [selectedRange, setSelectedRange] = useState(filters.range || 'this_month');
     const [startDate, setStartDate] = useState(filters.start_date || '');
     const [endDate, setEndDate] = useState(filters.end_date || '');
@@ -82,6 +83,7 @@ export default function TransactionIndex({
             search: overrides.search !== undefined ? overrides.search : search,
             type: (overrides.type !== undefined ? overrides.type : selectedType) === 'all' ? '' : (overrides.type ?? selectedType),
             account_id: (overrides.account_id !== undefined ? overrides.account_id : selectedAccount) === 'all' ? '' : (overrides.account_id ?? selectedAccount),
+            category_id: (overrides.category_id !== undefined ? overrides.category_id : selectedCategory) === 'all' ? '' : (overrides.category_id ?? selectedCategory),
             range: overrides.range !== undefined ? overrides.range : selectedRange,
             start_date: overrides.start_date !== undefined ? overrides.start_date : startDate,
             end_date: overrides.end_date !== undefined ? overrides.end_date : endDate,
@@ -114,6 +116,7 @@ export default function TransactionIndex({
         setSearch('');
         setSelectedType('all');
         setSelectedAccount('all');
+        setSelectedCategory('all');
         setSelectedRange('this_month');
         setStartDate('');
         setEndDate('');
@@ -124,6 +127,7 @@ export default function TransactionIndex({
         filters.search ||
         (filters.type && filters.type !== 'all') ||
         (filters.account_id && filters.account_id !== 'all') ||
+        (filters.category_id && filters.category_id !== 'all') ||
         (filters.range && filters.range !== 'this_month')
     );
 
@@ -131,6 +135,7 @@ export default function TransactionIndex({
         Boolean(filters.search),
         Boolean(filters.type && filters.type !== 'all'),
         Boolean(filters.account_id && filters.account_id !== 'all'),
+        Boolean(filters.category_id && filters.category_id !== 'all'),
         Boolean(filters.range && filters.range !== 'this_month'),
     ].filter(Boolean).length;
 
@@ -245,6 +250,8 @@ export default function TransactionIndex({
                     setSelectedType={setSelectedType}
                     selectedAccount={selectedAccount}
                     setSelectedAccount={setSelectedAccount}
+                    selectedCategory={selectedCategory}
+                    setSelectedCategory={setSelectedCategory}
                     selectedRange={selectedRange}
                     setSelectedRange={setSelectedRange}
                     setStartDate={setStartDate}
@@ -252,6 +259,7 @@ export default function TransactionIndex({
                     startDate={startDate}
                     endDate={endDate}
                     accounts={accounts}
+                    categories={categories}
                 />
 
                 {/* Transaction History Container */}
@@ -426,6 +434,8 @@ export default function TransactionIndex({
                 setSelectedType={setSelectedType}
                 selectedAccount={selectedAccount}
                 setSelectedAccount={setSelectedAccount}
+                selectedCategory={selectedCategory}
+                setSelectedCategory={setSelectedCategory}
                 selectedRange={selectedRange}
                 handleRangeChange={handleRangeChange}
                 startDate={startDate}
@@ -436,6 +446,7 @@ export default function TransactionIndex({
                 hasActiveFilters={hasActiveFilters}
                 handleResetFilters={handleResetFilters}
                 accounts={accounts}
+                categories={categories}
                 handleApplyFilters={handleApplyFilters}
                 hideTrigger
             />

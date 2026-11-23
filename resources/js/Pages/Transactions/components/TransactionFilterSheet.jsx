@@ -1,4 +1,4 @@
-import { Search, Filter, X, SlidersHorizontal } from 'lucide-react';
+import { Search, Filter, X, SlidersHorizontal, Tag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -10,7 +10,6 @@ import {
     SheetTitle,
     SheetTrigger,
     SheetFooter,
-    SheetClose,
 } from '@/components/ui/sheet';
 
 export default function TransactionFilterSheet({
@@ -23,6 +22,8 @@ export default function TransactionFilterSheet({
     setSelectedType,
     selectedAccount,
     setSelectedAccount,
+    selectedCategory,
+    setSelectedCategory,
     selectedRange,
     handleRangeChange,
     startDate,
@@ -33,6 +34,7 @@ export default function TransactionFilterSheet({
     hasActiveFilters,
     handleResetFilters,
     accounts = [],
+    categories = [],
     handleApplyFilters,
     hideTrigger = false,
 }) {
@@ -60,7 +62,7 @@ export default function TransactionFilterSheet({
                             <Filter className="h-4 w-4 text-zinc-400" /> Filter Transactions
                         </SheetTitle>
                         <SheetDescription className="text-zinc-400 text-xs">
-                            Refine your transaction list by description, type, account, or date range.
+                            Refine your transaction list by description, type, account, category, or date range.
                         </SheetDescription>
                     </SheetHeader>
 
@@ -121,24 +123,47 @@ export default function TransactionFilterSheet({
                             </div>
                         </div>
 
-                        {/* Date Range Filter */}
-                        <div className="space-y-2">
-                            <label className="text-xs font-medium text-zinc-400">Date Range</label>
-                            <Select value={selectedRange} onValueChange={handleRangeChange}>
-                                <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900">
-                                    <SlidersHorizontal className="mr-2 h-4 w-4" />
-                                    <SelectValue placeholder="Range" />
-                                </SelectTrigger>
-                                <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-300">
-                                    <SelectItem value="this_day">This Day</SelectItem>
-                                    <SelectItem value="this_week">This Week</SelectItem>
-                                    <SelectItem value="this_month">This Month</SelectItem>
-                                    <SelectItem value="last_30_days">Last 30 Days</SelectItem>
-                                    <SelectItem value="this_year">This Year</SelectItem>
-                                    <SelectItem value="custom">Custom Range</SelectItem>
-                                    <SelectItem value="all">All Time</SelectItem>
-                                </SelectContent>
-                            </Select>
+                        {/* Date Range & Category Grid */}
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="space-y-2">
+                                <label className="text-xs font-medium text-zinc-400">Date Range</label>
+                                <Select value={selectedRange} onValueChange={handleRangeChange}>
+                                    <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900">
+                                        <SlidersHorizontal className="mr-2 h-4 w-4 shrink-0 text-zinc-400" />
+                                        <SelectValue placeholder="Range" />
+                                    </SelectTrigger>
+                                    <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-300">
+                                        <SelectItem value="this_day">This Day</SelectItem>
+                                        <SelectItem value="this_week">This Week</SelectItem>
+                                        <SelectItem value="this_month">This Month</SelectItem>
+                                        <SelectItem value="last_30_days">Last 30 Days</SelectItem>
+                                        <SelectItem value="this_year">This Year</SelectItem>
+                                        <SelectItem value="custom">Custom Range</SelectItem>
+                                        <SelectItem value="all">All Time</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-2">
+                                <label className="text-xs font-medium text-zinc-400">Category</label>
+                                <Select
+                                    value={selectedCategory}
+                                    onValueChange={(val) => setSelectedCategory(val)}
+                                >
+                                    <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900">
+                                        <Tag className="mr-2 h-4 w-4 shrink-0 text-zinc-400" />
+                                        <SelectValue placeholder="All Categories" />
+                                    </SelectTrigger>
+                                    <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-300 max-h-60">
+                                        <SelectItem value="all">All Categories</SelectItem>
+                                        {categories.map((cat) => (
+                                            <SelectItem key={cat.id} value={String(cat.id)}>
+                                                {cat.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
 
                         {/* Custom Range Inputs */}

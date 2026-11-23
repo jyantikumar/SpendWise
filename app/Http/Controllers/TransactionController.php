@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\Category;
 use App\Models\RecurringTransaction;
 use App\Models\SavingsGoal;
 use App\Models\Transaction;
@@ -18,21 +19,23 @@ class TransactionController extends Controller
 {
     public function index(Request $request)
     {
-        $user =$request->user();
+        $user = $request->user();
 
-        $search    =$request->input('search');
-        $type      =$request->input('type');
-        $accountId =$request->input('account_id');
-        $range     =$request->input('range', 'this_month');
+        $search     = $request->input('search');
+        $type       = $request->input('type');
+        $accountId  = $request->input('account_id');
+        $categoryId = $request->input('category_id');
+        $range      = $request->input('range', 'this_month');
 
-        $customStartDate =$request->input('start_date');
-        $customEndDate   =$request->input('end_date');
+        $customStartDate = $request->input('start_date');
+        $customEndDate   = $request->input('end_date');
 
         // Resolve date boundaries based on selected range
-        if ($range === 'custom' && $customStartDate &&$customEndDate) {
+        if ($range === 'custom' && $customStartDate && $customEndDate) {
             $startDate = Carbon::parse($customStartDate)->startOfDay();
             $endDate   = Carbon::parse($customEndDate)->endOfDay();
-        } elseif ($range === 'all') {$startDate = null;
+        } elseif ($range === 'all') {
+            $startDate = null;
             $endDate   = null;
         } else {
             [$startDate, $endDate] = match ($range) {
@@ -45,61 +48,70 @@ class TransactionController extends Controller
         }
 
         // 1. Build filtered query for logged transactions
-        $query = Transaction::where('user_id',$user->id)
-            ->when($search, function ($q, $search) {$q->where(function ($sub) use ($search) {
+        $query = Transaction::where('user_id', $user->id)
+            ->when($search, function ($q, $search) {
+                $q->where(function ($sub) use ($search) {
                     $sub->where('description', 'like', "%{$search}%")
                         ->orWhere('reference_number', 'like', "%{$search}%");
                 });
             })
-            ->when($type, function ($q,$type) {
-                $q->where('type',$type);
+            ->when($type, function ($q, $type) {
+                $q->where('type', $type);
             })
-            ->when($accountId, function ($q, $accountId) {$q->where(function ($sub) use ($accountId) {
-                    $sub->where('account_id',$accountId)
+            ->when($accountId, function ($q, $accountId) {
+                $q->where(function ($sub) use ($accountId) {
+                    $sub->where('account_id', $accountId)
                         ->orWhere('destination_account_id', $accountId);
                 });
             })
+            ->when($categoryId, function ($q, $categoryId) {
+                $q->where('category_id', $categoryId);
+            })
             ->when($startDate, function ($q) use ($startDate) {
-                $q->whereDate('transaction_date', '>=',$startDate->format('Y-m-d'));
+                $q->whereDate('transaction_date', '>=', $startDate->format('Y-m-d'));
             })
             ->when($endDate, function ($q) use ($endDate) {
-                $q->whereDate('transaction_date', '<=',$endDate->format('Y-m-d'));
+                $q->whereDate('transaction_date', '<=', $endDate->format('Y-m-d'));
             });
 
         // 2. Core KPI Calculations
-        $totalIncome  = (clone $query)->where('type', 'income')->sum('amount');$totalExpense = (clone $query)->where('type', 'expense')->sum('amount');$netCashFlow  = $totalIncome -$totalExpense;
+        $totalIncome  = (clone $query)->where('type', 'income')->sum('amount');
+        $totalExpense = (clone $query)->where('type', 'expense')->sum('amount');
+        $netCashFlow  = $totalIncome - $totalExpense;
 
-        if ($accountId &&$accountId !== 'all') {
-            $totalBalance = Account::where('user_id',$user->id)
+        if ($accountId && $accountId !== 'all') {
+            $totalBalance = Account::where('user_id', $user->id)
                 ->where('id', $accountId)
                 ->value('balance') ?? 0;
         } else {
-            $totalBalance = Account::where('user_id',$user->id)
+            $totalBalance = Account::where('user_id', $user->id)
                 ->where('is_active', true)
                 ->sum('balance');
         }
 
         // 3. Calculate Recurring Instances for Projected Month
-        $todayStr = Carbon::today()->format('Y-m-d');$endOfMonthStr = Carbon::now()->endOfMonth()->format('Y-m-d');
+        $todayStr = Carbon::today()->format('Y-m-d');
+        $endOfMonthStr = Carbon::now()->endOfMonth()->format('Y-m-d');
 
-        $recurringRules = RecurringTransaction::where('user_id',$user->id)
+        $recurringRules = RecurringTransaction::where('user_id', $user->id)
             ->where('is_active', true)
             ->get();
 
-        $paidTransactions = Transaction::where('user_id',$user->id)
+        $paidTransactions = Transaction::where('user_id', $user->id)
             ->whereNotNull('recurring_transaction_id')
             ->get(['recurring_transaction_id', 'transaction_date'])
             ->groupBy('recurring_transaction_id');
 
-        $pendingInstances = [];$projectedRecurringNet = 0;
+        $pendingInstances = [];
+        $projectedRecurringNet = 0;
 
-        foreach ($recurringRules as$rule) {
+        foreach ($recurringRules as $rule) {
             $startDateStr = optional($rule->start_date)->format('Y-m-d');
             $endDateStr   = optional($rule->end_date)->format('Y-m-d');
             if (!$startDateStr) continue;
 
-            $skippedDates =$rule->skipped_dates ?? [];
-            $weekdays     = is_array($rule->weekdays) ?$rule->weekdays : [];
+            $skippedDates = $rule->skipped_dates ?? [];
+            $weekdays     = is_array($rule->weekdays) ? $rule->weekdays : [];
 
             $currentDueDate = Carbon::parse($startDateStr)->startOfDay();
 
@@ -109,20 +121,21 @@ class TransactionController extends Controller
                 ->toArray();
 
             while (
-                $currentDueDate->format('Y-m-d') <=$endOfMonthStr
-                && (!$endDateStr || $currentDueDate->format('Y-m-d') <=$endDateStr)
+                $currentDueDate->format('Y-m-d') <= $endOfMonthStr
+                && (!$endDateStr || $currentDueDate->format('Y-m-d') <= $endDateStr)
             ) {
-                $formattedDate =$currentDueDate->format('Y-m-d');
+                $formattedDate = $currentDueDate->format('Y-m-d');
 
-                if ($formattedDate >=$todayStr) {
-                    $isPaid    = in_array($formattedDate, $rulePaidDates, true);$isSkipped = in_array($formattedDate,$skippedDates, true);
+                if ($formattedDate >= $todayStr) {
+                    $isPaid    = in_array($formattedDate, $rulePaidDates, true);
+                    $isSkipped = in_array($formattedDate, $skippedDates, true);
 
                     if (!$isPaid && !$isSkipped) {
                         $amt = (float)$rule->amount;
                         if ($rule->type === 'income') {
-                            $projectedRecurringNet +=$amt;
+                            $projectedRecurringNet += $amt;
                         } else {
-                            $projectedRecurringNet -=$amt;
+                            $projectedRecurringNet -= $amt;
                         }
 
                         $pendingInstances[] = [
@@ -136,16 +149,18 @@ class TransactionController extends Controller
                     }
                 }
 
-                $currentDueDate = RecurringTransaction::advanceDate($currentDueDate,
-                    $rule->frequency,$weekdays
+                $currentDueDate = RecurringTransaction::advanceDate(
+                    $currentDueDate,
+                    $rule->frequency,
+                    $weekdays
                 );
             }
         }
 
-        usort($pendingInstances, fn ($a,$b) => strcmp($a['date'],$b['date']));
+        usort($pendingInstances, fn ($a, $b) => strcmp($a['date'], $b['date']));
 
         // 4. Format Recorded Transactions for Sheet Display
-        $periodTransactions = (clone$query)
+        $periodTransactions = (clone $query)
             ->get(['id', 'description', 'amount', 'type', 'transaction_date'])
             ->map(function ($tx) {
                 $dateStr = is_string($tx->transaction_date) 
@@ -168,11 +183,11 @@ class TransactionController extends Controller
             'totalIncome'           => $totalIncome,
             'totalExpense'          => $totalExpense,
             'projectedRecurringNet' => $projectedRecurringNet,
-            'projectedAmount'       => $netCashFlow +$projectedRecurringNet,
+            'projectedAmount'       => $netCashFlow + $projectedRecurringNet,
         ];
 
         // 5. Build Daily Trends for Net Cash Flow Sparkline/Drawer
-        $dailyTrendsRaw = (clone$query)
+        $dailyTrendsRaw = (clone $query)
             ->select(
                 DB::raw('DATE(transaction_date) as date'),
                 DB::raw("SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as income"),
@@ -194,16 +209,16 @@ class TransactionController extends Controller
         });
 
         // 6. Paginated transactions list
-        $transactions = (clone$query)
+        $transactions = (clone $query)
             ->with(['account', 'destinationAccount', 'category', 'savingsGoal'])
             ->orderBy('transaction_date', 'desc')
             ->orderBy('id', 'desc')
             ->paginate(10)
             ->withQueryString();
 
-        $accounts   =$user->accounts()->orderBy('name')->get();
-        $categories =$user->categories()->orderBy('name')->get();
-        $savingsGoals =$user->savingsGoals()
+        $accounts   = $user->accounts()->orderBy('name')->get();
+        $categories = $user->categories()->orderBy('name')->get();
+        $savingsGoals = $user->savingsGoals()
             ->where('status', 'active')
             ->orderBy('title')
             ->get(['id', 'title', 'status', 'target_amount', 'current_amount']);
@@ -218,21 +233,22 @@ class TransactionController extends Controller
             'recurringInstances' => $pendingInstances,
             'periodTransactions' => $periodTransactions,
             'filters'            => [
-                'search'     => $search ?? '',
-                'type'       => $type ?? 'all',
-                'account_id' => $accountId ?? 'all',
-                'range'      => $range,
-                'start_date' => $customStartDate ?? ($startDate ? $startDate->format('Y-m-d') : ''),
-                'end_date'   => $customEndDate ?? ($endDate ? $endDate->format('Y-m-d') : ''),
+                'search'      => $search ?? '',
+                'type'        => $type ?? 'all',
+                'account_id'  => $accountId ?? 'all',
+                'category_id' => $categoryId ?? 'all',
+                'range'       => $range,
+                'start_date'  => $customStartDate ?? ($startDate ? $startDate->format('Y-m-d') : ''),
+                'end_date'    => $customEndDate ?? ($endDate ? $endDate->format('Y-m-d') : ''),
             ],
         ]);
     }
 
     public function store(Request $request)
     {
-        $user =$request->user();
+        $user = $request->user();
 
-        $validated =$request->validate([
+        $validated = $request->validate([
             'account_id' => [
                 'required',
                 Rule::exists('accounts', 'id')->where('user_id', $user->id),
@@ -265,28 +281,31 @@ class TransactionController extends Controller
             ]);
         }
 
-        if ($validated['type'] !== 'savings') {$validated['savings_goal_id'] = null;
+        if ($validated['type'] !== 'savings') {
+            $validated['savings_goal_id'] = null;
         }
 
-        if ($validated['type'] !== 'transfer') {$validated['destination_account_id'] = null;
+        if ($validated['type'] !== 'transfer') {
+            $validated['destination_account_id'] = null;
         }
 
-        DB::transaction(function () use ($user, $validated) {$tx = $user->transactions()->create($validated);
+        DB::transaction(function () use ($user, $validated) {
+            $tx = $user->transactions()->create($validated);
             $this->applyEffects($tx);
         });
 
         return back();
     }
 
-    public function update(Request $request, Transaction$transaction)
+    public function update(Request $request, Transaction $transaction)
     {
-        $user =$request->user();
+        $user = $request->user();
 
-        if ($transaction->user_id !==$user->id) {
+        if ($transaction->user_id !== $user->id) {
             abort(403);
         }
 
-        $validated =$request->validate([
+        $validated = $request->validate([
             'account_id' => [
                 'required',
                 Rule::exists('accounts', 'id')->where('user_id', $user->id),
@@ -319,13 +338,15 @@ class TransactionController extends Controller
             ]);
         }
 
-        if ($validated['type'] !== 'savings') {$validated['savings_goal_id'] = null;
+        if ($validated['type'] !== 'savings') {
+            $validated['savings_goal_id'] = null;
         }
 
-        if ($validated['type'] !== 'transfer') {$validated['destination_account_id'] = null;
+        if ($validated['type'] !== 'transfer') {
+            $validated['destination_account_id'] = null;
         }
 
-        DB::transaction(function () use ($transaction,$validated) {
+        DB::transaction(function () use ($transaction, $validated) {
             $this->applyEffects($transaction, reverse: true);
             $transaction->update($validated);
             $this->applyEffects($transaction->refresh());
@@ -334,21 +355,23 @@ class TransactionController extends Controller
         return back();
     }
 
-    public function destroy(Request $request, Transaction$transaction)
+    public function destroy(Request $request, Transaction $transaction)
     {
-        if ($transaction->user_id !==$request->user()->id) {
+        if ($transaction->user_id !== $request->user()->id) {
             abort(403);
         }
 
-        DB::transaction(function () use ($transaction) {$this->applyEffects($transaction, reverse: true);$transaction->delete();
+        DB::transaction(function () use ($transaction) {
+            $this->applyEffects($transaction, reverse: true);
+            $transaction->delete();
         });
 
         return back();
     }
 
-    private function applyEffects(Transaction $tx, bool$reverse = false): void
+    private function applyEffects(Transaction $tx, bool $reverse = false): void
     {
-        $sign   =$reverse ? -1 : 1;
+        $sign   = $reverse ? -1 : 1;
         $amount = (float)$tx->amount;
 
         $account = Account::findOrFail($tx->account_id);
@@ -386,9 +409,9 @@ class TransactionController extends Controller
 
                 if ($goal) {
                     if ($sign > 0) {
-                        $goal->increment('current_amount',$amount);
+                        $goal->increment('current_amount', $amount);
                     } else {
-                        $goal->decrement('current_amount',$amount);
+                        $goal->decrement('current_amount', $amount);
                     }
 
                     $goal->refresh()->syncStatus();
