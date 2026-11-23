@@ -14,7 +14,6 @@ class AnalysisController extends Controller
     {
         $user = $request->user();
 
-        // Default range remains 'monthly' for macro-first experience
         $range          = $request->input('range', 'monthly'); 
         $type           = $request->input('type', 'all');
         $accountId      = $request->input('account_id', 'all');
@@ -84,7 +83,7 @@ class AnalysisController extends Controller
         $totalDays           = max(1, $startDate->diffInDays($endDate) + 1);
         $dailyAverage        = $totalFilteredAmount / $totalDays;
 
-        // Peak Day Calculation (Optimized in memory)
+        // Peak Day Calculation
         $dailySums = $transactions->groupBy(function ($tx) {
             return Carbon::parse($tx->transaction_date)->format('Y-m-d');
         })->map->sum('amount');
@@ -93,7 +92,7 @@ class AnalysisController extends Controller
         $peakDateRaw = $dailySums->search($peakAmount) ?? null;
         $peakDate    = $peakDateRaw ? Carbon::parse($peakDateRaw)->format('M d, Y') : null;
 
-        // 5. Line/Area Chart Trend Data (Optimized via memory lookup)
+        // 5. Line/Area Chart Trend Data
         $trendData    = [];
         $periodCursor = (clone $startDate)->startOfDay();
         $endCursor    = (clone $endDate)->startOfDay();
@@ -129,7 +128,7 @@ class AnalysisController extends Controller
             $periodCursor->addDay();
         }
 
-        // 6. Monthly Comparison Bar Chart Data (In-Memory Grouping)
+        // 6. Monthly Comparison Bar Chart Data
         $monthlyComparisonData = [];
         $monthlyCursor = Carbon::createFromDate($targetYear, 1, 1)->startOfYear();
         $monthlyEnd    = Carbon::createFromDate($targetYear, 12, 31)->endOfYear();
@@ -157,7 +156,7 @@ class AnalysisController extends Controller
             $monthlyCursor->addMonth();
         }
 
-        // 7. Yearly Comparison Bar Chart Data (Single Query Batch)
+        // 7. Yearly Comparison Bar Chart Data
         $yearlyComparisonData = [];
         $allYearsTransactions = Transaction::where('user_id', $user->id)
             ->whereIn('type', ['income', 'expense'])
@@ -205,7 +204,29 @@ class AnalysisController extends Controller
             ->values()
             ->take(8);
 
-        // 9. Calendar Grid Assembly
+        // 9. Account Income vs Expense Analysis Data
+        $userAccounts = Account::where('user_id', $user->id)->get();
+        $accountFlowData = $userAccounts->map(function ($acc) use ($allPeriodTransactions) {
+            $accTxs = $allPeriodTransactions->filter(function ($tx) use ($acc) {
+                return (int) $tx->account_id === (int) $acc->id;
+            });
+
+            $inc = $accTxs->where('type', 'income')->sum('amount');
+            $exp = $accTxs->where('type', 'expense')->sum('amount');
+
+            return [
+                'id'      => $acc->id,
+                'name'    => $acc->name,
+                'color'   => $acc->color ?? '#14b8a6',
+                'Income'  => (float) $inc,
+                'Expense' => (float) $exp,
+                'Net'     => (float) ($inc - $exp),
+            ];
+        })->filter(function ($acc) {
+            return $acc['Income'] > 0 || $acc['Expense'] > 0;
+        })->values();
+
+        // 10. Calendar Grid Assembly
         try {
             $calendarCarbon = Carbon::parse($calendarMonth)->startOfMonth();
         } catch (\Exception $e) {
@@ -246,31 +267,25 @@ class AnalysisController extends Controller
             ];
         }
 
-        // Dynamic Range Label Construction
-        // AnalysisController.php
-
-// Dynamic Range Label Construction
-if ($range === 'this_month') {
-    // Formats calendarMonth (e.g., '2026-10') into 'October 2026'
-    $rangeLabel = Carbon::parse($calendarMonth)->format('F Y'); 
-} elseif ($range === 'monthly') {
-    $rangeLabel = 'Monthly (' . $targetYear . ')';
-} elseif ($range === 'yearly') {
-    $rangeLabel = 'Yearly';
-} elseif ($range === '1_week') {
-    $rangeLabel = '1 Week';
-} elseif ($range === '6_months') {
-    $rangeLabel = '6 Months';
-} elseif ($range === 'this_year') {
-    $rangeLabel = 'This Year';
-} else {
-    $rangeLabel = 'Custom Range';
-}
-
-        $accounts = $user->accounts()->orderBy('name')->get();
+        if ($range === 'this_month') {
+            $rangeLabel = Carbon::parse($calendarMonth)->format('F Y'); 
+        } elseif ($range === 'monthly') {
+            $rangeLabel = 'Monthly (' . $targetYear . ')';
+        } elseif ($range === 'yearly') {
+            $rangeLabel = 'Yearly';
+        } elseif ($range === '1_week') {
+            $rangeLabel = '1 Week';
+        } elseif ($range === '6_months') {
+            $rangeLabel = '6 Months';
+        } elseif ($range === 'this_year') {
+            $rangeLabel = 'This Year';
+        } else {
+            $rangeLabel = 'Custom Range';
+        }
 
         return Inertia::render('Analysis/Index', [
-            'accounts'              => $accounts,
+            'accounts'              => $userAccounts,
+            'accountFlowData'       => $accountFlowData,
             'kpis'                  => [
                 'totalIncome'         => (float) $totalIncome,
                 'totalExpense'        => (float) $totalExpense,

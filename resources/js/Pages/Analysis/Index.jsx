@@ -1,15 +1,18 @@
 // resources/js/Pages/Analysis/Index.jsx
 import { useState, useEffect } from 'react';
 import { router } from '@inertiajs/react';
+import { Wallet, PieChart as PieChartIcon } from 'lucide-react';
 
 import AppLayout from '@/Layouts/AuthenticatedLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
 import { DateTransactionsDialog } from '@/Pages/Analysis/components/DateTransactionsDialog';
 import ExpenseAnalysisPieChart from '@/Pages/Analysis/components/ExpenseAnalysisPieChart';
 import AccountAnalysisPieChart from '@/Pages/Analysis/components/AccountAnalysisPieChart';
+import AccountFlowAnalysisChart from '@/Pages/Analysis/components/AccountFlowAnalysisChart';
 import CategoryTransactionsModal from '@/Pages/Categories/components/CategoryTransactionsModal';
 import AccountTransactionsModal from '@/Pages/Accounts/components/AccountTransactionsModal';
-import { AccountsBreakdownCard } from '@/components/AccountsBreakdownCard';
 
 import { AnalysisFilterSheet } from '@/Pages/Analysis/components/AnalysisFilterSheet';
 import { AnalysisActiveFiltersBar } from '@/Pages/Analysis/components/AnalysisActiveFiltersBar';
@@ -19,6 +22,7 @@ import { AnalysisChartSection } from '@/Pages/Analysis/components/AnalysisChartS
 export default function AnalysisIndex({ 
     auth, 
     accounts = [], 
+    accountFlowData = [],
     kpis = {}, 
     trendData = [], 
     monthlyComparisonData = [], 
@@ -44,6 +48,9 @@ export default function AnalysisIndex({
     const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
     const [selectedDayObj, setSelectedDayObj] = useState(null);
     const [isChartLoading, setIsChartLoading] = useState(false);
+
+    // Default view set to 'overview'
+    const [accountViewMode, setAccountViewMode] = useState('overview');
 
     const [isMobile, setIsMobile] = useState(false);
 
@@ -299,8 +306,11 @@ export default function AnalysisIndex({
     };
 
     const handleAccountClick = (account) => {
-        setSelectedAccount(account);
-        setIsAccountModalOpen(true);
+        const found = accounts.find(a => String(a.id) === String(account.id || account.payload?.id));
+        if (found) {
+            setSelectedAccount(found);
+            setIsAccountModalOpen(true);
+        }
     };
 
     const incomeVal = kpis?.totalIncome || 0;
@@ -397,6 +407,7 @@ export default function AnalysisIndex({
                 />
 
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
+                    {/* Expense Categories Card */}
                     <Card className="border-zinc-800 flex flex-col">
                         <CardHeader className="pb-3">
                             <CardTitle className="text-sm font-semibold text-zinc-200">
@@ -412,18 +423,46 @@ export default function AnalysisIndex({
                         </CardContent>
                     </Card>
 
+                    {/* Account Analysis Card (Defaulted to Overview) */}
                     <Card className="border-zinc-800 flex flex-col">
-                        <CardHeader className="pb-3">
-                            <CardTitle className="text-sm font-semibold text-zinc-200">
-                                Accounts Distribution
-                            </CardTitle>
+                        <CardHeader className="pb-3 flex flex-row items-center justify-between gap-3 space-y-0">
+                            <div>
+                                <CardTitle className="text-sm font-semibold text-zinc-200">
+                                    Account Analysis
+                                </CardTitle>
+                                <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                                    {accountViewMode === 'overview' 
+                                        ? 'Overview of active account balances.'
+                                        : 'Income vs. expense comparison per account.'}
+                                </CardDescription>
+                            </div>
+
+                            <div className="w-[140px] shrink-0">
+                                <Select value={accountViewMode} onValueChange={setAccountViewMode}>
+                                    <SelectTrigger className="w-full h-8 text-xs border-zinc-800 bg-zinc-900 text-zinc-200">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent className="border-zinc-800 bg-zinc-950 text-zinc-300 w-[var(--radix-select-trigger-width)]">
+                                        <SelectItem value="overview">Overview</SelectItem>
+                                        <SelectItem value="cash_flow">Cash Flow</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </CardHeader>
                         <CardContent className="flex-1">
-                            <AccountAnalysisPieChart 
-                                accounts={accounts} 
-                                formatCurrency={formatCurrency}
-                                onAccountClick={handleAccountClick}
-                            />
+                            {accountViewMode === 'overview' ? (
+                                <AccountAnalysisPieChart 
+                                    accounts={accounts} 
+                                    formatCurrency={formatCurrency}
+                                    onAccountClick={handleAccountClick}
+                                />
+                            ) : (
+                                <AccountFlowAnalysisChart 
+                                    data={accountFlowData} 
+                                    formatCurrency={formatCurrency}
+                                    onAccountClick={handleAccountClick}
+                                />
+                            )}
                         </CardContent>
                     </Card>
                 </div>
