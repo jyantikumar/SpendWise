@@ -45,12 +45,12 @@ class DashboardController extends Controller
             ->where('is_active', true)
             ->pluck('id');
 
-        // 2. Total Balance — active accounts
+        // 2. Total Balance — active accounts (includes adjustments)
         $totalBalance = Account::where('user_id', $userId)
             ->where('is_active', true)
             ->sum('balance');
 
-        // 3. Period income/expense
+        // 3. Period income/expense — strictly income and expense (exclude adjustments)
         $periodIncomes = Transaction::where('user_id', $userId)
             ->where('type', 'income')
             ->whereIn('account_id', $activeAccountIds)
@@ -85,7 +85,7 @@ class DashboardController extends Controller
                 ];
             });
 
-        // 5. Daily Trends
+        // 5. Daily Trends — strictly income and expense only (adjustments excluded from trend lines)
         $dailyRaw = Transaction::where('user_id', $userId)
             ->whereIn('type', ['income', 'expense'])
             ->whereIn('account_id', $activeAccountIds)
@@ -119,7 +119,7 @@ class DashboardController extends Controller
             $current->addDay();
         }
 
-        // 6. Category Breakdown
+        // 6. Category Breakdown — strictly income and expense only (adjustments excluded from pie chart)
         $categoryBreakdown = Transaction::where('transactions.user_id', $userId)
             ->whereIn('transactions.type', ['income', 'expense'])
             ->whereIn('transactions.account_id', $activeAccountIds)
@@ -136,7 +136,7 @@ class DashboardController extends Controller
             ->get()
             ->groupBy('type');
 
-        // 7. Latest 10 Transactions — Fetch top 10 recent transactions without strict account status filtering
+        // 7. Latest 10 Transactions — include all types (income, expense, transfer, savings, adjustment)
         $latestTransactions = Transaction::where('user_id', $userId)
             ->with(['account', 'destinationAccount', 'category'])
             ->orderBy('transaction_date', 'desc')

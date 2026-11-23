@@ -39,8 +39,6 @@ export function DateTransactionsDialog({
     onDelete,
     userCurrency = 'PHP' // Accept userCurrency prop with fallback
 }) {
-    const [selectedType, setSelectedType] = useState('all');
-    
     // Sheet Filter States
     const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -53,7 +51,6 @@ export function DateTransactionsDialog({
     // Reset filters when dialog opens or dayData changes
     useEffect(() => {
         if (open) {
-            setSelectedType('all');
             setSearchQuery('');
             setSheetType('all');
             setSelectedAccount('all');
@@ -100,24 +97,21 @@ export function DateTransactionsDialog({
         ).values()
     );
 
-    const hasActiveFilters = searchQuery !== '' || sheetType !== 'all' || selectedAccount !== 'all' || selectedType !== 'all';
+    const hasActiveFilters = searchQuery !== '' || sheetType !== 'all' || selectedAccount !== 'all';
     const activeFilterCount = [
         searchQuery !== '',
         sheetType !== 'all',
-        selectedAccount !== 'all',
-        selectedType !== 'all'
+        selectedAccount !== 'all'
     ].filter(Boolean).length;
 
     const handleResetFilters = () => {
         setSearchQuery('');
         setSheetType('all');
         setSelectedAccount('all');
-        setSelectedType('all');
     };
     
     const transactions = rawTransactions.filter((tx) => {
-        const activeType = sheetType !== 'all' ? sheetType : selectedType;
-        if (activeType !== 'all' && tx.type !== activeType) return false;
+        if (sheetType !== 'all' && tx.type !== sheetType) return false;
 
         if (selectedAccount !== 'all') {
             const accIdNum = Number(selectedAccount);
@@ -142,9 +136,7 @@ export function DateTransactionsDialog({
     const netRemaining = (dayData.income || 0) - (dayData.expense || 0);
 
     const renderSummaryBadge = () => {
-        const effectiveType = sheetType !== 'all' ? sheetType : selectedType;
-
-        if (effectiveType === 'expense') {
+        if (sheetType === 'expense') {
             return (
                 <Badge variant="outline" className="bg-rose-500/10 text-rose-400 border-rose-500/20 text-xs font-semibold px-2.5 py-1 whitespace-nowrap">
                     Total Expense: {formatCurrency(dayData.expense)}
@@ -152,7 +144,7 @@ export function DateTransactionsDialog({
             );
         }
 
-        if (effectiveType === 'income') {
+        if (sheetType === 'income') {
             return (
                 <Badge variant="outline" className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 text-xs font-semibold px-2.5 py-1 whitespace-nowrap">
                     Total Income: {formatCurrency(dayData.income)}
@@ -201,28 +193,14 @@ export function DateTransactionsDialog({
 
                     {/* Filter Controls Bar */}
                     <div className="py-3 border-b border-zinc-800 bg-zinc-900/40 -mx-4 px-4 sm:-mx-6 sm:px-6 shrink-0 flex items-center gap-2">
-                        <div className="grid grid-cols-3 gap-1 bg-zinc-900 p-1 rounded-lg border border-zinc-800 text-xs flex-1">
-                            {[
-                                { label: 'All', value: 'all' },
-                                { label: 'Expenses', value: 'expense' },
-                                { label: 'Income', value: 'income' },
-                            ].map((pill) => (
-                                <button
-                                    key={pill.value}
-                                    type="button"
-                                    onClick={() => {
-                                        setSelectedType(pill.value);
-                                        setSheetType(pill.value);
-                                    }}
-                                    className={`w-full py-1 rounded-md font-medium text-xs text-center transition-all whitespace-nowrap ${
-                                        (sheetType === pill.value || selectedType === pill.value)
-                                            ? 'bg-zinc-800 text-zinc-100 shadow-sm'
-                                            : 'text-zinc-400 hover:text-zinc-200'
-                                    }`}
-                                >
-                                    {pill.label}
-                                </button>
-                            ))}
+                        <div className="relative flex-1">
+                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
+                            <Input
+                                placeholder="Search description, category, or account..."
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                className="pl-8 h-9 border-zinc-800 text-zinc-300 bg-zinc-900 text-xs w-full"
+                            />
                         </div>
 
                         {/* Sheet Trigger Button */}
@@ -269,10 +247,7 @@ export function DateTransactionsDialog({
                                                 <label className="text-xs font-medium text-zinc-400">Type</label>
                                                 <Select 
                                                     value={sheetType} 
-                                                    onValueChange={(val) => {
-                                                        setSheetType(val);
-                                                        setSelectedType(val);
-                                                    }}
+                                                    onValueChange={(val) => setSheetType(val)}
                                                 >
                                                     <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900 text-xs">
                                                         <SelectValue placeholder="All Types" />
@@ -282,6 +257,7 @@ export function DateTransactionsDialog({
                                                         <SelectItem value="expense">Expense</SelectItem>
                                                         <SelectItem value="income">Income</SelectItem>
                                                         <SelectItem value="transfer">Transfer</SelectItem>
+                                                        <SelectItem value="adjustment">Adjustment</SelectItem>
                                                     </SelectContent>
                                                 </Select>
                                             </div>
@@ -378,10 +354,13 @@ export function DateTransactionsDialog({
                                                     ? 'text-emerald-400' 
                                                     : tx.type === 'expense' 
                                                     ? 'text-rose-400' 
+                                                    : tx.type === 'adjustment'
+                                                    ? ((tx.description || '').toLowerCase().includes('decrease') ? 'text-rose-400' : 'text-emerald-400')
                                                     : 'text-blue-400'
                                             }`}>
                                                 {tx.type === 'income' && '+'}
                                                 {tx.type === 'expense' && '-'}
+                                                {tx.type === 'adjustment' && ((tx.description || '').toLowerCase().includes('decrease') ? '-' : '+')}
                                                 {formatCurrency(tx.amount)}
                                             </TableCell>
                                         </TableRow>

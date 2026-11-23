@@ -119,7 +119,7 @@ export default function AccountTypeFormModal({
                                 maxLength={7}
                                 value={data.color}
                                 onChange={(e) => setData('color', e.target.value)}
-                                className="flex-1 h-10 font-mono text-xs uppercase border-zinc-800"
+                                className="flex-1 h-10   text-xs uppercase border-zinc-800"
                                 placeholder="#000000"
                             />
                         </div>

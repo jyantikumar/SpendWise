@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Dialog,
     DialogContent,
@@ -73,6 +74,7 @@ export default function TransactionFormModal({
         category_id: '',
         savings_goal_id: '',
         type: 'expense',
+        adjustment_mode: 'increase',
         amount: '',
         description: '',
         notes: '',
@@ -100,6 +102,7 @@ export default function TransactionFormModal({
                     ? String(editingTransaction.savings_goal_id)
                     : '',
                 type: editingTransaction.type || 'expense',
+                adjustment_mode: 'increase',
                 amount: editingTransaction.amount ? String(editingTransaction.amount) : '',
                 description: editingTransaction.description || '',
                 notes: editingTransaction.notes || '',
@@ -116,6 +119,7 @@ export default function TransactionFormModal({
                 category_id: '',
                 savings_goal_id: defaultSavingsGoalId ? String(defaultSavingsGoalId) : '',
                 type: defaultType || 'expense',
+                adjustment_mode: 'increase',
                 amount: '',
                 description: '',
                 notes: '',
@@ -193,6 +197,7 @@ export default function TransactionFormModal({
     const showCategory = showCategoryForType(data.type);
     const showSavingsGoal = data.type === 'savings';
     const isTransfer = data.type === 'transfer';
+    const isAdjustment = data.type === 'adjustment';
 
     return (
         <>
@@ -203,93 +208,81 @@ export default function TransactionFormModal({
                         <DialogDescription>
                             {isEditing
                                 ? 'Update the details for this transaction record.'
-                                : 'Log income, expenses, transfers, or savings deposits.'}
+                                : 'Log income, expenses, transfers, savings, or balance adjustments.'}
                         </DialogDescription>
                     </DialogHeader>
 
                     <form onSubmit={handleSubmit} className="space-y-4 py-2">
-                        {/* Type */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium leading-none">Type</label>
-                            <Select
-                                value={data.type}
-                                onValueChange={(val) =>
-                                    setData((prev) => ({
-                                        ...prev,
-                                        type: val,
-                                        category_id: val === 'income' || val === 'expense' ? prev.category_id : '',
-                                        destination_account_id: val === 'transfer' ? prev.destination_account_id : '',
-                                        savings_goal_id: val === 'savings' ? prev.savings_goal_id : '',
-                                    }))
-                                }
-                            >
-                                <SelectTrigger className="w-full h-10">
-                                    <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                    <SelectItem value="expense">Expense</SelectItem>
-                                    <SelectItem value="income">Income</SelectItem>
-                                    <SelectItem value="transfer">Transfer</SelectItem>
-                                    <SelectItem value="savings">Savings Deposit</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Account & Target Grid (Side by Side) */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* Source Account */}
+                        {/* Adjustment Direction Tabs (Displayed above the Type & Account row when Adjustment is selected) */}
+                        {isAdjustment && (
                             <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-sm font-medium leading-none">
-                                        {isTransfer ? 'From Account' : 'Account'}
-                                    </label>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => setIsAccountModalOpen(true)}
-                                        className="h-6 px-1.5 text-xs text-primary gap-1"
-                                    >
-                                        <Plus className="h-3 w-3" /> Quick Add
-                                    </Button>
-                                </div>
-                                <Select
-                                    value={data.account_id}
-                                    onValueChange={(val) => {
-                                        setData((prev) => ({
-                                            ...prev,
-                                            account_id: val,
-                                            destination_account_id:
-                                                prev.destination_account_id === val ? '' : prev.destination_account_id,
-                                        }));
-                                    }}
+                                <label className="text-sm font-medium leading-none text-zinc-300">
+                                    Adjustment Direction
+                                </label>
+                                <Tabs
+                                    value={data.adjustment_mode}
+                                    onValueChange={(val) => setData('adjustment_mode', val)}
+                                    className="w-full"
                                 >
-                                    <SelectTrigger className="w-full h-10">
-                                        <SelectValue placeholder="Select account" />
-                                    </SelectTrigger>
-                                    <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
-                                        {availableAccounts.length > 0 ? (
-                                            availableAccounts.map((acc) => (
-                                                <SelectItem key={acc.id} value={String(acc.id)}>
-                                                    {acc.name} {acc.type ? `(${acc.type})` : ''}{' '}
-                                                    {!acc.is_active && acc.is_active !== undefined ? '(Inactive)' : ''}
-                                                </SelectItem>
-                                            ))
-                                        ) : (
-                                            <div className="p-2 text-xs text-center text-muted-foreground">
-                                                No active accounts available.
-                                            </div>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                {errors.account_id && <p className="text-xs text-rose-500">{errors.account_id}</p>}
+                                    <TabsList className="grid w-full grid-cols-2 bg-zinc-950 p-1 border border-zinc-800/80 h-10">
+                                        <TabsTrigger
+                                            value="increase"
+                                            className="text-xs font-medium text-zinc-400 data-[state=active]:bg-zinc-900 data-[state=active]:text-emerald-400 data-[state=active]:shadow-none transition-colors"
+                                        >
+                                            + Increase Balance
+                                        </TabsTrigger>
+                                        <TabsTrigger
+                                            value="decrease"
+                                            className="text-xs font-medium text-zinc-400 data-[state=active]:bg-zinc-900 data-[state=active]:text-rose-400 data-[state=active]:shadow-none transition-colors"
+                                        >
+                                            - Decrease Balance
+                                        </TabsTrigger>
+                                    </TabsList>
+                                </Tabs>
                             </div>
+                        )}
 
-                            {/* Destination Account (Transfers) */}
-                            {isTransfer && (
+                        {/* Top Type / Account Row Layout */}
+                        {isAdjustment ? (
+                            /* 2-Column Grid for Type & Account with synchronized h-6 header heights */
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-end">
+                                {/* Type Field */}
                                 <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-sm font-medium leading-none">To Account</label>
+                                    <div className="flex items-center justify-between h-6">
+                                        <label className="text-sm font-medium leading-none">Type</label>
+                                    </div>
+                                    <Select
+                                        value={data.type}
+                                        onValueChange={(val) =>
+                                            setData((prev) => ({
+                                                ...prev,
+                                                type: val,
+                                                category_id: val === 'income' || val === 'expense' ? prev.category_id : '',
+                                                destination_account_id: val === 'transfer' ? prev.destination_account_id : '',
+                                                savings_goal_id: val === 'savings' ? prev.savings_goal_id : '',
+                                                adjustment_mode: val === 'adjustment' ? (prev.adjustment_mode || 'increase') : '',
+                                                description: val === 'adjustment' && !prev.description ? 'Balance Adjustment' : prev.description,
+                                                notes: val === 'adjustment' ? '' : prev.notes,
+                                            }))
+                                        }
+                                    >
+                                        <SelectTrigger className="w-full h-10">
+                                            <SelectValue placeholder="Select type" />
+                                        </SelectTrigger>
+                                        <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                            <SelectItem value="expense">Expense</SelectItem>
+                                            <SelectItem value="income">Income</SelectItem>
+                                            <SelectItem value="transfer">Transfer</SelectItem>
+                                            <SelectItem value="savings">Savings Deposit</SelectItem>
+                                            <SelectItem value="adjustment">Balance Adjustment</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Account Field */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between h-6">
+                                        <label className="text-sm font-medium leading-none">Account</label>
                                         <Button
                                             type="button"
                                             variant="ghost"
@@ -301,122 +294,249 @@ export default function TransactionFormModal({
                                         </Button>
                                     </div>
                                     <Select
-                                        value={data.destination_account_id}
-                                        onValueChange={(val) => setData('destination_account_id', val)}
+                                        value={data.account_id}
+                                        onValueChange={(val) => setData('account_id', val)}
                                     >
                                         <SelectTrigger className="w-full h-10">
-                                            <SelectValue placeholder="Select to account" />
+                                            <SelectValue placeholder="Select account" />
                                         </SelectTrigger>
                                         <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
                                             {availableAccounts.length > 0 ? (
-                                                availableAccounts
-                                                    .filter((acc) => String(acc.id) !== String(data.account_id))
-                                                    .map((acc) => (
-                                                        <SelectItem key={acc.id} value={String(acc.id)}>
-                                                            {acc.name} {acc.type ? `(${acc.type})` : ''}{' '}
-                                                            {!acc.is_active && acc.is_active !== undefined ? '(Inactive)' : ''}
-                                                        </SelectItem>
-                                                    ))
+                                                availableAccounts.map((acc) => (
+                                                    <SelectItem key={acc.id} value={String(acc.id)}>
+                                                        {acc.name} {acc.type ? `(${acc.type})` : ''}{' '}
+                                                        {!acc.is_active && acc.is_active !== undefined ? '(Inactive)' : ''}
+                                                    </SelectItem>
+                                                ))
                                             ) : (
                                                 <div className="p-2 text-xs text-center text-muted-foreground">
-                                                    No destination accounts.
+                                                    No active accounts available.
                                                 </div>
                                             )}
                                         </SelectContent>
                                     </Select>
-                                    {errors.destination_account_id && (
-                                        <p className="text-xs text-rose-500">{errors.destination_account_id}</p>
-                                    )}
+                                    {errors.account_id && <p className="text-xs text-rose-500">{errors.account_id}</p>}
                                 </div>
-                            )}
+                            </div>
+                        ) : (
+                            /* Full-width Type selection for standard transaction types */
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium leading-none">Type</label>
+                                <Select
+                                    value={data.type}
+                                    onValueChange={(val) =>
+                                        setData((prev) => ({
+                                            ...prev,
+                                            type: val,
+                                            category_id: val === 'income' || val === 'expense' ? prev.category_id : '',
+                                            destination_account_id: val === 'transfer' ? prev.destination_account_id : '',
+                                            savings_goal_id: val === 'savings' ? prev.savings_goal_id : '',
+                                            adjustment_mode: val === 'adjustment' ? (prev.adjustment_mode || 'increase') : '',
+                                            description: val === 'adjustment' && !prev.description ? 'Balance Adjustment' : prev.description,
+                                            notes: val === 'adjustment' ? '' : prev.notes,
+                                        }))
+                                    }
+                                >
+                                    <SelectTrigger className="w-full h-10">
+                                        <SelectValue placeholder="Select type" />
+                                    </SelectTrigger>
+                                    <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                        <SelectItem value="expense">Expense</SelectItem>
+                                        <SelectItem value="income">Income</SelectItem>
+                                        <SelectItem value="transfer">Transfer</SelectItem>
+                                        <SelectItem value="savings">Savings Deposit</SelectItem>
+                                        <SelectItem value="adjustment">Balance Adjustment</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        )}
 
-                            {/* Category (Income & Expense) */}
-                            {showCategory && (
+                        {/* Account & Target Grid for Standard Types */}
+                        {!isAdjustment && (
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                {/* Source Account */}
                                 <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-sm font-medium leading-none">Category</label>
+                                    <div className="flex items-center justify-between h-6">
+                                        <label className="text-sm font-medium leading-none">
+                                            {isTransfer ? 'From Account' : 'Account'}
+                                        </label>
                                         <Button
                                             type="button"
                                             variant="ghost"
                                             size="sm"
-                                            onClick={() => setIsCategoryModalOpen(true)}
+                                            onClick={() => setIsAccountModalOpen(true)}
                                             className="h-6 px-1.5 text-xs text-primary gap-1"
                                         >
                                             <Plus className="h-3 w-3" /> Quick Add
                                         </Button>
                                     </div>
                                     <Select
-                                        value={data.category_id}
-                                        onValueChange={(val) => setData('category_id', val)}
+                                        value={data.account_id}
+                                        onValueChange={(val) => {
+                                            setData((prev) => ({
+                                                ...prev,
+                                                account_id: val,
+                                                destination_account_id:
+                                                    prev.destination_account_id === val ? '' : prev.destination_account_id,
+                                            }));
+                                        }}
                                     >
                                         <SelectTrigger className="w-full h-10">
-                                            <SelectValue placeholder="Select category" />
+                                            <SelectValue placeholder="Select account" />
                                         </SelectTrigger>
                                         <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
-                                            {filteredCategories.length > 0 ? (
-                                                filteredCategories.map((cat) => {
-                                                    const isSelected =
-                                                        String(cat.id) === String(data.category_id);
-                                                    const typeMismatch =
-                                                        isSelected &&
-                                                        cat.type &&
-                                                        cat.type !== data.type;
-                                                    return (
-                                                        <SelectItem key={cat.id} value={String(cat.id)}>
-                                                            {cat.name}{' '}
-                                                            {!cat.is_active && cat.is_active !== undefined ? '(Inactive)' : ''}
-                                                            {typeMismatch ? ' (different type)' : ''}
-                                                        </SelectItem>
-                                                    );
-                                                })
-                                            ) : (
-                                                <div className="p-2 text-xs text-center text-muted-foreground">
-                                                    No categories available.
-                                                </div>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    {selectedCategoryTypeMismatch && (
-                                        <p className="text-[11px] text-amber-500 leading-tight">
-                                            Type mismatch with selected category.
-                                        </p>
-                                    )}
-                                    {errors.category_id && <p className="text-xs text-rose-500">{errors.category_id}</p>}
-                                </div>
-                            )}
-
-                            {/* Savings Goal (Savings Deposit) */}
-                            {showSavingsGoal && (
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium leading-none">Deposit to Goal</label>
-                                    <Select
-                                        value={data.savings_goal_id}
-                                        onValueChange={(val) => setData('savings_goal_id', val)}
-                                    >
-                                        <SelectTrigger className="w-full h-10">
-                                            <SelectValue placeholder="Select savings goal" />
-                                        </SelectTrigger>
-                                        <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
-                                            {availableSavingsGoals.length > 0 ? (
-                                                availableSavingsGoals.map((goal) => (
-                                                    <SelectItem key={goal.id} value={String(goal.id)}>
-                                                        {goal.title}
-                                                        {goal.status === 'completed' ? ' (Completed)' : ''}
+                                            {availableAccounts.length > 0 ? (
+                                                availableAccounts.map((acc) => (
+                                                    <SelectItem key={acc.id} value={String(acc.id)}>
+                                                        {acc.name} {acc.type ? `(${acc.type})` : ''}{' '}
+                                                        {!acc.is_active && acc.is_active !== undefined ? '(Inactive)' : ''}
                                                     </SelectItem>
                                                 ))
                                             ) : (
                                                 <div className="p-2 text-xs text-center text-muted-foreground">
-                                                    No active savings goals.
+                                                    No active accounts available.
                                                 </div>
                                             )}
                                         </SelectContent>
                                     </Select>
-                                    {errors.savings_goal_id && (
-                                        <p className="text-xs text-rose-500">{errors.savings_goal_id}</p>
-                                    )}
+                                    {errors.account_id && <p className="text-xs text-rose-500">{errors.account_id}</p>}
                                 </div>
-                            )}
-                        </div>
+
+                                {/* Destination Account (Transfers) */}
+                                {isTransfer && (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between h-6">
+                                            <label className="text-sm font-medium leading-none">To Account</label>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => setIsAccountModalOpen(true)}
+                                                className="h-6 px-1.5 text-xs text-primary gap-1"
+                                            >
+                                                <Plus className="h-3 w-3" /> Quick Add
+                                            </Button>
+                                        </div>
+                                        <Select
+                                            value={data.destination_account_id}
+                                            onValueChange={(val) => setData('destination_account_id', val)}
+                                        >
+                                            <SelectTrigger className="w-full h-10">
+                                                <SelectValue placeholder="Select to account" />
+                                            </SelectTrigger>
+                                            <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
+                                                {availableAccounts.length > 0 ? (
+                                                    availableAccounts
+                                                        .filter((acc) => String(acc.id) !== String(data.account_id))
+                                                        .map((acc) => (
+                                                            <SelectItem key={acc.id} value={String(acc.id)}>
+                                                                {acc.name} {acc.type ? `(${acc.type})` : ''}{' '}
+                                                                {!acc.is_active && acc.is_active !== undefined ? '(Inactive)' : ''}
+                                                            </SelectItem>
+                                                        ))
+                                                ) : (
+                                                    <div className="p-2 text-xs text-center text-muted-foreground">
+                                                        No destination accounts.
+                                                    </div>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.destination_account_id && (
+                                            <p className="text-xs text-rose-500">{errors.destination_account_id}</p>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* Category (Income & Expense) */}
+                                {showCategory && (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between h-6">
+                                            <label className="text-sm font-medium leading-none">Category</label>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => setIsCategoryModalOpen(true)}
+                                                className="h-6 px-1.5 text-xs text-primary gap-1"
+                                            >
+                                                <Plus className="h-3 w-3" /> Quick Add
+                                            </Button>
+                                        </div>
+                                        <Select
+                                            value={data.category_id}
+                                            onValueChange={(val) => setData('category_id', val)}
+                                        >
+                                            <SelectTrigger className="w-full h-10">
+                                                <SelectValue placeholder="Select category" />
+                                            </SelectTrigger>
+                                            <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
+                                                {filteredCategories.length > 0 ? (
+                                                    filteredCategories.map((cat) => {
+                                                        const isSelected =
+                                                            String(cat.id) === String(data.category_id);
+                                                        const typeMismatch =
+                                                            isSelected &&
+                                                            cat.type &&
+                                                            cat.type !== data.type;
+                                                        return (
+                                                            <SelectItem key={cat.id} value={String(cat.id)}>
+                                                                {cat.name}{' '}
+                                                                {!cat.is_active && cat.is_active !== undefined ? '(Inactive)' : ''}
+                                                                {typeMismatch ? ' (different type)' : ''}
+                                                            </SelectItem>
+                                                        );
+                                                    })
+                                                ) : (
+                                                    <div className="p-2 text-xs text-center text-muted-foreground">
+                                                        No categories available.
+                                                    </div>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        {selectedCategoryTypeMismatch && (
+                                            <p className="text-[11px] text-amber-500 leading-tight">
+                                                Type mismatch with selected category.
+                                            </p>
+                                        )}
+                                        {errors.category_id && <p className="text-xs text-rose-500">{errors.category_id}</p>}
+                                    </div>
+                                )}
+
+                                {/* Savings Goal (Savings Deposit) */}
+                                {showSavingsGoal && (
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between h-6">
+                                            <label className="text-sm font-medium leading-none">Deposit to Goal</label>
+                                        </div>
+                                        <Select
+                                            value={data.savings_goal_id}
+                                            onValueChange={(val) => setData('savings_goal_id', val)}
+                                        >
+                                            <SelectTrigger className="w-full h-10">
+                                                <SelectValue placeholder="Select savings goal" />
+                                            </SelectTrigger>
+                                            <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
+                                                {availableSavingsGoals.length > 0 ? (
+                                                    availableSavingsGoals.map((goal) => (
+                                                        <SelectItem key={goal.id} value={String(goal.id)}>
+                                                            {goal.title}
+                                                            {goal.status === 'completed' ? ' (Completed)' : ''}
+                                                        </SelectItem>
+                                                    ))
+                                                ) : (
+                                                    <div className="p-2 text-xs text-center text-muted-foreground">
+                                                        No active savings goals.
+                                                    </div>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.savings_goal_id && (
+                                            <p className="text-xs text-rose-500">{errors.savings_goal_id}</p>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
+                        )}
 
                         {/* Amount & Date */}
                         <div className="grid grid-cols-2 gap-4">
@@ -462,28 +582,30 @@ export default function TransactionFormModal({
                             {errors.description && <p className="text-xs text-rose-500">{errors.description}</p>}
                         </div>
 
-                        {/* Notes */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium leading-none">Notes</label>
-                                <span className={`text-[11px] tabular-nums ${counterClass((data.notes || '').length, NOTES_MAX)}`}>
-                                    {(data.notes || '').length}/{NOTES_MAX}
-                                </span>
+                        {/* Notes (Hidden for Adjustments) */}
+                        {!isAdjustment && (
+                            <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-sm font-medium leading-none">Notes</label>
+                                    <span className={`text-[11px] tabular-nums ${counterClass((data.notes || '').length, NOTES_MAX)}`}>
+                                        {(data.notes || '').length}/{NOTES_MAX}
+                                    </span>
+                                </div>
+                                
+                                <div className="rounded-md border border-zinc-800 bg-zinc-950/50 text-sm shadow-sm transition-colors focus-within:border-zinc-500 focus-within:ring-1 focus-within:ring-zinc-500">
+                                    <ScrollArea className="h-24">
+                                        <Textarea
+                                            placeholder="Add any extra details or context (optional)..."
+                                            value={data.notes}
+                                            onChange={(e) => setData('notes', e.target.value)}
+                                            maxLength={NOTES_MAX}
+                                            className="min-h-[96px] resize-none break-all border-0 bg-transparent shadow-none focus-visible:ring-0 p-3 text-zinc-200 placeholder:text-zinc-500"
+                                        />
+                                    </ScrollArea>
+                                </div>
+                                {errors.notes && <p className="text-xs text-rose-500">{errors.notes}</p>}
                             </div>
-                            
-                            <div className="rounded-md border border-zinc-800 bg-zinc-950/50 text-sm shadow-sm transition-colors focus-within:border-zinc-500 focus-within:ring-1 focus-within:ring-zinc-500">
-                                <ScrollArea className="h-24">
-                                    <Textarea
-                                        placeholder="Add any extra details or context (optional)..."
-                                        value={data.notes}
-                                        onChange={(e) => setData('notes', e.target.value)}
-                                        maxLength={NOTES_MAX}
-                                        className="min-h-[96px] resize-none break-all border-0 bg-transparent shadow-none focus-visible:ring-0 p-3 text-zinc-200 placeholder:text-zinc-500"
-                                    />
-                                </ScrollArea>
-                            </div>
-                            {errors.notes && <p className="text-xs text-rose-500">{errors.notes}</p>}
-                        </div>
+                        )}
 
                         <DialogFooter className="pt-4">
                             <Button type="button" variant="outline" onClick={onClose}>

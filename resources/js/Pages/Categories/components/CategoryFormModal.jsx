@@ -136,7 +136,7 @@ export default function CategoryFormModal({
                                     maxLength={7}
                                     value={data.color}
                                     onChange={(e) => setData('color', e.target.value)}
-                                    className="w-full h-10 font-mono text-xs uppercase border-zinc-800"
+                                    className="w-full h-10   text-xs uppercase border-zinc-800"
                                     placeholder="#000000"
                                 />
                             </div>

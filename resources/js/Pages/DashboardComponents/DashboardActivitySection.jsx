@@ -11,6 +11,27 @@ export default function DashboardActivitySection({
     formatDateOnly,
     setSelectedDetailTransaction,
 }) {
+    const getAmountPrefix = (tx) => {
+        if (tx.type === 'income') return '+';
+        if (tx.type === 'expense') return '-';
+        if (tx.type === 'adjustment') {
+            return (tx.description || '').toLowerCase().includes('decrease') ? '-' : '+';
+        }
+        return '';
+    };
+
+    const getAmountColorClass = (tx) => {
+        if (tx.type === 'income') return 'text-emerald-500';
+        if (tx.type === 'expense') return 'text-rose-500';
+        if (tx.type === 'transfer') return 'text-blue-400';
+        if (tx.type === 'adjustment') {
+            return (tx.description || '').toLowerCase().includes('decrease') 
+                ? 'text-rose-500' 
+                : 'text-emerald-500';
+        }
+        return 'text-zinc-200';
+    };
+
     return (
         <Card className="xl:col-span-2 border-zinc-800 flex flex-col min-h-[400px] max-h-[520px]">
             <CardHeader className="p-4 sm:p-6 flex flex-row items-center justify-between gap-3 shrink-0">
@@ -52,14 +73,8 @@ export default function DashboardActivitySection({
                                     </div>
                                 </div>
 
-                                <div className={`text-right font-semibold text-sm whitespace-nowrap shrink-0 ${
-                                    tx.type === 'income' 
-                                        ? 'text-emerald-500' 
-                                        : tx.type === 'expense' 
-                                            ? 'text-rose-500' 
-                                            : 'text-blue-400'
-                                }`}>
-                                    {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
+                                <div className={`text-right font-semibold text-sm whitespace-nowrap shrink-0 ${getAmountColorClass(tx)}`}>
+                                    {getAmountPrefix(tx)}
                                     {formatCurrency(tx.amount)}
                                 </div>
                             </div>
@@ -96,14 +111,8 @@ export default function DashboardActivitySection({
                                                 {tx.description || 'No description'}
                                             </span>
                                         </TableCell>
-                                        <TableCell className={`text-right font-semibold text-sm ${
-                                            tx.type === 'income' 
-                                                ? 'text-emerald-500' 
-                                                : tx.type === 'expense' 
-                                                    ? 'text-rose-500' 
-                                                    : 'text-blue-400'
-                                        }`}>
-                                            {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
+                                        <TableCell className={`text-right font-semibold text-sm ${getAmountColorClass(tx)}`}>
+                                            {getAmountPrefix(tx)}
                                             {formatCurrency(tx.amount)}
                                         </TableCell>
                                     </TableRow>

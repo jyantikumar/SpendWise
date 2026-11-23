@@ -30,7 +30,6 @@ class TransactionController extends Controller
         $customStartDate = $request->input('start_date');
         $customEndDate   = $request->input('end_date');
 
-        // Resolve date boundaries based on selected range
         if ($range === 'custom' && $customStartDate && $customEndDate) {
             $startDate = Carbon::parse($customStartDate)->startOfDay();
             $endDate   = Carbon::parse($customEndDate)->endOfDay();
@@ -43,11 +42,11 @@ class TransactionController extends Controller
                 'this_week'    => [now()->startOfWeek(), now()->endOfWeek()],
                 'last_30_days' => [now()->subDays(30)->startOfDay(), now()->endOfDay()],
                 'this_year'    => [now()->startOfYear(), now()->endOfYear()],
-                default        => [now()->startOfMonth(), now()->endOfMonth()], // 'this_month'
+                default        => [now()->startOfMonth(), now()->endOfMonth()],
             };
         }
 
-        // 1. Build filtered query for logged transactions
+        // 1. Filtered base query for logged transactions
         $query = Transaction::where('user_id', $user->id)
             ->when($search, function ($q, $search) {
                 $q->where(function ($sub) use ($search) {
@@ -74,7 +73,7 @@ class TransactionController extends Controller
                 $q->whereDate('transaction_date', '<=', $endDate->format('Y-m-d'));
             });
 
-        // 2. Core KPI Calculations
+        // 2. Core KPI Calculations — strictly income vs. expense (exclude adjustments)
         $totalIncome  = (clone $query)->where('type', 'income')->sum('amount');
         $totalExpense = (clone $query)->where('type', 'expense')->sum('amount');
         $netCashFlow  = $totalIncome - $totalExpense;
@@ -186,8 +185,9 @@ class TransactionController extends Controller
             'projectedAmount'       => $netCashFlow + $projectedRecurringNet,
         ];
 
-        // 5. Build Daily Trends for Net Cash Flow Sparkline/Drawer
+        // 5. Daily Trends for Net Cash Flow Sparkline — strictly income vs. expense (exclude adjustments)
         $dailyTrendsRaw = (clone $query)
+            ->whereIn('type', ['income', 'expense'])
             ->select(
                 DB::raw('DATE(transaction_date) as date'),
                 DB::raw("SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as income"),
@@ -208,7 +208,7 @@ class TransactionController extends Controller
             ];
         });
 
-        // 6. Paginated transactions list
+        // 6. Paginated transactions list — includes adjustments
         $transactions = (clone $query)
             ->with(['account', 'destinationAccount', 'category', 'savingsGoal'])
             ->orderBy('transaction_date', 'desc')
@@ -268,7 +268,8 @@ class TransactionController extends Controller
                 'required_if:type,savings',
                 Rule::exists('savings_goals', 'id')->where('user_id', $user->id),
             ],
-            'type'             => ['required', 'in:income,expense,transfer,savings'],
+            'type'             => ['required', 'in:income,expense,transfer,savings,adjustment'],
+            'adjustment_mode'  => ['nullable', 'required_if:type,adjustment', 'in:increase,decrease'],
             'amount'           => ['required', 'numeric', 'min:0.01'],
             'description'      => ['nullable', 'string', 'max:255'],
             'notes'            => ['nullable', 'string', 'max:2000'],
@@ -289,9 +290,17 @@ class TransactionController extends Controller
             $validated['destination_account_id'] = null;
         }
 
-        DB::transaction(function () use ($user, $validated) {
+        if ($validated['type'] === 'adjustment' && empty($validated['description'])) {
+            $modeText = ($validated['adjustment_mode'] === 'increase') ? 'Increase' : 'Decrease';
+            $validated['description'] = "Balance Adjustment ({$modeText})";
+        }
+
+        $adjustmentMode = $validated['adjustment_mode'] ?? null;
+        unset($validated['adjustment_mode']);
+
+        DB::transaction(function () use ($user, $validated, $adjustmentMode) {
             $tx = $user->transactions()->create($validated);
-            $this->applyEffects($tx);
+            $this->applyEffects($tx, reverse: false, adjustmentMode: $adjustmentMode);
         });
 
         return back();
@@ -325,7 +334,8 @@ class TransactionController extends Controller
                 'required_if:type,savings',
                 Rule::exists('savings_goals', 'id')->where('user_id', $user->id),
             ],
-            'type'             => ['required', 'in:income,expense,transfer,savings'],
+            'type'             => ['required', 'in:income,expense,transfer,savings,adjustment'],
+            'adjustment_mode'  => ['nullable', 'required_if:type,adjustment', 'in:increase,decrease'],
             'amount'           => ['required', 'numeric', 'min:0.01'],
             'description'      => ['nullable', 'string', 'max:255'],
             'notes'            => ['nullable', 'string', 'max:2000'],
@@ -346,10 +356,13 @@ class TransactionController extends Controller
             $validated['destination_account_id'] = null;
         }
 
-        DB::transaction(function () use ($transaction, $validated) {
+        $adjustmentMode = $validated['adjustment_mode'] ?? null;
+        unset($validated['adjustment_mode']);
+
+        DB::transaction(function () use ($transaction, $validated, $adjustmentMode) {
             $this->applyEffects($transaction, reverse: true);
             $transaction->update($validated);
-            $this->applyEffects($transaction->refresh());
+            $this->applyEffects($transaction->refresh(), reverse: false, adjustmentMode: $adjustmentMode);
         });
 
         return back();
@@ -369,7 +382,7 @@ class TransactionController extends Controller
         return back();
     }
 
-    private function applyEffects(Transaction $tx, bool $reverse = false): void
+    private function applyEffects(Transaction $tx, bool $reverse = false, ?string $adjustmentMode = null): void
     {
         $sign   = $reverse ? -1 : 1;
         $amount = (float)$tx->amount;
@@ -383,6 +396,19 @@ class TransactionController extends Controller
 
             case 'expense':
                 $account->decrement('balance', $sign * $amount);
+                break;
+
+            case 'adjustment':
+                $isIncrease = $adjustmentMode ? ($adjustmentMode === 'increase') : ($sign > 0);
+                if ($reverse) {
+                    $isIncrease = !$isIncrease;
+                }
+
+                if ($isIncrease) {
+                    $account->increment('balance', $amount);
+                } else {
+                    $account->decrement('balance', $amount);
+                }
                 break;
 
             case 'transfer':
