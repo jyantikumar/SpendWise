@@ -78,27 +78,6 @@ export default function TransactionIndex({
     const formatCurrency = (val) =>
         new Intl.NumberFormat('en-US', { style: 'currency', currency: userCurrency }).format(val || 0);
 
-    const getAmountPrefix = (tx) => {
-        if (tx.type === 'income') return '+';
-        if (tx.type === 'expense') return '-';
-        if (tx.type === 'adjustment') {
-            return (tx.description || '').toLowerCase().includes('decrease') ? '-' : '+';
-        }
-        return '';
-    };
-
-    const getAmountColorClass = (tx) => {
-        if (tx.type === 'income') return 'text-emerald-500';
-        if (tx.type === 'expense') return 'text-rose-500';
-        if (tx.type === 'transfer') return 'text-blue-400';
-        if (tx.type === 'adjustment') {
-            return (tx.description || '').toLowerCase().includes('decrease') 
-                ? 'text-amber-500' 
-                : 'text-emerald-400';
-        }
-        return 'text-zinc-200';
-    };
-
     const applyFilters = (overrides = {}) => {
         const query = {
             search: overrides.search !== undefined ? overrides.search : search,
@@ -199,7 +178,7 @@ export default function TransactionIndex({
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                     <div>
                         <p className="text-sm text-zinc-400">
-                            Log and view income, expenses, transfers, and account balance adjustments.
+                            Log and view income, expenses, and account transfers.
                         </p>
                     </div>
 
@@ -324,8 +303,14 @@ export default function TransactionIndex({
                                             </div>
                                         </div>
 
-                                        <div className={`text-right font-semibold text-sm whitespace-nowrap shrink-0 ${getAmountColorClass(tx)}`}>
-                                            {getAmountPrefix(tx)}
+                                        <div className={`text-right font-semibold text-sm whitespace-nowrap shrink-0 ${
+                                            tx.type === 'income'
+                                                ? 'text-emerald-500'
+                                                : tx.type === 'expense'
+                                                ? 'text-rose-500'
+                                                : 'text-blue-400'
+                                        }`}>
+                                            {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
                                             {formatCurrency(tx.amount)}
                                         </div>
                                     </div>
@@ -376,8 +361,14 @@ export default function TransactionIndex({
                                                         tx.account?.name || '—'
                                                     )}
                                                 </TableCell>
-                                                <TableCell className={`text-right font-semibold text-sm whitespace-nowrap ${getAmountColorClass(tx)}`}>
-                                                    {getAmountPrefix(tx)}
+                                                <TableCell className={`text-right font-semibold text-sm whitespace-nowrap ${
+                                                    tx.type === 'income'
+                                                        ? 'text-emerald-500'
+                                                        : tx.type === 'expense'
+                                                        ? 'text-rose-500'
+                                                        : 'text-blue-400'
+                                                }`}>
+                                                    {tx.type === 'income' ? '+' : tx.type === 'expense' ? '-' : ''}
                                                     {formatCurrency(tx.amount)}
                                                 </TableCell>
                                             </TableRow>

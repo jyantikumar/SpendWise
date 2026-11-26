@@ -52,6 +52,7 @@ export function AnalysisKpiGrid({ kpis, formatCurrency, totalFlow, incomeVal, ex
                                             outerRadius={30}
                                             paddingAngle={3}
                                             dataKey="value"
+                                            stroke="none" // <-- Removes the default white border
                                         >
                                             {incomeVsExpenseData.map((entry, index) => (
                                                 <Cell key={`cell-${index}`} fill={entry.color} />
