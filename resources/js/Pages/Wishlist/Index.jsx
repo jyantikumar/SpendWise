@@ -18,7 +18,7 @@ export default function WishlistIndex({ items = [] }) {
     const [openModal, setOpenModal] = useState(false);
     const [editingItem, setEditingItem] = useState(null);
     const [deletingItem, setDeletingItem] = useState(null);
-    const [statusTab, setStatusTab] = useState('all'); // 'all', 'active', 'acquired'
+    const [statusTab, setStatusTab] = useState('active'); // 'all', 'active', 'acquired'
     const [searchQuery, setSearchQuery] = useState('');
 
     const { data, setData, post, put, processing, reset, errors } = useForm({
