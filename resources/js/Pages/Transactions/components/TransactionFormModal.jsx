@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Dialog,
     DialogContent,
@@ -51,6 +52,7 @@ export default function TransactionFormModal({
 }) {
     const isEditing = Boolean(editingTransaction);
 
+    const [activeTab, setActiveTab] = useState('basic');
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
     const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
 
@@ -83,6 +85,7 @@ export default function TransactionFormModal({
         if (!isOpen) return;
 
         clearErrors();
+        setActiveTab('basic');
 
         if (editingTransaction) {
             const rawDate = editingTransaction.transaction_date || editingTransaction.date;
@@ -194,6 +197,8 @@ export default function TransactionFormModal({
     const showSavingsGoal = data.type === 'savings';
     const isTransfer = data.type === 'transfer';
 
+    const hasNotesOrDescriptionErrors = Boolean(errors.description || errors.notes);
+
     return (
         <>
             <Dialog open={isOpen} onOpenChange={onClose}>
@@ -207,285 +212,311 @@ export default function TransactionFormModal({
                         </DialogDescription>
                     </DialogHeader>
 
-                    <form onSubmit={handleSubmit} className="space-y-4 py-2">
-                        {/* Type */}
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium leading-none">Type</label>
-                            <Select
-                                value={data.type}
-                                onValueChange={(val) =>
-                                    setData((prev) => ({
-                                        ...prev,
-                                        type: val,
-                                        category_id: val === 'income' || val === 'expense' ? prev.category_id : '',
-                                        destination_account_id: val === 'transfer' ? prev.destination_account_id : '',
-                                        savings_goal_id: val === 'savings' ? prev.savings_goal_id : '',
-                                    }))
-                                }
-                            >
-                                <SelectTrigger className="w-full h-10">
-                                    <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                                <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
-                                    <SelectItem value="expense">Expense</SelectItem>
-                                    <SelectItem value="income">Income</SelectItem>
-                                    <SelectItem value="transfer">Transfer</SelectItem>
-                                    <SelectItem value="savings">Savings Deposit</SelectItem>
-                                </SelectContent>
-                            </Select>
-                        </div>
-
-                        {/* Account & Target Grid (Side by Side) */}
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* Source Account */}
-                            <div className="space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-sm font-medium leading-none">
-                                        {isTransfer ? 'From Account' : 'Account'}
-                                    </label>
-                                    <Button
-                                        type="button"
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => setIsAccountModalOpen(true)}
-                                        className="h-6 px-1.5 text-xs text-primary gap-1"
-                                    >
-                                        <Plus className="h-3 w-3" /> Quick Add
-                                    </Button>
-                                </div>
-                                <Select
-                                    value={data.account_id}
-                                    onValueChange={(val) => {
-                                        setData((prev) => ({
-                                            ...prev,
-                                            account_id: val,
-                                            destination_account_id:
-                                                prev.destination_account_id === val ? '' : prev.destination_account_id,
-                                        }));
-                                    }}
+                    <form onSubmit={handleSubmit} className="flex flex-col space-y-4 pt-2">
+                        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col">
+                            <TabsList className="grid w-full grid-cols-2 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
+                                <TabsTrigger 
+                                    value="basic"
+                                    className="data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 data-[state=active]:shadow-sm text-zinc-400 font-medium transition-all"
                                 >
-                                    <SelectTrigger className="w-full h-10">
-                                        <SelectValue placeholder="Select account" />
-                                    </SelectTrigger>
-                                    <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
-                                        {availableAccounts.length > 0 ? (
-                                            availableAccounts.map((acc) => (
-                                                <SelectItem key={acc.id} value={String(acc.id)}>
-                                                    {acc.name} {acc.type ? `(${acc.type})` : ''}{' '}
-                                                    {!acc.is_active && acc.is_active !== undefined ? '(Inactive)' : ''}
-                                                </SelectItem>
-                                            ))
-                                        ) : (
-                                            <div className="p-2 text-xs text-center text-muted-foreground">
-                                                No active accounts available.
-                                            </div>
-                                        )}
-                                    </SelectContent>
-                                </Select>
-                                {errors.account_id && <p className="text-xs text-rose-500">{errors.account_id}</p>}
-                            </div>
+                                    Basic Info
+                                </TabsTrigger>
+                                <TabsTrigger 
+                                    value="notes" 
+                                    className="relative data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 data-[state=active]:shadow-sm text-zinc-400 font-medium transition-all"
+                                >
+                                    Notes & Description
+                                    {hasNotesOrDescriptionErrors && (
+                                        <span className="ml-1.5 h-2 w-2 rounded-full bg-rose-500" />
+                                    )}
+                                </TabsTrigger>
+                            </TabsList>
 
-                            {/* Destination Account (Transfers) */}
-                            {isTransfer && (
+                            {/* TAB 1: Basic Info */}
+                            <TabsContent value="basic" className="space-y-4 pt-4 focus-visible:outline-none">
+                                {/* Type */}
                                 <div className="space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <label className="text-sm font-medium leading-none">To Account</label>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => setIsAccountModalOpen(true)}
-                                            className="h-6 px-1.5 text-xs text-primary gap-1"
-                                        >
-                                            <Plus className="h-3 w-3" /> Quick Add
-                                        </Button>
-                                    </div>
+                                    <label className="text-sm font-medium leading-none">Type</label>
                                     <Select
-                                        value={data.destination_account_id}
-                                        onValueChange={(val) => setData('destination_account_id', val)}
+                                        value={data.type}
+                                        onValueChange={(val) =>
+                                            setData((prev) => ({
+                                                ...prev,
+                                                type: val,
+                                                category_id: val === 'income' || val === 'expense' ? prev.category_id : '',
+                                                destination_account_id: val === 'transfer' ? prev.destination_account_id : '',
+                                                savings_goal_id: val === 'savings' ? prev.savings_goal_id : '',
+                                            }))
+                                        }
                                     >
                                         <SelectTrigger className="w-full h-10">
-                                            <SelectValue placeholder="Select to account" />
+                                            <SelectValue placeholder="Select type" />
                                         </SelectTrigger>
-                                        <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
-                                            {availableAccounts.length > 0 ? (
-                                                availableAccounts
-                                                    .filter((acc) => String(acc.id) !== String(data.account_id))
-                                                    .map((acc) => (
+                                        <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
+                                            <SelectItem value="expense">Expense</SelectItem>
+                                            <SelectItem value="income">Income</SelectItem>
+                                            <SelectItem value="transfer">Transfer</SelectItem>
+                                            <SelectItem value="savings">Savings Deposit</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+
+                                {/* Account & Target Grid */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                    {/* Source Account */}
+                                    <div className="space-y-2">
+                                        <div className="flex items-center justify-between">
+                                            <label className="text-sm font-medium leading-none">
+                                                {isTransfer ? 'From Account' : 'Account'}
+                                            </label>
+                                            <Button
+                                                type="button"
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => setIsAccountModalOpen(true)}
+                                                className="h-6 px-1.5 text-xs text-primary gap-1"
+                                            >
+                                                <Plus className="h-3 w-3" /> Quick Add
+                                            </Button>
+                                        </div>
+                                        <Select
+                                            value={data.account_id}
+                                            onValueChange={(val) => {
+                                                setData((prev) => ({
+                                                    ...prev,
+                                                    account_id: val,
+                                                    destination_account_id:
+                                                        prev.destination_account_id === val ? '' : prev.destination_account_id,
+                                                }));
+                                            }}
+                                        >
+                                            <SelectTrigger className="w-full h-10">
+                                                <SelectValue placeholder="Select account" />
+                                            </SelectTrigger>
+                                            <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
+                                                {availableAccounts.length > 0 ? (
+                                                    availableAccounts.map((acc) => (
                                                         <SelectItem key={acc.id} value={String(acc.id)}>
                                                             {acc.name} {acc.type ? `(${acc.type})` : ''}{' '}
                                                             {!acc.is_active && acc.is_active !== undefined ? '(Inactive)' : ''}
                                                         </SelectItem>
                                                     ))
-                                            ) : (
-                                                <div className="p-2 text-xs text-center text-muted-foreground">
-                                                    No destination accounts.
-                                                </div>
+                                                ) : (
+                                                    <div className="p-2 text-xs text-center text-muted-foreground">
+                                                        No active accounts available.
+                                                    </div>
+                                                )}
+                                            </SelectContent>
+                                        </Select>
+                                        {errors.account_id && <p className="text-xs text-rose-500">{errors.account_id}</p>}
+                                    </div>
+
+                                    {/* Destination Account (Transfers) */}
+                                    {isTransfer && (
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-sm font-medium leading-none">To Account</label>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setIsAccountModalOpen(true)}
+                                                    className="h-6 px-1.5 text-xs text-primary gap-1"
+                                                >
+                                                    <Plus className="h-3 w-3" /> Quick Add
+                                                </Button>
+                                            </div>
+                                            <Select
+                                                value={data.destination_account_id}
+                                                onValueChange={(val) => setData('destination_account_id', val)}
+                                            >
+                                                <SelectTrigger className="w-full h-10">
+                                                    <SelectValue placeholder="Select to account" />
+                                                </SelectTrigger>
+                                                <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
+                                                    {availableAccounts.length > 0 ? (
+                                                        availableAccounts
+                                                            .filter((acc) => String(acc.id) !== String(data.account_id))
+                                                            .map((acc) => (
+                                                                <SelectItem key={acc.id} value={String(acc.id)}>
+                                                                    {acc.name} {acc.type ? `(${acc.type})` : ''}{' '}
+                                                                    {!acc.is_active && acc.is_active !== undefined ? '(Inactive)' : ''}
+                                                                </SelectItem>
+                                                            ))
+                                                    ) : (
+                                                        <div className="p-2 text-xs text-center text-muted-foreground">
+                                                            No destination accounts.
+                                                        </div>
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                            {errors.destination_account_id && (
+                                                <p className="text-xs text-rose-500">{errors.destination_account_id}</p>
                                             )}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.destination_account_id && (
-                                        <p className="text-xs text-rose-500">{errors.destination_account_id}</p>
+                                        </div>
+                                    )}
+
+                                    {/* Category (Income & Expense) */}
+                                    {showCategory && (
+                                        <div className="space-y-2">
+                                            <div className="flex items-center justify-between">
+                                                <label className="text-sm font-medium leading-none">Category</label>
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => setIsCategoryModalOpen(true)}
+                                                    className="h-6 px-1.5 text-xs text-primary gap-1"
+                                                >
+                                                    <Plus className="h-3 w-3" /> Quick Add
+                                                </Button>
+                                            </div>
+                                            <Select
+                                                value={data.category_id}
+                                                onValueChange={(val) => setData('category_id', val)}
+                                            >
+                                                <SelectTrigger className="w-full h-10">
+                                                    <SelectValue placeholder="Select category" />
+                                                </SelectTrigger>
+                                                <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
+                                                    {filteredCategories.length > 0 ? (
+                                                        filteredCategories.map((cat) => {
+                                                            const isSelected =
+                                                                String(cat.id) === String(data.category_id);
+                                                            const typeMismatch =
+                                                                isSelected &&
+                                                                cat.type &&
+                                                                cat.type !== data.type;
+                                                            return (
+                                                                <SelectItem key={cat.id} value={String(cat.id)}>
+                                                                    {cat.name}{' '}
+                                                                    {!cat.is_active && cat.is_active !== undefined ? '(Inactive)' : ''}
+                                                                    {typeMismatch ? ' (different type)' : ''}
+                                                                </SelectItem>
+                                                            );
+                                                        })
+                                                    ) : (
+                                                        <div className="p-2 text-xs text-center text-muted-foreground">
+                                                            No categories available.
+                                                        </div>
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                            {selectedCategoryTypeMismatch && (
+                                                <p className="text-[11px] text-amber-500 leading-tight">
+                                                    Type mismatch with selected category.
+                                                </p>
+                                            )}
+                                            {errors.category_id && <p className="text-xs text-rose-500">{errors.category_id}</p>}
+                                        </div>
+                                    )}
+
+                                    {/* Savings Goal (Savings Deposit) */}
+                                    {showSavingsGoal && (
+                                        <div className="space-y-2">
+                                            <label className="text-sm font-medium leading-none">Deposit to Goal</label>
+                                            <Select
+                                                value={data.savings_goal_id}
+                                                onValueChange={(val) => setData('savings_goal_id', val)}
+                                            >
+                                                <SelectTrigger className="w-full h-10">
+                                                    <SelectValue placeholder="Select savings goal" />
+                                                </SelectTrigger>
+                                                <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
+                                                    {availableSavingsGoals.length > 0 ? (
+                                                        availableSavingsGoals.map((goal) => (
+                                                            <SelectItem key={goal.id} value={String(goal.id)}>
+                                                                {goal.title}
+                                                                {goal.status === 'completed' ? ' (Completed)' : ''}
+                                                            </SelectItem>
+                                                        ))
+                                                    ) : (
+                                                        <div className="p-2 text-xs text-center text-muted-foreground">
+                                                            No active savings goals.
+                                                        </div>
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                            {errors.savings_goal_id && (
+                                                <p className="text-xs text-rose-500">{errors.savings_goal_id}</p>
+                                            )}
+                                        </div>
                                     )}
                                 </div>
-                            )}
 
-                            {/* Category (Income & Expense) */}
-                            {showCategory && (
+                                {/* Amount & Date */}
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium leading-none">Amount</label>
+                                        <Input
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            value={data.amount}
+                                            onChange={(e) => setData('amount', e.target.value)}
+                                        />
+                                        {errors.amount && <p className="text-xs text-rose-500">{errors.amount}</p>}
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-medium leading-none">Date</label>
+                                        <Input
+                                            type="date"
+                                            value={data.transaction_date}
+                                            onChange={(e) => setData('transaction_date', e.target.value)}
+                                        />
+                                        {errors.transaction_date && (
+                                            <p className="text-xs text-rose-500">{errors.transaction_date}</p>
+                                        )}
+                                    </div>
+                                </div>
+                            </TabsContent>
+
+                            {/* TAB 2: Notes & Description */}
+                            <TabsContent value="notes" className="space-y-4 pt-4 focus-visible:outline-none">
+                                {/* Description */}
                                 <div className="space-y-2">
                                     <div className="flex items-center justify-between">
-                                        <label className="text-sm font-medium leading-none">Category</label>
-                                        <Button
-                                            type="button"
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => setIsCategoryModalOpen(true)}
-                                            className="h-6 px-1.5 text-xs text-primary gap-1"
-                                        >
-                                            <Plus className="h-3 w-3" /> Quick Add
-                                        </Button>
+                                        <label className="text-sm font-medium leading-none">Description</label>
+                                        <span className={`text-[11px] tabular-nums ${counterClass((data.description || '').length, DESCRIPTION_MAX)}`}>
+                                            {(data.description || '').length}/{DESCRIPTION_MAX}
+                                        </span>
                                     </div>
-                                    <Select
-                                        value={data.category_id}
-                                        onValueChange={(val) => setData('category_id', val)}
-                                    >
-                                        <SelectTrigger className="w-full h-10">
-                                            <SelectValue placeholder="Select category" />
-                                        </SelectTrigger>
-                                        <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
-                                            {filteredCategories.length > 0 ? (
-                                                filteredCategories.map((cat) => {
-                                                    const isSelected =
-                                                        String(cat.id) === String(data.category_id);
-                                                    const typeMismatch =
-                                                        isSelected &&
-                                                        cat.type &&
-                                                        cat.type !== data.type;
-                                                    return (
-                                                        <SelectItem key={cat.id} value={String(cat.id)}>
-                                                            {cat.name}{' '}
-                                                            {!cat.is_active && cat.is_active !== undefined ? '(Inactive)' : ''}
-                                                            {typeMismatch ? ' (different type)' : ''}
-                                                        </SelectItem>
-                                                    );
-                                                })
-                                            ) : (
-                                                <div className="p-2 text-xs text-center text-muted-foreground">
-                                                    No categories available.
-                                                </div>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    {selectedCategoryTypeMismatch && (
-                                        <p className="text-[11px] text-amber-500 leading-tight">
-                                            Type mismatch with selected category.
-                                        </p>
-                                    )}
-                                    {errors.category_id && <p className="text-xs text-rose-500">{errors.category_id}</p>}
-                                </div>
-                            )}
-
-                            {/* Savings Goal (Savings Deposit) */}
-                            {showSavingsGoal && (
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium leading-none">Deposit to Goal</label>
-                                    <Select
-                                        value={data.savings_goal_id}
-                                        onValueChange={(val) => setData('savings_goal_id', val)}
-                                    >
-                                        <SelectTrigger className="w-full h-10">
-                                            <SelectValue placeholder="Select savings goal" />
-                                        </SelectTrigger>
-                                        <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
-                                            {availableSavingsGoals.length > 0 ? (
-                                                availableSavingsGoals.map((goal) => (
-                                                    <SelectItem key={goal.id} value={String(goal.id)}>
-                                                        {goal.title}
-                                                        {goal.status === 'completed' ? ' (Completed)' : ''}
-                                                    </SelectItem>
-                                                ))
-                                            ) : (
-                                                <div className="p-2 text-xs text-center text-muted-foreground">
-                                                    No active savings goals.
-                                                </div>
-                                            )}
-                                        </SelectContent>
-                                    </Select>
-                                    {errors.savings_goal_id && (
-                                        <p className="text-xs text-rose-500">{errors.savings_goal_id}</p>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Amount & Date */}
-                        <div className="grid grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium leading-none">Amount</label>
-                                <Input
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="0.00"
-                                    value={data.amount}
-                                    onChange={(e) => setData('amount', e.target.value)}
-                                />
-                                {errors.amount && <p className="text-xs text-rose-500">{errors.amount}</p>}
-                            </div>
-
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium leading-none">Date</label>
-                                <Input
-                                    type="date"
-                                    value={data.transaction_date}
-                                    onChange={(e) => setData('transaction_date', e.target.value)}
-                                />
-                                {errors.transaction_date && (
-                                    <p className="text-xs text-rose-500">{errors.transaction_date}</p>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Description */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium leading-none">Description</label>
-                                <span className={`text-[11px] tabular-nums ${counterClass((data.description || '').length, DESCRIPTION_MAX)}`}>
-                                    {(data.description || '').length}/{DESCRIPTION_MAX}
-                                </span>
-                            </div>
-                            <Input
-                                placeholder="e.g. Monthly deposit"
-                                value={data.description}
-                                maxLength={DESCRIPTION_MAX}
-                                onChange={(e) => setData('description', e.target.value)}
-                            />
-                            {errors.description && <p className="text-xs text-rose-500">{errors.description}</p>}
-                        </div>
-
-                        {/* Notes */}
-                        <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                                <label className="text-sm font-medium leading-none">Notes</label>
-                                <span className={`text-[11px] tabular-nums ${counterClass((data.notes || '').length, NOTES_MAX)}`}>
-                                    {(data.notes || '').length}/{NOTES_MAX}
-                                </span>
-                            </div>
-                            
-                            <div className="rounded-md border border-zinc-800 bg-zinc-950/50 text-sm shadow-sm transition-colors focus-within:border-zinc-500 focus-within:ring-1 focus-within:ring-zinc-500">
-                                <ScrollArea className="h-24">
-                                    <Textarea
-                                        placeholder="Add any extra details or context (optional)..."
-                                        value={data.notes}
-                                        onChange={(e) => setData('notes', e.target.value)}
-                                        maxLength={NOTES_MAX}
-                                        className="min-h-[96px] resize-none break-all border-0 bg-transparent shadow-none focus-visible:ring-0 p-3 text-zinc-200 placeholder:text-zinc-500"
+                                    <Input
+                                        placeholder="e.g. Monthly deposit"
+                                        value={data.description}
+                                        maxLength={DESCRIPTION_MAX}
+                                        onChange={(e) => setData('description', e.target.value)}
                                     />
-                                </ScrollArea>
-                            </div>
-                            {errors.notes && <p className="text-xs text-rose-500">{errors.notes}</p>}
-                        </div>
+                                    {errors.description && <p className="text-xs text-rose-500">{errors.description}</p>}
+                                </div>
 
-                        <DialogFooter className="pt-4">
+                                {/* Notes */}
+                                <div className="space-y-2">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-sm font-medium leading-none">Notes</label>
+                                        <span className={`text-[11px] tabular-nums ${counterClass((data.notes || '').length, NOTES_MAX)}`}>
+                                            {(data.notes || '').length}/{NOTES_MAX}
+                                        </span>
+                                    </div>
+                                    
+                                    <div className="rounded-md border border-zinc-800 bg-zinc-950/50 text-sm shadow-sm transition-colors focus-within:border-zinc-500 focus-within:ring-1 focus-within:ring-zinc-500">
+                                        <ScrollArea className="h-28">
+                                            <Textarea
+                                                placeholder="Add any extra details or context (optional)..."
+                                                value={data.notes}
+                                                onChange={(e) => setData('notes', e.target.value)}
+                                                maxLength={NOTES_MAX}
+                                                className="min-h-[112px] resize-none break-all border-0 bg-transparent shadow-none focus-visible:ring-0 p-3 text-zinc-200 placeholder:text-zinc-500"
+                                            />
+                                        </ScrollArea>
+                                    </div>
+                                    {errors.notes && <p className="text-xs text-rose-500">{errors.notes}</p>}
+                                </div>
+                            </TabsContent>
+                        </Tabs>
+
+                        <DialogFooter className="pt-2">
                             <Button type="button" variant="outline" onClick={onClose}>
                                 Cancel
                             </Button>

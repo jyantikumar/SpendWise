@@ -1,5 +1,5 @@
 // resources/js/Pages/Subscriptions/Components/CreateRecurringDialog.jsx
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useForm } from '@inertiajs/react';
 import {
     Dialog,
@@ -20,6 +20,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { todayLocalISO } from './dateHelpers';
 import { SearchableSelect } from './SearchableSelect';
 
@@ -56,6 +57,7 @@ export function CreateRecurringDialog({
     userCurrency = 'PHP',
 }) {
     const isEditing = Boolean(editingItem);
+    const [activeTab, setActiveTab] = useState('basic');
 
     const { data, setData, post, put, processing, errors, reset } = useForm({
         title: '',
@@ -79,6 +81,7 @@ export function CreateRecurringDialog({
 
     useEffect(() => {
         if (editingItem && open) {
+            setActiveTab('basic');
             const resolvedCategoryId =
                 editingItem.category_id ?? editingItem.category?.id;
 
@@ -108,6 +111,7 @@ export function CreateRecurringDialog({
                 auto_create: Boolean(editingItem.auto_create),
             });
         } else if (!open) {
+            setActiveTab('basic');
             reset();
         }
     }, [editingItem, open]);
@@ -182,6 +186,8 @@ export function CreateRecurringDialog({
         }
     };
 
+    const hasNotesErrors = Boolean(errors.notes);
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="sm:max-w-[560px] p-0 overflow-hidden border-zinc-800 bg-zinc-950 text-zinc-100">
@@ -196,216 +202,241 @@ export function CreateRecurringDialog({
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="p-5 space-y-4">
-                    {/* Top Row: Type & Title */}
-                    <div className="grid grid-cols-2 sm:grid-cols-12 gap-3">
-                        <div className="col-span-1 sm:col-span-4 space-y-1">
-                            <Label className="text-[11px] font-medium text-zinc-400">Type</Label>
-                            <Select value={data.type} onValueChange={handleTypeChange}>
-                                <SelectTrigger className="w-full h-9 text-xs border-zinc-800 bg-zinc-900 text-zinc-200">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="z-[60] border-zinc-800 bg-zinc-900 text-zinc-200">
-                                    <SelectItem value="expense">Expense</SelectItem>
-                                    <SelectItem value="income">Income</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            {errors.type && (
-                                <p className="text-[10px] text-rose-500">{errors.type}</p>
-                            )}
-                        </div>
-
-                        <div className="col-span-1 sm:col-span-8 space-y-1">
-                            <Label htmlFor="title" className="text-[11px] font-medium text-zinc-400">
-                                Merchant / Title
-                            </Label>
-                            <Input
-                                id="title"
-                                placeholder="e.g. Netflix, Housing Rent, Spotify"
-                                value={data.title}
-                                onChange={(e) => setData('title', e.target.value)}
-                                className="h-9 text-xs border-zinc-800 bg-zinc-900 text-zinc-200"
-                            />
-                            {errors.title && (
-                                <p className="text-[10px] text-rose-500">{errors.title}</p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Middle Section: 2x2 on Mobile, 3-column on Desktop */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        <div className="col-span-1 space-y-1">
-                            <Label htmlFor="amount" className="text-[11px] font-medium text-zinc-400">
-                                Amount ({userCurrency})
-                            </Label>
-                            <Input
-                                id="amount"
-                                type="number"
-                                step="0.01"
-                                placeholder="0.00"
-                                value={data.amount}
-                                onChange={(e) => setData('amount', e.target.value)}
-                                className="h-9 text-xs border-zinc-800 bg-zinc-900 text-zinc-200"
-                            />
-                            {errors.amount && (
-                                <p className="text-[10px] text-rose-500">{errors.amount}</p>
-                            )}
-                        </div>
-
-                        <div className="col-span-1 space-y-1">
-                            <Label className="text-[11px] font-medium text-zinc-400">Account</Label>
-                            <SearchableSelect
-                                value={data.account_id}
-                                onValueChange={(val) => setData('account_id', val)}
-                                options={accounts.map((acc) => ({
-                                    value: String(acc.id),
-                                    label: acc.name,
-                                }))}
-                                placeholder="Select account"
-                                searchPlaceholder="Search…"
-                                emptyText="No match."
-                                disabled={accounts.length === 0}
-                            />
-                            {errors.account_id && (
-                                <p className="text-[10px] text-rose-500">{errors.account_id}</p>
-                            )}
-                        </div>
-
-                        <div className="col-span-2 sm:col-span-1 space-y-1">
-                            <Label className="text-[11px] font-medium text-zinc-400">Category</Label>
-                            <SearchableSelect
-                                value={data.category_id}
-                                onValueChange={(val) => setData('category_id', val)}
-                                options={filteredCategories.map((cat) => ({
-                                    value: String(cat.id),
-                                    label: cat.name,
-                                }))}
-                                placeholder="Select category"
-                                searchPlaceholder="Search…"
-                                emptyText="No match."
-                                disabled={filteredCategories.length === 0}
-                            />
-                            {errors.category_id && (
-                                <p className="text-[10px] text-rose-500">{errors.category_id}</p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Schedule Section: 2x2 on Mobile, 3-column on Desktop */}
-                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-                        <div className="col-span-1 space-y-1">
-                            <Label className="text-[11px] font-medium text-zinc-400">Frequency</Label>
-                            <Select
-                                value={data.frequency}
-                                onValueChange={handleFrequencyChange}
+                <form onSubmit={handleSubmit} className="p-5 flex flex-col space-y-4">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col">
+                        <TabsList className="grid w-full grid-cols-2 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
+                            <TabsTrigger 
+                                value="basic"
+                                className="data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 data-[state=active]:shadow-sm text-zinc-400 text-xs font-medium transition-all"
                             >
-                                <SelectTrigger className="w-full h-9 text-xs border-zinc-800 bg-zinc-900 text-zinc-200">
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent className="z-[60] border-zinc-800 bg-zinc-900 text-zinc-200">
-                                    <SelectItem value="daily">Daily</SelectItem>
-                                    <SelectItem value="weekly">Weekly</SelectItem>
-                                    <SelectItem value="custom">Custom (Days)</SelectItem>
-                                    <SelectItem value="monthly">Monthly</SelectItem>
-                                    <SelectItem value="yearly">Yearly</SelectItem>
-                                </SelectContent>
-                            </Select>
-                            {errors.frequency && (
-                                <p className="text-[10px] text-rose-500">{errors.frequency}</p>
-                            )}
-                        </div>
+                                Basic Info
+                            </TabsTrigger>
+                            <TabsTrigger 
+                                value="notes" 
+                                className="relative data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 data-[state=active]:shadow-sm text-zinc-400 text-xs font-medium transition-all"
+                            >
+                                Notes & Description
+                                {hasNotesErrors && (
+                                    <span className="ml-1.5 h-2 w-2 rounded-full bg-rose-500" />
+                                )}
+                            </TabsTrigger>
+                        </TabsList>
 
-                        <div className="col-span-1 space-y-1">
-                            <Label htmlFor="start_date" className="text-[11px] font-medium text-zinc-400">
-                                {isEditing ? 'Next Due' : 'Start Date'}
-                            </Label>
-                            <Input
-                                id="start_date"
-                                type="date"
-                                value={data.start_date}
-                                onChange={(e) => setData('start_date', e.target.value)}
-                                className="h-9 text-xs border-zinc-800 bg-zinc-900 text-zinc-200"
-                            />
-                            {errors.start_date && (
-                                <p className="text-[10px] text-rose-500">{errors.start_date}</p>
-                            )}
-                        </div>
+                        {/* TAB 1: Basic Info */}
+                        <TabsContent value="basic" className="space-y-4 pt-4 focus-visible:outline-none">
+                            {/* Top Row: Type & Title */}
+                            <div className="grid grid-cols-2 sm:grid-cols-12 gap-3">
+                                <div className="col-span-1 sm:col-span-4 space-y-1">
+                                    <Label className="text-[11px] font-medium text-zinc-400">Type</Label>
+                                    <Select value={data.type} onValueChange={handleTypeChange}>
+                                        <SelectTrigger className="w-full h-9 text-xs border-zinc-800 bg-zinc-900 text-zinc-200">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="z-[60] border-zinc-800 bg-zinc-900 text-zinc-200">
+                                            <SelectItem value="expense">Expense</SelectItem>
+                                            <SelectItem value="income">Income</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.type && (
+                                        <p className="text-[10px] text-rose-500">{errors.type}</p>
+                                    )}
+                                </div>
 
-                        <div className="col-span-2 sm:col-span-1 space-y-1">
-                            <Label htmlFor="end_date" className="text-[11px] font-medium text-zinc-400">
-                                End Date
-                            </Label>
-                            <Input
-                                id="end_date"
-                                type="date"
-                                value={data.end_date}
-                                onChange={(e) => setData('end_date', e.target.value)}
-                                className="h-9 text-xs border-zinc-800 bg-zinc-900 text-zinc-200"
-                            />
-                            {errors.end_date && (
-                                <p className="text-[10px] text-rose-500">{errors.end_date}</p>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Custom Weekdays Picker */}
-                    {data.frequency === 'custom' && (
-                        <div className="p-2.5 rounded-md border border-zinc-800/80 bg-zinc-900/30 space-y-1.5">
-                            <div className="flex items-center justify-between">
-                                <Label className="text-[11px] font-medium text-zinc-300">
-                                    Repeats On
-                                </Label>
-                                <div className="flex items-center gap-2 text-[10px] text-zinc-400">
-                                    <button type="button" onClick={() => setWeekdayPreset('weekdays')} className="hover:text-zinc-200 transition-colors">Mon-Fri</button>
-                                    <span className="text-zinc-700">•</span>
-                                    <button type="button" onClick={() => setWeekdayPreset('weekends')} className="hover:text-zinc-200 transition-colors">Sat-Sun</button>
-                                    <span className="text-zinc-700">•</span>
-                                    <button type="button" onClick={() => setWeekdayPreset('all')} className="hover:text-zinc-200 transition-colors">All</button>
+                                <div className="col-span-1 sm:col-span-8 space-y-1">
+                                    <Label htmlFor="title" className="text-[11px] font-medium text-zinc-400">
+                                        Merchant / Title
+                                    </Label>
+                                    <Input
+                                        id="title"
+                                        placeholder="e.g. Netflix, Housing Rent, Spotify"
+                                        value={data.title}
+                                        onChange={(e) => setData('title', e.target.value)}
+                                        className="h-9 text-xs border-zinc-800 bg-zinc-900 text-zinc-200"
+                                    />
+                                    {errors.title && (
+                                        <p className="text-[10px] text-rose-500">{errors.title}</p>
+                                    )}
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-7 gap-1">
-                                {WEEKDAYS.map((day) => {
-                                    const selected = data.weekdays.includes(day.value);
-                                    return (
-                                        <button
-                                            key={day.value}
-                                            type="button"
-                                            title={day.label}
-                                            onClick={() => toggleWeekday(day.value)}
-                                            className={`h-7 rounded text-xs font-medium border transition-all ${
-                                                selected
-                                                    ? 'bg-zinc-100 border-zinc-100 text-zinc-900 shadow-sm font-semibold'
-                                                    : 'bg-zinc-900/80 border-zinc-800 text-zinc-400 hover:text-zinc-200'
-                                            }`}
-                                        >
-                                            {day.short}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                            {errors.weekdays && (
-                                <p className="text-[10px] text-rose-500">{errors.weekdays}</p>
-                            )}
-                        </div>
-                    )}
+                            {/* Middle Section: Amount, Account, Category */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                <div className="col-span-1 space-y-1">
+                                    <Label htmlFor="amount" className="text-[11px] font-medium text-zinc-400">
+                                        Amount ({userCurrency})
+                                    </Label>
+                                    <Input
+                                        id="amount"
+                                        type="number"
+                                        step="0.01"
+                                        placeholder="0.00"
+                                        value={data.amount}
+                                        onChange={(e) => setData('amount', e.target.value)}
+                                        className="h-9 text-xs border-zinc-800 bg-zinc-900 text-zinc-200"
+                                    />
+                                    {errors.amount && (
+                                        <p className="text-[10px] text-rose-500">{errors.amount}</p>
+                                    )}
+                                </div>
 
-                    {/* Compact Notes Field */}
-                    <div className="space-y-1">
-                        <Label htmlFor="notes" className="text-[11px] font-medium text-zinc-400">
-                            Notes (Optional)
-                        </Label>
-                        <Textarea
-                            id="notes"
-                            placeholder="Add reference codes, billing IDs, or memos..."
-                            value={data.notes}
-                            onChange={(e) => setData('notes', e.target.value)}
-                            className="h-14 resize-none border-zinc-800 bg-zinc-900 text-zinc-200 text-xs p-2.5"
-                        />
-                        {errors.notes && (
-                            <p className="text-[10px] text-rose-500">{errors.notes}</p>
-                        )}
-                    </div>
+                                <div className="col-span-1 space-y-1">
+                                    <Label className="text-[11px] font-medium text-zinc-400">Account</Label>
+                                    <SearchableSelect
+                                        value={data.account_id}
+                                        onValueChange={(val) => setData('account_id', val)}
+                                        options={accounts.map((acc) => ({
+                                            value: String(acc.id),
+                                            label: acc.name,
+                                        }))}
+                                        placeholder="Select account"
+                                        searchPlaceholder="Search…"
+                                        emptyText="No match."
+                                        disabled={accounts.length === 0}
+                                    />
+                                    {errors.account_id && (
+                                        <p className="text-[10px] text-rose-500">{errors.account_id}</p>
+                                    )}
+                                </div>
+
+                                <div className="col-span-2 sm:col-span-1 space-y-1">
+                                    <Label className="text-[11px] font-medium text-zinc-400">Category</Label>
+                                    <SearchableSelect
+                                        value={data.category_id}
+                                        onValueChange={(val) => setData('category_id', val)}
+                                        options={filteredCategories.map((cat) => ({
+                                            value: String(cat.id),
+                                            label: cat.name,
+                                        }))}
+                                        placeholder="Select category"
+                                        searchPlaceholder="Search…"
+                                        emptyText="No match."
+                                        disabled={filteredCategories.length === 0}
+                                    />
+                                    {errors.category_id && (
+                                        <p className="text-[10px] text-rose-500">{errors.category_id}</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Schedule Section: Frequency, Start, End */}
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                                <div className="col-span-1 space-y-1">
+                                    <Label className="text-[11px] font-medium text-zinc-400">Frequency</Label>
+                                    <Select
+                                        value={data.frequency}
+                                        onValueChange={handleFrequencyChange}
+                                    >
+                                        <SelectTrigger className="w-full h-9 text-xs border-zinc-800 bg-zinc-900 text-zinc-200">
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent className="z-[60] border-zinc-800 bg-zinc-900 text-zinc-200">
+                                            <SelectItem value="daily">Daily</SelectItem>
+                                            <SelectItem value="weekly">Weekly</SelectItem>
+                                            <SelectItem value="custom">Custom (Days)</SelectItem>
+                                            <SelectItem value="monthly">Monthly</SelectItem>
+                                            <SelectItem value="yearly">Yearly</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    {errors.frequency && (
+                                        <p className="text-[10px] text-rose-500">{errors.frequency}</p>
+                                    )}
+                                </div>
+
+                                <div className="col-span-1 space-y-1">
+                                    <Label htmlFor="start_date" className="text-[11px] font-medium text-zinc-400">
+                                        {isEditing ? 'Next Due' : 'Start Date'}
+                                    </Label>
+                                    <Input
+                                        id="start_date"
+                                        type="date"
+                                        value={data.start_date}
+                                        onChange={(e) => setData('start_date', e.target.value)}
+                                        className="h-9 text-xs border-zinc-800 bg-zinc-900 text-zinc-200"
+                                    />
+                                    {errors.start_date && (
+                                        <p className="text-[10px] text-rose-500">{errors.start_date}</p>
+                                    )}
+                                </div>
+
+                                <div className="col-span-2 sm:col-span-1 space-y-1">
+                                    <Label htmlFor="end_date" className="text-[11px] font-medium text-zinc-400">
+                                        End Date
+                                    </Label>
+                                    <Input
+                                        id="end_date"
+                                        type="date"
+                                        value={data.end_date}
+                                        onChange={(e) => setData('end_date', e.target.value)}
+                                        className="h-9 text-xs border-zinc-800 bg-zinc-900 text-zinc-200"
+                                    />
+                                    {errors.end_date && (
+                                        <p className="text-[10px] text-rose-500">{errors.end_date}</p>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Custom Weekdays Picker */}
+                            {data.frequency === 'custom' && (
+                                <div className="p-2.5 rounded-md border border-zinc-800/80 bg-zinc-900/30 space-y-1.5">
+                                    <div className="flex items-center justify-between">
+                                        <Label className="text-[11px] font-medium text-zinc-300">
+                                            Repeats On
+                                        </Label>
+                                        <div className="flex items-center gap-2 text-[10px] text-zinc-400">
+                                            <button type="button" onClick={() => setWeekdayPreset('weekdays')} className="hover:text-zinc-200 transition-colors">Mon-Fri</button>
+                                            <span className="text-zinc-700">•</span>
+                                            <button type="button" onClick={() => setWeekdayPreset('weekends')} className="hover:text-zinc-200 transition-colors">Sat-Sun</button>
+                                            <span className="text-zinc-700">•</span>
+                                            <button type="button" onClick={() => setWeekdayPreset('all')} className="hover:text-zinc-200 transition-colors">All</button>
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-7 gap-1">
+                                        {WEEKDAYS.map((day) => {
+                                            const selected = data.weekdays.includes(day.value);
+                                            return (
+                                                <button
+                                                    key={day.value}
+                                                    type="button"
+                                                    title={day.label}
+                                                    onClick={() => toggleWeekday(day.value)}
+                                                    className={`h-7 rounded text-xs font-medium border transition-all ${
+                                                        selected
+                                                            ? 'bg-zinc-100 border-zinc-100 text-zinc-900 shadow-sm font-semibold'
+                                                            : 'bg-zinc-900/80 border-zinc-800 text-zinc-400 hover:text-zinc-200'
+                                                    }`}
+                                                >
+                                                    {day.short}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    {errors.weekdays && (
+                                        <p className="text-[10px] text-rose-500">{errors.weekdays}</p>
+                                    )}
+                                </div>
+                            )}
+                        </TabsContent>
+
+                        {/* TAB 2: Notes & Description */}
+                        <TabsContent value="notes" className="space-y-4 pt-4 focus-visible:outline-none">
+                            <div className="space-y-1">
+                                <Label htmlFor="notes" className="text-[11px] font-medium text-zinc-400">
+                                    Notes (Optional)
+                                </Label>
+                                <Textarea
+                                    id="notes"
+                                    placeholder="Add reference codes, billing IDs, or memos..."
+                                    value={data.notes}
+                                    onChange={(e) => setData('notes', e.target.value)}
+                                    className="h-32 resize-none border-zinc-800 bg-zinc-900 text-zinc-200 text-xs p-2.5"
+                                />
+                                {errors.notes && (
+                                    <p className="text-[10px] text-rose-500">{errors.notes}</p>
+                                )}
+                            </div>
+                        </TabsContent>
+                    </Tabs>
 
                     {/* Dialog Footer Actions */}
                     <DialogFooter className="pt-2 flex-row justify-end gap-2 border-t border-zinc-900">
