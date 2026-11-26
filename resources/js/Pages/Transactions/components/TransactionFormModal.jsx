@@ -212,31 +212,31 @@ export default function TransactionFormModal({
                         </DialogDescription>
                     </DialogHeader>
 
-                    <form onSubmit={handleSubmit} className="flex flex-col space-y-4 pt-2">
-                        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full flex flex-col">
-                            <TabsList className="grid w-full grid-cols-2 bg-zinc-900 p-1 rounded-lg border border-zinc-800">
+                    <form onSubmit={handleSubmit} className="flex flex-col pt-1 space-y-3">
+                        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col w-full">
+                            <TabsList className="grid w-full grid-cols-2 bg-zinc-900/60 p-0.5 h-8 rounded-lg border border-zinc-800/80">
                                 <TabsTrigger 
                                     value="basic"
-                                    className="data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 data-[state=active]:shadow-sm text-zinc-400 font-medium transition-all"
+                                    className="h-7 text-[11px] font-medium text-zinc-400 data-[state=active]:bg-zinc-800/90 data-[state=active]:text-zinc-200 data-[state=active]:shadow-none transition-all rounded-[6px]"
                                 >
                                     Basic Info
                                 </TabsTrigger>
                                 <TabsTrigger 
                                     value="notes" 
-                                    className="relative data-[state=active]:bg-zinc-800 data-[state=active]:text-zinc-100 data-[state=active]:shadow-sm text-zinc-400 font-medium transition-all"
+                                    className="relative h-7 text-[11px] font-medium text-zinc-400 data-[state=active]:bg-zinc-800/90 data-[state=active]:text-zinc-200 data-[state=active]:shadow-none transition-all rounded-[6px]"
                                 >
                                     Notes & Description
                                     {hasNotesOrDescriptionErrors && (
-                                        <span className="ml-1.5 h-2 w-2 rounded-full bg-rose-500" />
+                                        <span className="ml-1.5 h-1.5 w-1.5 rounded-full bg-rose-500" />
                                     )}
                                 </TabsTrigger>
                             </TabsList>
 
                             {/* TAB 1: Basic Info */}
-                            <TabsContent value="basic" className="space-y-4 pt-4 focus-visible:outline-none">
+                            <TabsContent value="basic" className="pt-3 space-y-3.5 focus-visible:outline-none">
                                 {/* Type */}
-                                <div className="space-y-2">
-                                    <label className="text-sm font-medium leading-none">Type</label>
+                                <div className="space-y-1.5">
+                                    <label className="text-xs font-medium leading-none text-zinc-300">Type</label>
                                     <Select
                                         value={data.type}
                                         onValueChange={(val) =>
@@ -249,7 +249,7 @@ export default function TransactionFormModal({
                                             }))
                                         }
                                     >
-                                        <SelectTrigger className="w-full h-10">
+                                        <SelectTrigger className="w-full h-9 text-xs">
                                             <SelectValue placeholder="Select type" />
                                         </SelectTrigger>
                                         <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[280px]">
@@ -262,11 +262,11 @@ export default function TransactionFormModal({
                                 </div>
 
                                 {/* Account & Target Grid */}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                                     {/* Source Account */}
-                                    <div className="space-y-2">
+                                    <div className="space-y-1.5">
                                         <div className="flex items-center justify-between">
-                                            <label className="text-sm font-medium leading-none">
+                                            <label className="text-xs font-medium leading-none text-zinc-300">
                                                 {isTransfer ? 'From Account' : 'Account'}
                                             </label>
                                             <Button
@@ -274,9 +274,9 @@ export default function TransactionFormModal({
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => setIsAccountModalOpen(true)}
-                                                className="h-6 px-1.5 text-xs text-primary gap-1"
+                                                className="h-5 px-1 text-[11px] text-primary gap-1"
                                             >
-                                                <Plus className="h-3 w-3" /> Quick Add
+                                                <Plus className="w-3 h-3" /> Quick Add
                                             </Button>
                                         </div>
                                         <Select
@@ -290,7 +290,7 @@ export default function TransactionFormModal({
                                                 }));
                                             }}
                                         >
-                                            <SelectTrigger className="w-full h-10">
+                                            <SelectTrigger className="w-full h-9 text-xs">
                                                 <SelectValue placeholder="Select account" />
                                             </SelectTrigger>
                                             <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
@@ -313,24 +313,24 @@ export default function TransactionFormModal({
 
                                     {/* Destination Account (Transfers) */}
                                     {isTransfer && (
-                                        <div className="space-y-2">
+                                        <div className="space-y-1.5">
                                             <div className="flex items-center justify-between">
-                                                <label className="text-sm font-medium leading-none">To Account</label>
+                                                <label className="text-xs font-medium leading-none text-zinc-300">To Account</label>
                                                 <Button
                                                     type="button"
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => setIsAccountModalOpen(true)}
-                                                    className="h-6 px-1.5 text-xs text-primary gap-1"
+                                                    className="h-5 px-1 text-[11px] text-primary gap-1"
                                                 >
-                                                    <Plus className="h-3 w-3" /> Quick Add
+                                                    <Plus className="w-3 h-3" /> Quick Add
                                                 </Button>
                                             </div>
                                             <Select
                                                 value={data.destination_account_id}
                                                 onValueChange={(val) => setData('destination_account_id', val)}
                                             >
-                                                <SelectTrigger className="w-full h-10">
+                                                <SelectTrigger className="w-full h-9 text-xs">
                                                     <SelectValue placeholder="Select to account" />
                                                 </SelectTrigger>
                                                 <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
@@ -358,24 +358,24 @@ export default function TransactionFormModal({
 
                                     {/* Category (Income & Expense) */}
                                     {showCategory && (
-                                        <div className="space-y-2">
+                                        <div className="space-y-1.5">
                                             <div className="flex items-center justify-between">
-                                                <label className="text-sm font-medium leading-none">Category</label>
+                                                <label className="text-xs font-medium leading-none text-zinc-300">Category</label>
                                                 <Button
                                                     type="button"
                                                     variant="ghost"
                                                     size="sm"
                                                     onClick={() => setIsCategoryModalOpen(true)}
-                                                    className="h-6 px-1.5 text-xs text-primary gap-1"
+                                                    className="h-5 px-1 text-[11px] text-primary gap-1"
                                                 >
-                                                    <Plus className="h-3 w-3" /> Quick Add
+                                                    <Plus className="w-3 h-3" /> Quick Add
                                                 </Button>
                                             </div>
                                             <Select
                                                 value={data.category_id}
                                                 onValueChange={(val) => setData('category_id', val)}
                                             >
-                                                <SelectTrigger className="w-full h-10">
+                                                <SelectTrigger className="w-full h-9 text-xs">
                                                     <SelectValue placeholder="Select category" />
                                                 </SelectTrigger>
                                                 <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
@@ -413,13 +413,13 @@ export default function TransactionFormModal({
 
                                     {/* Savings Goal (Savings Deposit) */}
                                     {showSavingsGoal && (
-                                        <div className="space-y-2">
-                                            <label className="text-sm font-medium leading-none">Deposit to Goal</label>
+                                        <div className="space-y-1.5">
+                                            <label className="text-xs font-medium leading-none text-zinc-300">Deposit to Goal</label>
                                             <Select
                                                 value={data.savings_goal_id}
                                                 onValueChange={(val) => setData('savings_goal_id', val)}
                                             >
-                                                <SelectTrigger className="w-full h-10">
+                                                <SelectTrigger className="w-full h-9 text-xs">
                                                     <SelectValue placeholder="Select savings goal" />
                                                 </SelectTrigger>
                                                 <SelectContent className="z-[60] w-[var(--radix-select-trigger-width)] min-w-[220px]">
@@ -445,25 +445,27 @@ export default function TransactionFormModal({
                                 </div>
 
                                 {/* Amount & Date */}
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium leading-none">Amount</label>
+                                <div className="grid grid-cols-2 gap-3.5">
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-medium leading-none text-zinc-300">Amount</label>
                                         <Input
                                             type="number"
                                             step="0.01"
                                             placeholder="0.00"
                                             value={data.amount}
                                             onChange={(e) => setData('amount', e.target.value)}
+                                            className="h-9 text-xs"
                                         />
                                         {errors.amount && <p className="text-xs text-rose-500">{errors.amount}</p>}
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <label className="text-sm font-medium leading-none">Date</label>
+                                    <div className="space-y-1.5">
+                                        <label className="text-xs font-medium leading-none text-zinc-300">Date</label>
                                         <Input
                                             type="date"
                                             value={data.transaction_date}
                                             onChange={(e) => setData('transaction_date', e.target.value)}
+                                            className="h-9 text-xs"
                                         />
                                         {errors.transaction_date && (
                                             <p className="text-xs text-rose-500">{errors.transaction_date}</p>
@@ -473,11 +475,11 @@ export default function TransactionFormModal({
                             </TabsContent>
 
                             {/* TAB 2: Notes & Description */}
-                            <TabsContent value="notes" className="space-y-4 pt-4 focus-visible:outline-none">
+                            <TabsContent value="notes" className="pt-3 space-y-3.5 focus-visible:outline-none">
                                 {/* Description */}
-                                <div className="space-y-2">
+                                <div className="space-y-1.5">
                                     <div className="flex items-center justify-between">
-                                        <label className="text-sm font-medium leading-none">Description</label>
+                                        <label className="text-xs font-medium leading-none text-zinc-300">Description</label>
                                         <span className={`text-[11px] tabular-nums ${counterClass((data.description || '').length, DESCRIPTION_MAX)}`}>
                                             {(data.description || '').length}/{DESCRIPTION_MAX}
                                         </span>
@@ -487,27 +489,28 @@ export default function TransactionFormModal({
                                         value={data.description}
                                         maxLength={DESCRIPTION_MAX}
                                         onChange={(e) => setData('description', e.target.value)}
+                                        className="h-9 text-xs"
                                     />
                                     {errors.description && <p className="text-xs text-rose-500">{errors.description}</p>}
                                 </div>
 
                                 {/* Notes */}
-                                <div className="space-y-2">
+                                <div className="space-y-1.5">
                                     <div className="flex items-center justify-between">
-                                        <label className="text-sm font-medium leading-none">Notes</label>
+                                        <label className="text-xs font-medium leading-none text-zinc-300">Notes</label>
                                         <span className={`text-[11px] tabular-nums ${counterClass((data.notes || '').length, NOTES_MAX)}`}>
                                             {(data.notes || '').length}/{NOTES_MAX}
                                         </span>
                                     </div>
                                     
-                                    <div className="rounded-md border border-zinc-800 bg-zinc-950/50 text-sm shadow-sm transition-colors focus-within:border-zinc-500 focus-within:ring-1 focus-within:ring-zinc-500">
+                                    <div className="rounded-md border border-zinc-800 bg-zinc-950/50 text-xs shadow-sm transition-colors focus-within:border-zinc-500 focus-within:ring-1 focus-within:ring-zinc-500">
                                         <ScrollArea className="h-28">
                                             <Textarea
                                                 placeholder="Add any extra details or context (optional)..."
                                                 value={data.notes}
                                                 onChange={(e) => setData('notes', e.target.value)}
                                                 maxLength={NOTES_MAX}
-                                                className="min-h-[112px] resize-none break-all border-0 bg-transparent shadow-none focus-visible:ring-0 p-3 text-zinc-200 placeholder:text-zinc-500"
+                                                className="min-h-[112px] resize-none break-all border-0 bg-transparent shadow-none focus-visible:ring-0 p-2.5 text-zinc-200 placeholder:text-zinc-500 text-xs"
                                             />
                                         </ScrollArea>
                                     </div>
@@ -517,10 +520,10 @@ export default function TransactionFormModal({
                         </Tabs>
 
                         <DialogFooter className="pt-2">
-                            <Button type="button" variant="outline" onClick={onClose}>
+                            <Button type="button" variant="outline" onClick={onClose} className="h-8 text-xs">
                                 Cancel
                             </Button>
-                            <Button type="submit" disabled={processing}>
+                            <Button type="submit" disabled={processing} className="h-8 text-xs">
                                 {isEditing ? 'Save Changes' : 'Create Transaction'}
                             </Button>
                         </DialogFooter>
@@ -547,4 +550,4 @@ export default function TransactionFormModal({
             )}
         </>
     );
-}
+}   
