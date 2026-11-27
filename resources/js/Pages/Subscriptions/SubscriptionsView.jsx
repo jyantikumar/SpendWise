@@ -135,7 +135,9 @@ export default function SubscriptionsView({
         const now = new Date();
         const currentYear = now.getFullYear();
         const currentMonth = now.getMonth();
-        const todayStr = now.toISOString().slice(0, 10);
+        
+        // Extract YYYY-MM-DD using local browser time instead of UTC toISOString()
+        const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
 
         return (Array.isArray(pendingInstances) ? pendingInstances : []).filter((item) => {
             if (item.is_overdue) return false;

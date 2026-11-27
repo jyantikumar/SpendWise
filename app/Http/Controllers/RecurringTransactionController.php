@@ -24,9 +24,11 @@ class RecurringTransactionController extends Controller
             ->orderBy('next_due_date', 'asc')
             ->get();
 
-        // Use date-only strings everywhere to avoid timezone-driven off-by-one.
-        $todayStr = Carbon::today()->format('Y-m-d');
-        $lookaheadStr = Carbon::today()->addDays(30)->format('Y-m-d');
+        $timezone = config('app.timezone', 'Asia/Manila');
+
+        // Force explicit application timezone on date evaluation
+        $todayStr = Carbon::now($timezone)->format('Y-m-d');
+        $lookaheadStr = Carbon::now($timezone)->addDays(30)->format('Y-m-d');
 
         $paidTransactions = Transaction::where('user_id', $user->id)
             ->whereNotNull('recurring_transaction_id')
@@ -41,7 +43,6 @@ class RecurringTransactionController extends Controller
                 continue;
             }
 
-            // Hard floor: never generate an instance before the rule's start_date.
             $startDateStr = optional($rule->start_date)->format('Y-m-d');
             $endDateStr   = optional($rule->end_date)->format('Y-m-d');
 
@@ -52,24 +53,21 @@ class RecurringTransactionController extends Controller
             $skippedDates = $rule->skipped_dates ?? [];
             $weekdays = $this->normalizeWeekdays($rule->weekdays);
 
-            // Resolve the first due date.
             $currentDueDate = $this->resolveFirstDueDate(
-                Carbon::parse($startDateStr),
+                Carbon::parse($startDateStr, $timezone),
                 $rule->frequency,
                 $weekdays
             );
 
-            // Safety net: if resolveFirstDueDate returned a date before start_date, snap to start_date.
             if ($currentDueDate->format('Y-m-d') < $startDateStr) {
-                $currentDueDate = Carbon::parse($startDateStr);
+                $currentDueDate = Carbon::parse($startDateStr, $timezone);
             }
 
             $rulePaidDates = $paidTransactions->get($rule->id, collect())
                 ->pluck('transaction_date')
-                ->map(fn ($d) => Carbon::parse($d)->format('Y-m-d'))
+                ->map(fn ($d) => Carbon::parse($d, $timezone)->format('Y-m-d'))
                 ->toArray();
 
-            // Iterate by date-string to avoid any TZ drift across the loop.
             while (
                 $currentDueDate->format('Y-m-d') <= $lookaheadStr
                 && (!$endDateStr || $currentDueDate->format('Y-m-d') <= $endDateStr)
@@ -125,13 +123,14 @@ class RecurringTransactionController extends Controller
 
     public function store(Request $request)
     {
+        $timezone = config('app.timezone', 'Asia/Manila');
         $validated = $this->validatePayload($request);
 
         $validated['user_id'] = $request->user()->id;
         $validated['weekdays'] = $this->normalizeWeekdays($validated['weekdays'] ?? null);
 
         $validated['next_due_date'] = $this->resolveFirstDueDate(
-            Carbon::parse($validated['start_date'])->startOfDay(),
+            Carbon::parse($validated['start_date'], $timezone)->startOfDay(),
             $validated['frequency'],
             $validated['weekdays'] ?? []
         )->format('Y-m-d');
@@ -147,13 +146,14 @@ class RecurringTransactionController extends Controller
             abort(403);
         }
 
+        $timezone = config('app.timezone', 'Asia/Manila');
         $validated = $this->validatePayload($request);
 
         $validated['weekdays'] = $this->normalizeWeekdays($validated['weekdays'] ?? null);
 
         if ($this->scheduleChanged($recurringTransaction, $validated)) {
             $validated['next_due_date'] = $this->resolveFirstDueDate(
-                Carbon::parse($validated['start_date'])->startOfDay(),
+                Carbon::parse($validated['start_date'], $timezone)->startOfDay(),
                 $validated['frequency'],
                 $validated['weekdays'] ?? []
             )->format('Y-m-d');
@@ -169,6 +169,8 @@ class RecurringTransactionController extends Controller
         if ($recurringTransaction->user_id !== $request->user()->id) {
             abort(403);
         }
+
+        $timezone = config('app.timezone', 'Asia/Manila');
 
         $validated = $request->validate([
             'due_date'     => 'required|date',
@@ -186,8 +188,8 @@ class RecurringTransactionController extends Controller
             $recurringTransaction->type
         );
 
-        DB::transaction(function () use ($recurringTransaction, $validated, $categoryId) {
-            $paymentDate = Carbon::parse($validated['payment_date'])->format('Y-m-d H:i:s');
+        DB::transaction(function () use ($recurringTransaction, $validated, $categoryId, $timezone) {
+            $paymentDate = Carbon::parse($validated['payment_date'], $timezone)->format('Y-m-d H:i:s');
 
             Transaction::create([
                 'user_id'                  => $recurringTransaction->user_id,
@@ -208,21 +210,21 @@ class RecurringTransactionController extends Controller
                 $account->decrement('balance', $validated['amount']);
             }
 
-            $assignedDue = Carbon::parse($validated['due_date'])->format('Y-m-d');
-            $currentNextDue = Carbon::parse($recurringTransaction->next_due_date)->format('Y-m-d');
+            $assignedDue = Carbon::parse($validated['due_date'], $timezone)->format('Y-m-d');
+            $currentNextDue = Carbon::parse($recurringTransaction->next_due_date, $timezone)->format('Y-m-d');
 
             if ($assignedDue === $currentNextDue) {
                 $nextDate = RecurringTransaction::advanceDate(
-                    Carbon::parse($recurringTransaction->next_due_date),
+                    Carbon::parse($recurringTransaction->next_due_date, $timezone),
                     $recurringTransaction->frequency,
                     $this->normalizeWeekdays($recurringTransaction->weekdays)
                 );
 
                 $isFinished = $recurringTransaction->end_date
-                    && $nextDate->greaterThan(Carbon::parse($recurringTransaction->end_date));
+                    && $nextDate->greaterThan(Carbon::parse($recurringTransaction->end_date, $timezone));
 
                 $recurringTransaction->update([
-                    'last_generated_at' => Carbon::now(),
+                    'last_generated_at' => Carbon::now($timezone),
                     'next_due_date'     => $nextDate->format('Y-m-d'),
                     'is_active'         => $isFinished ? false : $recurringTransaction->is_active,
                 ]);
@@ -238,11 +240,13 @@ class RecurringTransactionController extends Controller
             abort(403);
         }
 
+        $timezone = config('app.timezone', 'Asia/Manila');
+
         $validated = $request->validate([
             'due_date' => 'required|date',
         ]);
 
-        $skippedDate = Carbon::parse($validated['due_date'])->format('Y-m-d');
+        $skippedDate = Carbon::parse($validated['due_date'], $timezone)->format('Y-m-d');
         $currentSkipped = $recurringTransaction->skipped_dates ?? [];
 
         if (!in_array($skippedDate, $currentSkipped, true)) {
@@ -310,7 +314,6 @@ class RecurringTransactionController extends Controller
             'auto_create' => 'boolean',
         ]);
 
-        // Wipe weekdays array if frequency is not custom
         if ($validated['frequency'] !== 'custom') {
             $validated['weekdays'] = null;
         }
@@ -405,6 +408,7 @@ class RecurringTransactionController extends Controller
 
     private function scheduleChanged(RecurringTransaction $rule, array $validated): bool
     {
+        $timezone = config('app.timezone', 'Asia/Manila');
         $currentWeekdays = $this->normalizeWeekdays($rule->weekdays);
         $newWeekdays = $this->normalizeWeekdays($validated['weekdays'] ?? null);
 
@@ -413,9 +417,9 @@ class RecurringTransactionController extends Controller
 
         return $rule->frequency !== $validated['frequency']
             || $currentWeekdays !== $newWeekdays
-            || $currentStart !== Carbon::parse($validated['start_date'])->format('Y-m-d')
+            || $currentStart !== Carbon::parse($validated['start_date'], $timezone)->format('Y-m-d')
             || $currentEnd !== (!empty($validated['end_date'])
-                ? Carbon::parse($validated['end_date'])->format('Y-m-d')
+                ? Carbon::parse($validated['end_date'], $timezone)->format('Y-m-d')
                 : null);
     }
 }
