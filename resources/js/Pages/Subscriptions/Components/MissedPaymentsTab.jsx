@@ -1,30 +1,87 @@
 // resources/js/Pages/Subscriptions/Components/MissedPaymentsTab.jsx
-import { AlertCircle, ChevronLeft, ChevronRight, SkipForward } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { AlertCircle, ChevronLeft, ChevronRight, SkipForward, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { dueDateLabel } from './dateHelpers';
 
 export function MissedPaymentsTab({ 
-    overdueInstances, 
-    paginatedMissed, 
+    overdueInstances = [], 
     missedPage, 
     setMissedPage, 
-    totalMissedPages, 
     itemsPerPage, 
     formatCurrency, 
     setPayingInstance, 
     handleSkipInstance 
 }) {
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Filter missed items by title or account name
+    const searchedInstances = useMemo(() => {
+        if (!searchQuery.trim()) return overdueInstances;
+        const query = searchQuery.toLowerCase().trim();
+        return overdueInstances.filter((item) => {
+            const titleMatch = item.title?.toLowerCase().includes(query);
+            const accountMatch = item.account?.name?.toLowerCase().includes(query);
+            return titleMatch || accountMatch;
+        });
+    }, [overdueInstances, searchQuery]);
+
+    // Calculate total pages and current page slice dynamically
+    const totalPages = Math.ceil(searchedInstances.length / itemsPerPage) || 1;
+    const paginatedMissed = useMemo(() => {
+        return searchedInstances.slice(
+            (missedPage - 1) * itemsPerPage,
+            missedPage * itemsPerPage
+        );
+    }, [searchedInstances, missedPage, itemsPerPage]);
+
+    const handleSearchChange = (e) => {
+        setSearchQuery(e.target.value);
+        setMissedPage(1);
+    };
+
+    const handleClearSearch = () => {
+        setSearchQuery('');
+        setMissedPage(1);
+    };
+
     return (
         <Card className="border-zinc-800 w-full">
             <CardHeader className="p-4 sm:p-6 pb-3">
-                <CardTitle className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" /> Missed & Overdue Payments
-                </CardTitle>
-                <CardDescription className="text-xs text-zinc-400">
-                    Scheduled payments that passed their due date without being logged in transactions.
-                </CardDescription>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                        <CardTitle className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+                            <AlertCircle className="h-4 w-4 shrink-0 text-rose-500" /> Missed & Overdue Payments
+                        </CardTitle>
+                        <CardDescription className="text-xs text-zinc-400 mt-0.5">
+                            Scheduled payments that passed their due date without being logged in transactions.
+                        </CardDescription>
+                    </div>
+
+                    {/* Search Bar Input */}
+                    <div className="relative w-full sm:w-64 shrink-0">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                        <Input
+                            type="text"
+                            placeholder="Search missed payments..."
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            className="h-8 pl-8 pr-8 text-xs border-zinc-800 bg-zinc-900 text-zinc-200 focus-visible:ring-zinc-700"
+                        />
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={handleClearSearch}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                    </div>
+                </div>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 sm:pt-0">
                 {paginatedMissed.length > 0 ? (
@@ -129,25 +186,25 @@ export function MissedPaymentsTab({
                     </>
                 ) : (
                     <div className="py-8 text-center text-xs text-zinc-500">
-                        No missed or overdue payments found.
+                        {searchQuery ? `No missed payments matching "${searchQuery}".` : 'No missed or overdue payments found.'}
                     </div>
                 )}
             </CardContent>
 
-            {overdueInstances.length > 0 && (
+            {searchedInstances.length > 0 && (
                 <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-zinc-800 px-4 sm:px-6 py-4 text-xs text-zinc-400">
                     <div>
                         Showing <span className="font-medium text-zinc-200">{(missedPage - 1) * itemsPerPage + 1}</span> to{' '}
-                        <span className="font-medium text-zinc-200">{Math.min(missedPage * itemsPerPage, overdueInstances.length)}</span> of{' '}
-                        <span className="font-medium text-zinc-200">{overdueInstances.length}</span> records
+                        <span className="font-medium text-zinc-200">{Math.min(missedPage * itemsPerPage, searchedInstances.length)}</span> of{' '}
+                        <span className="font-medium text-zinc-200">{searchedInstances.length}</span> records
                     </div>
 
                     <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                         <Button variant="outline" size="sm" disabled={missedPage === 1} onClick={() => setMissedPage((prev) => Math.max(prev - 1, 1))} className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs">
                             <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
                         </Button>
-                        <span className="text-xs font-medium text-zinc-300 px-1">{missedPage} / {totalMissedPages}</span>
-                        <Button variant="outline" size="sm" disabled={missedPage >= totalMissedPages} onClick={() => setMissedPage((prev) => Math.min(prev + 1, totalMissedPages))} className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs">
+                        <span className="text-xs font-medium text-zinc-300 px-1">{missedPage} / {totalPages}</span>
+                        <Button variant="outline" size="sm" disabled={missedPage >= totalPages} onClick={() => setMissedPage((prev) => Math.min(prev + 1, totalPages))} className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs">
                             Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
                         </Button>
                     </div>

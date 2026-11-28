@@ -1,26 +1,82 @@
-import { Clock, ChevronLeft, ChevronRight, SkipForward } from 'lucide-react';
+// resources/js/Pages/Subscriptions/Components/TodayDuesTab.jsx
+import { useState, useMemo } from 'react';
+import { Clock, ChevronLeft, ChevronRight, SkipForward, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { dueDateLabel } from './dateHelpers';
 
 export function TodayDuesTab({ 
-    todayInstances, 
-    paginatedToday, 
+    todayInstances = [], 
     todayPage, 
     setTodayPage, 
-    totalTodayPages, 
     itemsPerPage, 
     formatCurrency, 
     setPayingInstance, 
     handleSkipInstance 
 }) {
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Filter instances by title or account name
+    const searchedInstances = useMemo(() => {
+        if (!searchQuery.trim()) return todayInstances;
+        const query = searchQuery.toLowerCase().trim();
+        return todayInstances.filter((item) => {
+            const titleMatch = item.title?.toLowerCase().includes(query);
+            const accountMatch = item.account?.name?.toLowerCase().includes(query);
+            return titleMatch || accountMatch;
+        });
+    }, [todayInstances, searchQuery]);
+
+    // Calculate total pages and current page items dynamically
+    const totalPages = Math.ceil(searchedInstances.length / itemsPerPage) || 1;
+    const paginatedToday = useMemo(() => {
+        return searchedInstances.slice(
+            (todayPage - 1) * itemsPerPage,
+            todayPage * itemsPerPage
+        );
+    }, [searchedInstances, todayPage, itemsPerPage]);
+
+    const handleSearchChange = (e) => {
+        setSearchQuery(e.target.value);
+        setTodayPage(1);
+    };
+
+    const handleClearSearch = () => {
+        setSearchQuery('');
+        setTodayPage(1);
+    };
+
     return (
         <Card className="border-zinc-800">
             <CardHeader className="p-4 sm:p-6 pb-3">
-                <CardTitle className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
-                    <Clock className="h-4 w-4 shrink-0" /> Due Today
-                </CardTitle>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <CardTitle className="text-sm font-semibold text-zinc-200 flex items-center gap-2">
+                        <Clock className="h-4 w-4 shrink-0" /> Due Today
+                    </CardTitle>
+
+                    {/* Search Bar Input */}
+                    <div className="relative w-full sm:w-64 shrink-0">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                        <Input
+                            type="text"
+                            placeholder="Search today's dues..."
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            className="h-8 pl-8 pr-8 text-xs border-zinc-800 bg-zinc-900 text-zinc-200 focus-visible:ring-zinc-700"
+                        />
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={handleClearSearch}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                    </div>
+                </div>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 sm:pt-0">
                 {paginatedToday.length > 0 ? (
@@ -128,25 +184,25 @@ export function TodayDuesTab({
                     </>
                 ) : (
                     <div className="py-8 text-center text-xs text-zinc-500">
-                        No payments due today. You're all caught up!
+                        {searchQuery ? `No payments due today matching "${searchQuery}".` : "No payments due today. You're all caught up!"}
                     </div>
                 )}
             </CardContent>
 
-            {todayInstances.length > 0 && (
+            {searchedInstances.length > 0 && (
                 <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-zinc-800 px-4 sm:px-6 py-4 text-xs text-zinc-400">
                     <div>
                         Showing <span className="font-medium text-zinc-200">{(todayPage - 1) * itemsPerPage + 1}</span> to{' '}
-                        <span className="font-medium text-zinc-200">{Math.min(todayPage * itemsPerPage, todayInstances.length)}</span> of{' '}
-                        <span className="font-medium text-zinc-200">{todayInstances.length}</span> records
+                        <span className="font-medium text-zinc-200">{Math.min(todayPage * itemsPerPage, searchedInstances.length)}</span> of{' '}
+                        <span className="font-medium text-zinc-200">{searchedInstances.length}</span> records
                     </div>
 
                     <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                         <Button variant="outline" size="sm" disabled={todayPage === 1} onClick={() => setTodayPage((prev) => Math.max(prev - 1, 1))} className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs">
                             <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
                         </Button>
-                        <span className="text-xs font-medium text-zinc-300 px-1">{todayPage} / {totalTodayPages}</span>
-                        <Button variant="outline" size="sm" disabled={todayPage >= totalTodayPages} onClick={() => setTodayPage((prev) => Math.min(prev + 1, totalTodayPages))} className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs">
+                        <span className="text-xs font-medium text-zinc-300 px-1">{todayPage} / {totalPages}</span>
+                        <Button variant="outline" size="sm" disabled={todayPage >= totalPages} onClick={() => setTodayPage((prev) => Math.min(prev + 1, totalPages))} className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs">
                             Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
                         </Button>
                     </div>

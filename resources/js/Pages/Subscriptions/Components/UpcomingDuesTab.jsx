@@ -1,34 +1,89 @@
 // resources/js/Pages/Subscriptions/Components/UpcomingDuesTab.jsx
-import { ChevronLeft, ChevronRight, SkipForward } from 'lucide-react';
+import { useState, useMemo } from 'react';
+import { ChevronLeft, ChevronRight, SkipForward, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { dueDateLabel } from './dateHelpers';
 
 export function UpcomingDuesTab({ 
     dateFilter, 
-    upcomingInstances, 
-    paginatedUpcoming, 
+    upcomingInstances = [], 
     upcomingPage, 
     setUpcomingPage, 
-    totalUpcomingPages, 
     itemsPerPage, 
     formatCurrency, 
     setPayingInstance, 
     handleSkipInstance 
 }) {
+    const [searchQuery, setSearchQuery] = useState('');
+
+    // Filter upcoming items by title or account name
+    const searchedInstances = useMemo(() => {
+        if (!searchQuery.trim()) return upcomingInstances;
+        const query = searchQuery.toLowerCase().trim();
+        return upcomingInstances.filter((item) => {
+            const titleMatch = item.title?.toLowerCase().includes(query);
+            const accountMatch = item.account?.name?.toLowerCase().includes(query);
+            return titleMatch || accountMatch;
+        });
+    }, [upcomingInstances, searchQuery]);
+
+    // Calculate total pages and current page slice dynamically
+    const totalPages = Math.ceil(searchedInstances.length / itemsPerPage) || 1;
+    const paginatedUpcoming = useMemo(() => {
+        return searchedInstances.slice(
+            (upcomingPage - 1) * itemsPerPage,
+            upcomingPage * itemsPerPage
+        );
+    }, [searchedInstances, upcomingPage, itemsPerPage]);
+
+    const handleSearchChange = (e) => {
+        setSearchQuery(e.target.value);
+        setUpcomingPage(1);
+    };
+
+    const handleClearSearch = () => {
+        setSearchQuery('');
+        setUpcomingPage(1);
+    };
+
     return (
         <Card className="border-zinc-800">
             <CardHeader className="p-4 sm:p-6 pb-3">
-                <CardTitle className="text-sm font-semibold text-zinc-200">
-                    Upcoming Dues ({
-                        dateFilter === 'current_month' 
-                            ? 'This Month' 
-                            : dateFilter === '30_days' 
-                            ? 'Next 30 Days' 
-                            : 'All Scheduled'
-                    })
-                </CardTitle>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <CardTitle className="text-sm font-semibold text-zinc-200">
+                        Upcoming Dues ({
+                            dateFilter === 'current_month' 
+                                ? 'This Month' 
+                                : dateFilter === '30_days' 
+                                ? 'Next 30 Days' 
+                                : 'All Scheduled'
+                        })
+                    </CardTitle>
+
+                    {/* Search Bar Input */}
+                    <div className="relative w-full sm:w-64 shrink-0">
+                        <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-zinc-400 pointer-events-none" />
+                        <Input
+                            type="text"
+                            placeholder="Search upcoming dues..."
+                            value={searchQuery}
+                            onChange={handleSearchChange}
+                            className="h-8 pl-8 pr-8 text-xs border-zinc-800 bg-zinc-900 text-zinc-200 focus-visible:ring-zinc-700"
+                        />
+                        {searchQuery && (
+                            <button
+                                type="button"
+                                onClick={handleClearSearch}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-200"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
+                    </div>
+                </div>
             </CardHeader>
             <CardContent className="p-4 sm:p-6 sm:pt-0">
                 {paginatedUpcoming.length > 0 ? (
@@ -136,25 +191,25 @@ export function UpcomingDuesTab({
                     </>
                 ) : (
                     <div className="py-8 text-center text-xs text-zinc-500">
-                        No upcoming dues scheduled for this timeframe matching your filters.
+                        {searchQuery ? `No upcoming dues matching "${searchQuery}".` : 'No upcoming dues scheduled for this timeframe matching your filters.'}
                     </div>
                 )}
             </CardContent>
 
-            {upcomingInstances.length > 0 && (
+            {searchedInstances.length > 0 && (
                 <CardFooter className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-zinc-800 px-4 sm:px-6 py-4 text-xs text-zinc-400">
                     <div>
                         Showing <span className="font-medium text-zinc-200">{(upcomingPage - 1) * itemsPerPage + 1}</span> to{' '}
-                        <span className="font-medium text-zinc-200">{Math.min(upcomingPage * itemsPerPage, upcomingInstances.length)}</span> of{' '}
-                        <span className="font-medium text-zinc-200">{upcomingInstances.length}</span> records
+                        <span className="font-medium text-zinc-200">{Math.min(upcomingPage * itemsPerPage, searchedInstances.length)}</span> of{' '}
+                        <span className="font-medium text-zinc-200">{searchedInstances.length}</span> records
                     </div>
 
                     <div className="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
                         <Button variant="outline" size="sm" disabled={upcomingPage === 1} onClick={() => setUpcomingPage((prev) => Math.max(prev - 1, 1))} className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs">
                             <ChevronLeft className="h-3.5 w-3.5 mr-1" /> Previous
                         </Button>
-                        <span className="text-xs font-medium text-zinc-300 px-1">{upcomingPage} / {totalUpcomingPages}</span>
-                        <Button variant="outline" size="sm" disabled={upcomingPage >= totalUpcomingPages} onClick={() => setUpcomingPage((prev) => Math.min(prev + 1, totalUpcomingPages))} className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs">
+                        <span className="text-xs font-medium text-zinc-300 px-1">{upcomingPage} / {totalPages}</span>
+                        <Button variant="outline" size="sm" disabled={upcomingPage >= totalPages} onClick={() => setUpcomingPage((prev) => Math.min(prev + 1, totalPages))} className="h-8 px-3 border-zinc-800 text-zinc-300 hover:text-zinc-100 text-xs">
                             Next <ChevronRight className="h-3.5 w-3.5 ml-1" />
                         </Button>
                     </div>
