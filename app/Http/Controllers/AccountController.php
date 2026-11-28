@@ -6,8 +6,8 @@ use App\Models\Account;
 use App\Models\AccountType;
 use App\Models\Category;
 use App\Models\Transaction;
-
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 
 class AccountController extends Controller
@@ -166,5 +166,59 @@ class AccountController extends Controller
         ]);
 
         return back();
+    }
+
+    /**
+     * Reconcile the account balance to match physical cash/bank totals.
+     */
+    public function reconcile(Request $request, Account $account)
+    {
+        if ($account->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
+        $validated = $request->validate([
+            'actual_balance' => ['required', 'numeric', 'min:-999999999.99', 'max:999999999.99'],
+            'notes'          => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $currentBalance = (float) $account->balance;
+        $actualBalance  = (float) $validated['actual_balance'];
+        $difference     = $actualBalance - $currentBalance;
+
+        if (abs($difference) < 0.01) {
+            return back()->with('info', 'Account balance is already up to date.');
+        }
+
+        DB::transaction(function () use ($request, $account, $currentBalance, $actualBalance, $difference, $validated) {
+            $user = $request->user();
+            $isIncome = $difference > 0;
+            $amount = abs($difference);
+
+            $category = Category::where('user_id', $user->id)
+                ->where(function ($q) {
+                    $q->where('name', 'like', '%Adjustment%')
+                      ->orWhere('name', 'like', '%Uncategorized%');
+                })
+                ->first();
+
+            $account->transactions()->create([
+                'user_id'          => $user->id,
+                'category_id'      => $category?->id,
+                'type'             => $isIncome ? 'income' : 'expense',
+                'amount'           => $amount,
+                'description'      => 'Balance Reconciliation',
+                'notes'            => $validated['notes'] 
+                    ? $validated['notes'] . " (Reconciled from {$currentBalance} to {$actualBalance})"
+                    : "Reconciled balance from {$currentBalance} to {$actualBalance}",
+                'transaction_date' => now()->format('Y-m-d H:i:s'),
+            ]);
+
+            $account->update([
+                'balance' => $actualBalance,
+            ]);
+        });
+
+        return back()->with('success', 'Account balance reconciled successfully.');
     }
 }

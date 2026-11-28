@@ -59,6 +59,7 @@ Route::middleware(['auth'])->group(function () {
         Route::delete('/{account}', [AccountController::class, 'destroy'])->name('destroy');
         Route::patch('/{account}/toggle-active', [AccountController::class, 'toggleActive'])->name('toggle-active');
         Route::get('/{account}/transactions', [AccountController::class, 'accountTransactions'])->name('transactions');
+        Route::post('/{account}/reconcile', [AccountController::class, 'reconcile'])->name('reconcile');
     });
 
     // Account Types
@@ -99,23 +100,21 @@ Route::middleware(['auth'])->group(function () {
     });
 
     // Wishlist Items & Prices
-   // Wishlist Items & Prices
-Route::prefix('wishlist')->name('wishlist.')->group(function () {
-    Route::get('/', [WishlistItemController::class, 'index'])->name('index');
-    Route::post('/', [WishlistItemController::class, 'store'])->name('store');
+    Route::prefix('wishlist')->name('wishlist.')->group(function () {
+        Route::get('/', [WishlistItemController::class, 'index'])->name('index');
+        Route::post('/', [WishlistItemController::class, 'store'])->name('store');
 
-    // Scope the {wishlist} parameter to the authenticated user
-    Route::scopeBindings()->group(function () {
-        Route::get('/{wishlist}', [WishlistItemController::class, 'show'])->name('show');
-        Route::put('/{wishlist}', [WishlistItemController::class, 'update'])->name('update');
-        Route::delete('/{wishlist}', [WishlistItemController::class, 'destroy'])->name('destroy');
-        Route::patch('/{wishlist}/status', [WishlistItemController::class, 'toggleStatus'])->name('status.toggle');
+        Route::scopeBindings()->group(function () {
+            Route::get('/{wishlist}', [WishlistItemController::class, 'show'])->name('show');
+            Route::put('/{wishlist}', [WishlistItemController::class, 'update'])->name('update');
+            Route::delete('/{wishlist}', [WishlistItemController::class, 'destroy'])->name('destroy');
+            Route::patch('/{wishlist}/status', [WishlistItemController::class, 'toggleStatus'])->name('status.toggle');
 
-        Route::post('/{wishlist}/prices', [WishlistItemController::class, 'storePrice'])->name('prices.store');
-        Route::put('/{wishlist}/prices/{price}', [WishlistItemController::class, 'updatePrice'])->name('prices.update');
-        Route::delete('/{wishlist}/prices/{price}', [WishlistItemController::class, 'destroyPrice'])->name('prices.destroy');
+            Route::post('/{wishlist}/prices', [WishlistItemController::class, 'storePrice'])->name('prices.store');
+            Route::put('/{wishlist}/prices/{price}', [WishlistItemController::class, 'updatePrice'])->name('prices.update');
+            Route::delete('/{wishlist}/prices/{price}', [WishlistItemController::class, 'destroyPrice'])->name('prices.destroy');
+        });
     });
-});
 
     // Savings Goals
     Route::prefix('savings')->name('savings.')->group(function () {
@@ -125,14 +124,16 @@ Route::prefix('wishlist')->name('wishlist.')->group(function () {
         Route::put('/{savingsGoal}', [SavingsGoalController::class, 'update'])->name('update');
         Route::delete('/{savingsGoal}', [SavingsGoalController::class, 'destroy'])->name('destroy');
     });
-// Budgets
-Route::prefix('budgets')->name('budgets.')->group(function () {
-    Route::get('/', [\App\Http\Controllers\BudgetController::class, 'index'])->name('index');
-    Route::post('/', [\App\Http\Controllers\BudgetController::class, 'store'])->name('store');
-    Route::get('/{budget}', [\App\Http\Controllers\BudgetController::class, 'show'])->name('show');
-    Route::put('/{budget}', [\App\Http\Controllers\BudgetController::class, 'update'])->name('update');
-    Route::delete('/{budget}', [\App\Http\Controllers\BudgetController::class, 'destroy'])->name('destroy');
-});
+
+    // Budgets
+    Route::prefix('budgets')->name('budgets.')->group(function () {
+        Route::get('/', [\App\Http\Controllers\BudgetController::class, 'index'])->name('index');
+        Route::post('/', [\App\Http\Controllers\BudgetController::class, 'store'])->name('store');
+        Route::get('/{budget}', [\App\Http\Controllers\BudgetController::class, 'show'])->name('show');
+        Route::put('/{budget}', [\App\Http\Controllers\BudgetController::class, 'update'])->name('update');
+        Route::delete('/{budget}', [\App\Http\Controllers\BudgetController::class, 'destroy'])->name('destroy');
+    });
+
     // Data Export, Import, Templates & Clear Data
     Route::prefix('settings/data')->name('settings.data.')->group(function () {
         Route::get('/', [DataExportImportController::class, 'index'])->name('index');

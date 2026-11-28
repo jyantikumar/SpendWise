@@ -28,6 +28,7 @@ import {
 
 import AccountTransactionsModal from '@/Pages/Accounts/components/AccountTransactionsModal';
 import AccountFormModal from '@/Pages/Accounts/components/AccountFormModal';
+import ReconcileBalanceModal from '@/Pages/Accounts/components/ReconcileBalanceModal'; // 👈 Imported Modal
 
 import { AccountKpiGrid } from '@/Pages/Accounts/components/AccountKpiGrid';
 import { AccountFilterTabs } from '@/Pages/Accounts/components/AccountFilterTabs';
@@ -37,6 +38,10 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingAccount, setEditingAccount] = useState(null);
     const [deletingAccount, setDeletingAccount] = useState(null);
+
+    // Reconcile Modal State
+    const [reconcilingAccount, setReconcilingAccount] = useState(null);
+    const [isReconcileModalOpen, setIsReconcileModalOpen] = useState(false);
 
     const [statusFilter, setStatusFilter] = useState('active');
 
@@ -56,6 +61,11 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
     const openEditModal = (account) => {
         setEditingAccount(account);
         setIsModalOpen(true);
+    };
+
+    const openReconcileModal = (account) => {
+        setReconcilingAccount(account);
+        setIsReconcileModalOpen(true);
     };
 
     const openTransactionsModal = (account) => {
@@ -177,6 +187,7 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                             statusFilter={statusFilter}
                             openTransactionsModal={openTransactionsModal}
                             openEditModal={openEditModal}
+                            openReconcileModal={openReconcileModal} // 👈 Passed down
                             handleToggleActive={handleToggleActive}
                             setDeletingAccount={setDeletingAccount}
                             formatCurrency={formatCurrency}
@@ -199,6 +210,14 @@ export default function AccountIndex({ auth, accounts = [], accountTypes = [], c
                 onClose={() => setIsModalOpen(false)}
                 editingAccount={editingAccount}
                 accountTypes={accountTypes}
+                userCurrency={userCurrency}
+            />
+
+            {/* Reconcile Balance Modal */}
+            <ReconcileBalanceModal
+                isOpen={isReconcileModalOpen}
+                onClose={() => setIsReconcileModalOpen(false)}
+                account={reconcilingAccount}
                 userCurrency={userCurrency}
             />
 

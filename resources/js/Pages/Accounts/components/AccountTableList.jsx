@@ -1,5 +1,5 @@
 // resources/js/Pages/Accounts/components/AccountTableList.jsx
-import { Wallet, MoreHorizontal, Pencil, Trash2, ListFilter, Power } from 'lucide-react';
+import { Wallet, MoreHorizontal, Pencil, Trash2, ListFilter, Power, Scale } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
@@ -9,22 +9,12 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-// Small reusable badge for the account's identity color — one dot, nothing more.
-function AccountColorDot({ color, isActive }) {
-    return (
-        <span
-            className="inline-block h-2 w-2 rounded-full shrink-0"
-            style={{ backgroundColor: color || '#71717a' }}
-            title={isActive ? 'Active' : 'Inactive'}
-        />
-    );
-}
-
 export function AccountTableList({
     filteredAccounts,
     statusFilter,
     openTransactionsModal,
     openEditModal,
+    openReconcileModal, // 👈 New Prop
     handleToggleActive,
     setDeletingAccount,
     formatCurrency,
@@ -44,10 +34,8 @@ export function AccountTableList({
                             onClick={() => openTransactionsModal(acc)}
                         >
                             <div className="flex items-center gap-3 min-w-0">
-                                {/* Neutral icon tile */}
                                 <div className="relative flex h-9 w-9 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 shrink-0">
                                     <Wallet className="h-4 w-4 text-zinc-400" />
-                                    {/* tiny color identity dot in corner */}
                                     <span
                                         className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full border-2 border-zinc-950"
                                         style={{ backgroundColor: acc.color || '#71717a' }}
@@ -93,6 +81,12 @@ export function AccountTableList({
                                                 className="cursor-pointer focus:bg-zinc-900 hover:bg-zinc-900"
                                             >
                                                 <ListFilter className="mr-2 h-3.5 w-3.5 text-zinc-400" /> View
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem
+                                                onClick={() => openReconcileModal(acc)}
+                                                className="cursor-pointer focus:bg-zinc-900 hover:bg-zinc-900"
+                                            >
+                                                <Scale className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Reconcile
                                             </DropdownMenuItem>
                                             <DropdownMenuItem
                                                 onClick={() => openEditModal(acc)}
@@ -148,7 +142,6 @@ export function AccountTableList({
                                 >
                                     <TableCell>
                                         <div className="flex items-center gap-3">
-                                            {/* Neutral icon tile */}
                                             <div className="relative flex h-8 w-8 items-center justify-center rounded-lg border border-zinc-800 bg-zinc-900 shrink-0">
                                                 <Wallet className="h-4 w-4 text-zinc-400" />
                                                 <span
@@ -196,6 +189,12 @@ export function AccountTableList({
                                                     className="cursor-pointer focus:bg-zinc-900 hover:bg-zinc-900"
                                                 >
                                                     <ListFilter className="mr-2 h-3.5 w-3.5 text-zinc-400" /> View
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem
+                                                    onClick={() => openReconcileModal(acc)}
+                                                    className="cursor-pointer focus:bg-zinc-900 hover:bg-zinc-900"
+                                                >
+                                                    <Scale className="mr-2 h-3.5 w-3.5 text-zinc-400" /> Reconcile
                                                 </DropdownMenuItem>
                                                 <DropdownMenuItem
                                                     onClick={() => openEditModal(acc)}
