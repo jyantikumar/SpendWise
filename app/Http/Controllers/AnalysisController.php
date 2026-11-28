@@ -3,6 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Account;
+use App\Models\AccountType;
+use App\Models\Category;
+use App\Models\SavingsGoal;
 use App\Models\Transaction;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -288,8 +291,25 @@ class AnalysisController extends Controller
             $rangeLabel = 'Custom Range';
         }
 
+        // 11. Modal Setup Props (Categories, Account Types, Savings Goals)
+        $categories = Category::where('user_id', $user->id)
+            ->orderBy('name')
+    ->get();
+
+        $accountTypes = AccountType::where('user_id', $user->id)
+            ->orderBy('name')
+            ->get();
+
+        $savingsGoals = SavingsGoal::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->orderBy('title')
+            ->get();
+
         return Inertia::render('Analysis/Index', [
             'accounts'              => $userAccounts,
+            'categories'            => $categories,     // 👈 Passed to populate Category dropdown
+            'accountTypes'          => $accountTypes,   // 👈 Passed for Quick Add Account modal
+            'savingsGoals'          => $savingsGoals,   // 👈 Passed to populate Savings Goal dropdown
             'accountFlowData'       => $accountFlowData,
             'kpis'                  => [
                 'totalIncome'         => (float) $totalIncome,

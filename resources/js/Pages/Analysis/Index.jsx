@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 import { DateTransactionsDialog } from '@/Pages/Analysis/components/DateTransactionsDialog';
+import { QuickAddTransactionModal } from '@/Pages/Analysis/components/QuickAddTransactionModal';
 import ExpenseAnalysisPieChart from '@/Pages/Analysis/components/ExpenseAnalysisPieChart';
 import AccountAnalysisPieChart from '@/Pages/Analysis/components/AccountAnalysisPieChart';
 import AccountFlowAnalysisChart from '@/Pages/Analysis/components/AccountFlowAnalysisChart';
@@ -29,7 +30,9 @@ export default function AnalysisIndex({
     categoryData = [], 
     calendar = {}, 
     filters = {}, 
-    categories = [] 
+    categories = [],
+    accountTypes = [],
+    savingsGoals = []
 }) {
     const [type, setType] = useState(filters.type || 'all');
     const [accountId, setAccountId] = useState(filters.account_id || 'all');
@@ -48,12 +51,13 @@ export default function AnalysisIndex({
     const [selectedDayObj, setSelectedDayObj] = useState(null);
     const [isChartLoading, setIsChartLoading] = useState(false);
 
-    // Default view set to 'overview'
-    const [accountViewMode, setAccountViewMode] = useState('overview');
+    // Dedicated Quick Add Modal States
+    const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
+    const [quickAddDate, setQuickAddDate] = useState('');
 
+    const [accountViewMode, setAccountViewMode] = useState('overview');
     const [isMobile, setIsMobile] = useState(false);
 
-    // Modal State for Category & Account Drilldowns
     const [selectedCategory, setSelectedCategory] = useState(null);
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
 
@@ -318,6 +322,11 @@ export default function AnalysisIndex({
         }
     };
 
+    const handleOpenQuickAdd = (targetDate) => {
+        setQuickAddDate(targetDate);
+        setIsQuickAddOpen(true);
+    };
+
     const incomeVal = kpis?.totalIncome || 0;
     const expenseVal = kpis?.totalExpense || 0;
     const totalFlow = incomeVal + expenseVal;
@@ -413,13 +422,13 @@ export default function AnalysisIndex({
 
                 <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-2">
                     {/* Expense Categories Card */}
-                    <Card className="border-zinc-800 flex flex-col">
+                    <Card className="border-zinc-800 flex flex-col min-h-[340px]">
                         <CardHeader className="pb-3">
                             <CardTitle className="text-sm font-semibold text-zinc-200">
                                 Expense Categories
                             </CardTitle>
                         </CardHeader>
-                        <CardContent className="flex-1">
+                        <CardContent className="flex-1 min-h-[260px]">
                             <ExpenseAnalysisPieChart 
                                 data={categoryData} 
                                 formatCurrency={formatCurrency}
@@ -428,8 +437,8 @@ export default function AnalysisIndex({
                         </CardContent>
                     </Card>
 
-                    {/* Account Analysis Card (Defaulted to Overview) */}
-                    <Card className="border-zinc-800 flex flex-col">
+                    {/* Account Analysis Card */}
+                    <Card className="border-zinc-800 flex flex-col min-h-[340px]">
                         <CardHeader className="pb-3 flex flex-row items-center justify-between gap-3 space-y-0">
                             <div>
                                 <CardTitle className="text-sm font-semibold text-zinc-200">
@@ -454,7 +463,7 @@ export default function AnalysisIndex({
                                 </Select>
                             </div>
                         </CardHeader>
-                        <CardContent className="flex-1">
+                        <CardContent className="flex-1 min-h-[260px]">
                             {accountViewMode === 'overview' ? (
                                 <AccountAnalysisPieChart 
                                     accounts={accounts} 
@@ -476,7 +485,22 @@ export default function AnalysisIndex({
                     open={!!selectedDayObj}
                     onOpenChange={(open) => !open && setSelectedDayObj(null)}
                     dayData={selectedDayObj}
+                    onQuickAdd={handleOpenQuickAdd}
                     userCurrency={userCurrency}
+                />
+
+                {/* Standalone Quick Add Modal */}
+                <QuickAddTransactionModal
+                    isOpen={isQuickAddOpen}
+                    onClose={() => {
+                        setIsQuickAddOpen(false);
+                        setQuickAddDate('');
+                    }}
+                    selectedDate={quickAddDate}
+                    accounts={accounts}
+                    categories={categories}
+                    accountTypes={accountTypes}
+                    savingsGoals={savingsGoals}
                 />
 
                 <CategoryTransactionsModal

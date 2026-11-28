@@ -4,7 +4,10 @@ import {
     Calendar, 
     Filter,
     Search,
-    X
+    X,
+    Plus,
+    ChevronDown,
+    SlidersHorizontal
 } from 'lucide-react';
 
 import {
@@ -24,9 +27,16 @@ import {
     SheetDescription,
     SheetHeader,
     SheetTitle,
-    SheetTrigger,
     SheetFooter,
 } from '@/components/ui/sheet';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { TransactionDetailSheet } from '@/Pages/Transactions/components/TransactionDetailSheet';
 
@@ -37,18 +47,15 @@ export function DateTransactionsDialog({
     dayData, 
     onEdit, 
     onDelete,
-    userCurrency = 'PHP' // Accept userCurrency prop with fallback
+    onQuickAdd,
+    userCurrency = 'PHP'
 }) {
-    // Sheet Filter States
     const [isFilterSheetOpen, setIsFilterSheetOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [sheetType, setSheetType] = useState('all');
     const [selectedAccount, setSelectedAccount] = useState('all');
-
-    // Row Click Detail State
     const [selectedTransaction, setSelectedTransaction] = useState(null);
 
-    // Reset filters when dialog opens or dayData changes
     useEffect(() => {
         if (open) {
             setSearchQuery('');
@@ -87,6 +94,7 @@ export function DateTransactionsDialog({
     };
 
     const rawTransactions = dayData.transactions || [];
+    const targetDate = date || dayData.date;
 
     const availableAccounts = Array.from(
         new Map(
@@ -177,7 +185,7 @@ export function DateTransactionsDialog({
                                 <Calendar className="h-5 w-5 text-primary shrink-0" /> 
                                 <div className="min-w-0">
                                     <DialogTitle className="text-base sm:text-lg font-bold text-zinc-200 truncate">
-                                        {formatDate(date || dayData.date)}
+                                        {formatDate(targetDate)}
                                     </DialogTitle>
                                     <DialogDescription className="text-xs text-zinc-400 truncate">
                                         Transactions recorded on this date. Click a row to view details.
@@ -185,13 +193,13 @@ export function DateTransactionsDialog({
                                 </div>
                             </div>
 
-                            <div className="shrink-0">
+                            <div className="flex items-center gap-2 shrink-0">
                                 {renderSummaryBadge()}
                             </div>
                         </div>
                     </DialogHeader>
 
-                    {/* Filter Controls Bar */}
+                    {/* Filter Controls Bar with Split Dropdown Button Group */}
                     <div className="py-3 border-b border-zinc-800 bg-zinc-900/40 -mx-4 px-4 sm:-mx-6 sm:px-6 shrink-0 flex items-center gap-2">
                         <div className="relative flex-1">
                             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
@@ -203,109 +211,146 @@ export function DateTransactionsDialog({
                             />
                         </div>
 
-                        {/* Sheet Trigger Button */}
-                        <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
-                            <SheetTrigger asChild>
-                                <Button variant="outline" size="sm" className="h-9 gap-1.5 border-zinc-800 text-zinc-300 bg-zinc-900 shrink-0">
-                                    <Filter className="h-3.5 w-3.5" />
-                                    <span className="hidden sm:inline">Filter</span>
-                                    {activeFilterCount > 0 && (
-                                        <span className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-emerald-500/10 text-[9px] font-semibold text-emerald-400 border border-emerald-500/20">
-                                            {activeFilterCount}
-                                        </span>
-                                    )}
-                                </Button>
-                            </SheetTrigger>
+                        {/* Split button: [ + Add | ▾ ] */}
+                        <div className="flex items-center shrink-0 rounded-md overflow-hidden divide-x divide-zinc-300">
+                            <Button
+                                size="sm"
+                                onClick={() => onQuickAdd && onQuickAdd(targetDate)}
+                                className="rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 font-medium text-xs h-9 px-3 gap-1.5 shadow-none"
+                            >
+                                <Plus className="h-3.5 w-3.5" />
+                                <span>Add</span>
+                            </Button>
 
-                            <SheetContent side="right" className="w-full sm:max-w-md border-zinc-800 bg-zinc-950 text-zinc-100 flex flex-col justify-between">
-                                <div>
-                                    <SheetHeader className="pb-4 border-b border-zinc-800">
-                                        <SheetTitle className="text-zinc-100 flex items-center gap-2">
-                                            <Filter className="h-4 w-4 text-zinc-400" /> Filter Date Transactions
-                                        </SheetTitle>
-                                        <SheetDescription className="text-zinc-400 text-xs">
-                                            Refine transactions by description, type, or account.
-                                        </SheetDescription>
-                                    </SheetHeader>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button
+                                        className="rounded-none border-0 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 h-9 px-2 shadow-none relative"
+                                        aria-label="More actions"
+                                    >
+                                        <ChevronDown className="h-3.5 w-3.5" />
+                                        {activeFilterCount > 0 && (
+                                            <span className="absolute -top-0.5 -right-0.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-zinc-900 text-zinc-100 px-0.5 text-[9px] font-bold border border-zinc-100">
+                                                {activeFilterCount}
+                                            </span>
+                                        )}
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent
+                                    align="end"
+                                    className="border-zinc-800 bg-zinc-950 text-zinc-300 text-xs w-[180px]"
+                                >
+                                    <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-zinc-500 font-medium px-2 py-1.5">
+                                        Actions
+                                    </DropdownMenuLabel>
+                                    <DropdownMenuSeparator className="bg-zinc-800" />
+                                    <DropdownMenuItem
+                                        onClick={() => setIsFilterSheetOpen(true)}
+                                        className="cursor-pointer focus:bg-zinc-900 hover:bg-zinc-900"
+                                    >
+                                        <SlidersHorizontal className="mr-2 h-3 w-3 text-zinc-400" />
+                                        <span className="flex-1">Filter</span>
+                                        {activeFilterCount > 0 && (
+                                            <span className="text-[10px] text-zinc-500">
+                                                {activeFilterCount}
+                                            </span>
+                                        )}
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </div>
+                    </div>
 
-                                    <div className="py-6 space-y-5">
+                    {/* Filter Sheet Triggered from Dropdown */}
+                    <Sheet open={isFilterSheetOpen} onOpenChange={setIsFilterSheetOpen}>
+                        <SheetContent side="right" className="w-full sm:max-w-md border-zinc-800 bg-zinc-950 text-zinc-100 flex flex-col justify-between">
+                            <div>
+                                <SheetHeader className="pb-4 border-b border-zinc-800">
+                                    <SheetTitle className="text-zinc-100 flex items-center gap-2">
+                                        <Filter className="h-4 w-4 text-zinc-400" /> Filter Date Transactions
+                                    </SheetTitle>
+                                    <SheetDescription className="text-zinc-400 text-xs">
+                                        Refine transactions by description, type, or account.
+                                    </SheetDescription>
+                                </SheetHeader>
+
+                                <div className="py-6 space-y-5">
+                                    <div className="space-y-2">
+                                        <label className="text-xs font-medium text-zinc-400">Search</label>
+                                        <div className="relative">
+                                            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
+                                            <Input
+                                                placeholder="Search description or category..."
+                                                value={searchQuery}
+                                                onChange={(e) => setSearchQuery(e.target.value)}
+                                                className="pl-8 h-9 border-zinc-800 text-zinc-300 bg-zinc-900 text-xs"
+                                            />
+                                        </div>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-3">
                                         <div className="space-y-2">
-                                            <label className="text-xs font-medium text-zinc-400">Search</label>
-                                            <div className="relative">
-                                                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-zinc-400" />
-                                                <Input
-                                                    placeholder="Search description or category..."
-                                                    value={searchQuery}
-                                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                                    className="pl-8 h-9 border-zinc-800 text-zinc-300 bg-zinc-900 text-xs"
-                                                />
-                                            </div>
+                                            <label className="text-xs font-medium text-zinc-400">Type</label>
+                                            <Select 
+                                                value={sheetType} 
+                                                onValueChange={(val) => setSheetType(val)}
+                                            >
+                                                <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900 text-xs">
+                                                    <SelectValue placeholder="All Types" />
+                                                </SelectTrigger>
+                                                <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-300 text-xs">
+                                                    <SelectItem value="all">All Types</SelectItem>
+                                                    <SelectItem value="expense">Expense</SelectItem>
+                                                    <SelectItem value="income">Income</SelectItem>
+                                                    <SelectItem value="transfer">Transfer</SelectItem>
+                                                    <SelectItem value="adjustment">Adjustment</SelectItem>
+                                                </SelectContent>
+                                            </Select>
                                         </div>
 
-                                        <div className="grid grid-cols-2 gap-3">
-                                            <div className="space-y-2">
-                                                <label className="text-xs font-medium text-zinc-400">Type</label>
-                                                <Select 
-                                                    value={sheetType} 
-                                                    onValueChange={(val) => setSheetType(val)}
-                                                >
-                                                    <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900 text-xs">
-                                                        <SelectValue placeholder="All Types" />
-                                                    </SelectTrigger>
-                                                    <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-300 text-xs">
-                                                        <SelectItem value="all">All Types</SelectItem>
-                                                        <SelectItem value="expense">Expense</SelectItem>
-                                                        <SelectItem value="income">Income</SelectItem>
-                                                        <SelectItem value="transfer">Transfer</SelectItem>
-                                                        <SelectItem value="adjustment">Adjustment</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-
-                                            <div className="space-y-2">
-                                                <label className="text-xs font-medium text-zinc-400">Account</label>
-                                                <Select 
-                                                    value={selectedAccount} 
-                                                    onValueChange={(val) => setSelectedAccount(val)}
-                                                >
-                                                    <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900 text-xs">
-                                                        <SelectValue placeholder="All Accounts" />
-                                                    </SelectTrigger>
-                                                    <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-300 max-h-60 text-xs">
-                                                        <SelectItem value="all">All Accounts</SelectItem>
-                                                        {availableAccounts.map((acc) => (
-                                                            <SelectItem key={acc.id} value={String(acc.id)}>
-                                                                {acc.name}
-                                                            </SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs font-medium text-zinc-400">Account</label>
+                                            <Select 
+                                                value={selectedAccount} 
+                                                onValueChange={(val) => setSelectedAccount(val)}
+                                            >
+                                                <SelectTrigger className="h-9 w-full border-zinc-800 text-zinc-300 bg-zinc-900 text-xs">
+                                                    <SelectValue placeholder="All Accounts" />
+                                                </SelectTrigger>
+                                                <SelectContent position="popper" align="start" className="border-zinc-800 bg-zinc-900 text-zinc-300 max-h-60 text-xs">
+                                                    <SelectItem value="all">All Accounts</SelectItem>
+                                                    {availableAccounts.map((acc) => (
+                                                        <SelectItem key={acc.id} value={String(acc.id)}>
+                                                            {acc.name}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
 
-                                <SheetFooter className="pt-4 border-t border-zinc-800 flex flex-row items-center justify-between gap-2">
-                                    {hasActiveFilters ? (
-                                        <Button 
-                                            variant="ghost" 
-                                            size="sm" 
-                                            onClick={handleResetFilters}
-                                            className="text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 gap-1 h-9"
-                                        >
-                                            <X className="h-3.5 w-3.5" /> Reset Filters
-                                        </Button>
-                                    ) : <div />}
-
-                                    <Button onClick={() => setIsFilterSheetOpen(false)} className="h-9 px-6 text-xs">
-                                        Done
+                            <SheetFooter className="pt-4 border-t border-zinc-800 flex flex-row items-center justify-between gap-2">
+                                {hasActiveFilters ? (
+                                    <Button 
+                                        variant="ghost" 
+                                        size="sm" 
+                                        onClick={handleResetFilters}
+                                        className="text-xs text-rose-400 hover:text-rose-300 hover:bg-rose-950/30 gap-1 h-9"
+                                    >
+                                        <X className="h-3.5 w-3.5" /> Reset Filters
                                     </Button>
-                                </SheetFooter>
-                            </SheetContent>
-                        </Sheet>
-                    </div>
+                                ) : <div />}
 
-                    {/* Clickable Table */}
+                                <Button onClick={() => setIsFilterSheetOpen(false)} className="h-9 px-6 text-xs">
+                                    Done
+                                </Button>
+                            </SheetFooter>
+                        </SheetContent>
+                    </Sheet>
+
+                    {/* Table View */}
                     <div className="flex-1 overflow-y-auto my-2 border border-zinc-800 rounded-lg [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
                         <Table>
                             <TableHeader className="bg-muted/40 sticky top-0 z-10">
@@ -322,7 +367,7 @@ export function DateTransactionsDialog({
                                             key={tx.id} 
                                             onClick={() => setSelectedTransaction({
                                                 ...tx, 
-                                                date: tx.date || date || dayData.date
+                                                date: tx.date || targetDate
                                             })}
                                             className="border-b border-zinc-800 hover:bg-muted/50 transition-colors cursor-pointer"
                                         >
@@ -330,11 +375,6 @@ export function DateTransactionsDialog({
                                                 <span className="text-xs font-medium text-zinc-200 block truncate">
                                                     {tx.description || <span className="text-zinc-500 italic">No description</span>}
                                                 </span>
-                                                {tx.category?.name && (
-                                                    <span className="text-[10px] text-zinc-400">
-                                                        {tx.category.name}
-                                                    </span>
-                                                )}
                                             </TableCell>
                                             <TableCell className="py-2.5 text-xs text-zinc-300">
                                                 {tx.type === 'transfer' ? (
@@ -378,12 +418,11 @@ export function DateTransactionsDialog({
                 </DialogContent>
             </Dialog>
 
-            {/* Reusable Transaction Detail Sheet Component */}
             <TransactionDetailSheet
                 open={!!selectedTransaction}
                 onOpenChange={(isOpen) => !isOpen && setSelectedTransaction(null)}
                 transaction={selectedTransaction}
-                currentDate={date || dayData?.date}
+                currentDate={targetDate}
                 onEdit={onEdit}
                 onDelete={onDelete}
                 userCurrency={userCurrency}
